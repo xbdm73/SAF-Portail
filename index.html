@@ -160,7 +160,7 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
   <div class="org">SAF International <small>CH.AOC.3052</small></div>
   <div class="spacer"></div>
   <div class="who" id="who" title=""><i class="dot"></i><span id="who-txt"></span></div>
-  <a class="iconbtn login" id="btn-login" href="https://saf-international-sms.netlify.app/index.html" hidden></a>
+  
   <button class="iconbtn" id="btn-lang" type="button" aria-label="Langue / Language">EN</button>
   <button class="iconbtn" id="btn-theme" type="button" aria-label="Thème">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -346,10 +346,6 @@ function renderWho(){
   box.classList.remove('on');
   txt.textContent=lang==='fr'?'Accès aux applications':'Application access';
   box.title='';
-  const login=document.getElementById('btn-login');
-  login.textContent=lang==='fr'?'Connexion SMS':'SMS sign in';
-  login.href='https://saf-international-sms.netlify.app/index.html';
-  login.hidden=false;
 }
 function applyGate(){
   document.body.classList.add('granted');
