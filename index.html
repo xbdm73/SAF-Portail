@@ -711,18 +711,18 @@ resolveRole();
       publish:'＋ Publier un document', loading:'Chargement des documents…', err_load:'Impossible de charger les documents',
       none_todo:'Aucune lecture en attente. Merci !', none_all:'Aucun document publié.', none_match:'Aucun document ne correspond.',
       search:'Rechercher un document', all_types:'Tous les types',
-      ref:'Réf.', rev:'Rév.', published:'publié le', due:'à lire avant le', late:'en retard',
+      ref:'Réf.', issue:'Éd./Issue', rev:'Rév.', published:'publié le', due:'à lire avant le', late:'en retard',
       read_on:'Lu le {d}', to_read:'À lire', consult:'Consultation', open:'Lire', open_tab:'Ouvrir dans un onglet',
       viewer_loading:'Ouverture du document…', viewer_err:'Le document ne peut pas être affiché',
       ack_label:'J’ai lu et compris ce document (révision {r}).', ack_btn:'Confirmer la lecture',
       ack_done:'✓ Lu et compris le {d} — révision {r}', ack_ok:'Lecture enregistrée', ack_err:'Échec de l’enregistrement',
       ack_shared:'Ce compte n’est pas inscrit au personnel : l’accusé de lecture n’est pas possible.',
       ack_none:'Document en consultation : pas d’accusé de lecture demandé.', close:'Fermer',
-      f_title:'Titre', f_type:'Type', f_ref:'Référence (ex. SA-005, MEMO-2026-12)', f_rev:'Révision', f_desc:'Résumé (facultatif)',
+      f_title:'Titre', f_type:'Type', f_ref:'Référence (ex. SA-005, MEMO-2026-12)', f_issue:'Édition / Issue', f_rev:'Révision', f_desc:'Résumé (facultatif)',
       f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF (50 Mo maximum)',
       f_supersedes:'Remplace (nouvelle révision d’un document publié)', f_none:'— aucun —', f_submit:'Publier',
       f_uploading:'Envoi du PDF…', f_saving:'Enregistrement…', f_ok:'Document publié',
-      e_title:'Indiquer un titre.', e_rev:'Indiquer la révision.', e_file:'Choisir un fichier PDF.', e_pdf:'Le fichier doit être un PDF.',
+      e_title:'Indiquer un titre.', e_issue:'Indiquer l’édition / Issue.', e_rev:'Indiquer la révision.', e_file:'Choisir un fichier PDF.', e_pdf:'Le fichier doit être un PDF.',
       e_size:'Le fichier dépasse 50 Mo.', e_mfa:'Publier exige une connexion SMS avec second facteur (ouvrez le SMS, connectez-vous, puis revenez).',
       t_doc:'Document', t_readers:'Lu par', t_progress:'Avancement', t_detail:'Détail', t_mand:'Obligatoire', t_status:'Statut',
       withdrawn:'Retiré', active:'Publié', readers:'Ont lu', missing:'N’ont pas encore lu', nobody:'Personne', everybody:'Tout le monde a lu.',
@@ -745,18 +745,18 @@ resolveRole();
       publish:'＋ Publish a document', loading:'Loading documents…', err_load:'Documents could not be loaded',
       none_todo:'Nothing left to read. Thank you!', none_all:'No document published.', none_match:'No document matches.',
       search:'Search documents', all_types:'All types',
-      ref:'Ref.', rev:'Rev.', published:'published', due:'read by', late:'overdue',
+      ref:'Ref.', issue:'Ed./Issue', rev:'Rev.', published:'published', due:'read by', late:'overdue',
       read_on:'Read {d}', to_read:'To read', consult:'For reference', open:'Read', open_tab:'Open in a new tab',
       viewer_loading:'Opening the document…', viewer_err:'The document cannot be displayed',
       ack_label:'I have read and understood this document (revision {r}).', ack_btn:'Confirm reading',
       ack_done:'✓ Read and understood on {d} — revision {r}', ack_ok:'Reading recorded', ack_err:'Could not record the reading',
       ack_shared:'This account is not registered as staff: acknowledgement is not possible.',
       ack_none:'Reference document: no reading acknowledgement required.', close:'Close',
-      f_title:'Title', f_type:'Type', f_ref:'Reference (e.g. SA-005, MEMO-2026-12)', f_rev:'Revision', f_desc:'Summary (optional)',
+      f_title:'Title', f_type:'Type', f_ref:'Reference (e.g. SA-005, MEMO-2026-12)', f_issue:'Edition / Issue', f_rev:'Revision', f_desc:'Summary (optional)',
       f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file (50 MB maximum)',
       f_supersedes:'Replaces (new revision of a published document)', f_none:'— none —', f_submit:'Publish',
       f_uploading:'Uploading the PDF…', f_saving:'Saving…', f_ok:'Document published',
-      e_title:'Enter a title.', e_rev:'Enter the revision.', e_file:'Choose a PDF file.', e_pdf:'The file must be a PDF.',
+      e_title:'Enter a title.', e_issue:'Enter the edition / issue.', e_rev:'Enter the revision.', e_file:'Choose a PDF file.', e_pdf:'The file must be a PDF.',
       e_size:'The file exceeds 50 MB.', e_mfa:'Publishing requires an SMS sign-in with second factor (open the SMS, sign in, then come back).',
       t_doc:'Document', t_readers:'Read by', t_progress:'Progress', t_detail:'Details', t_mand:'Mandatory', t_status:'Status',
       withdrawn:'Withdrawn', active:'Published', readers:'Have read', missing:'Have not read yet', nobody:'Nobody', everybody:'Everybody has read it.',
@@ -832,7 +832,7 @@ resolveRole();
   /* ── Rendu ────────────────────────────────────────────────────── */
   function docRow(x){
     const r = S.my[x.id], late = x.mandatory && !r && x.due_date && x.due_date < today();
-    const meta = [x.reference ? h(x.reference) : '', d('rev') + ' ' + h(x.revision), d('published') + ' ' + fd(x.published_at),
+    const meta = [x.reference ? h(x.reference) : '', (x.issue ? d('issue') + ' ' + h(x.issue) : ''), d('rev') + ' ' + h(x.revision), d('published') + ' ' + fd(x.published_at),
                   x.mandatory && x.due_date ? '<span class="' + (late ? 'late' : '') + '">' + d('due') + ' ' + fd(x.due_date) + (late ? ' — ' + d('late') : '') + '</span>' : '']
                  .filter(Boolean).join(' · ');
     const pill = x.status !== 'published' ? '<span class="pill info"><i></i>' + d('withdrawn') + '</span>'
@@ -892,7 +892,7 @@ resolveRole();
     o += '<div class="dtable-wrap"><table class="dtable"><thead><tr><th>' + d('t_doc') + '</th><th>' + d('t_status') + '</th><th>' + d('t_progress') + '</th><th></th></tr></thead><tbody>';
     docs.forEach(x => {
       const n = N - missingOf(x.id).length, pct = N ? Math.round(n * 100 / N) : 0;
-      o += '<tr><td>' + typeBadge(x.doc_type) + ' <strong>' + h(x.title) + '</strong><div class="dmeta">' + [x.reference, d('rev') + ' ' + x.revision, x.due_date ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</div></td>'
+      o += '<tr><td>' + typeBadge(x.doc_type) + ' <strong>' + h(x.title) + '</strong><div class="dmeta">' + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision, x.due_date ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</div></td>'
         + '<td>' + (x.status === 'published' ? d('active') : d('withdrawn')) + '</td>'
         + '<td><div style="display:flex;align-items:center;gap:10px"><div class="bar"><span style="width:' + pct + '%"></span></div><span class="dmeta" style="margin:0">' + n + ' / ' + N + '</span></div></td>'
         + '<td style="text-align:right"><button class="btn sm" type="button" data-detail="' + h(x.id) + '">' + d('t_detail') + '</button></td></tr>';
@@ -1062,7 +1062,7 @@ resolveRole();
     else ack = '<label><input type="checkbox" id="ack-chk" disabled> <span>' + d('ack_label', { r:h(x.revision) }) + '</span></label>'
       + '<div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="button" id="ack-btn" disabled>' + d('ack_btn') + '</button></div>';
     const m = modal('<div class="dbox-head"><div>' + typeBadge(x.doc_type) + '<h3 style="margin-top:8px">' + h(x.title) + '</h3>'
-      + '<p class="dsub">' + [x.reference, d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at), x.due_date && x.mandatory ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</p>'
+      + '<p class="dsub">' + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at), x.due_date && x.mandatory ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</p>'
       + (x.description ? '<p style="margin:0 0 10px;font-size:13px">' + h(x.description) + '</p>' : '') + '</div>'
       + '<button class="btn sm" type="button" data-close>✕ ' + d('close') + '</button></div>'
       + '<div id="viewer-wrap"><div class="dempty">' + d('viewer_loading') + '</div></div>'
@@ -1092,13 +1092,14 @@ resolveRole();
 
   /* ── Publication ──────────────────────────────────────────────── */
   function openPublish(){
-    const opts = published().map(x => '<option value="' + h(x.id) + '">' + h((x.reference ? x.reference + ' — ' : '') + x.title + ' (' + d('rev') + ' ' + x.revision + ')') + '</option>').join('');
+    const opts = published().map(x => '<option value="' + h(x.id) + '">' + h((x.reference ? x.reference + ' — ' : '') + x.title + ' (' + (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision + ')') + '</option>').join('');
     const m = modal('<div class="dbox-head"><h3>' + d('publish').replace('＋ ', '') + '</h3><button class="btn sm" type="button" data-close>✕</button></div>'
       + '<div class="dform">'
       + '<div class="full"><label for="f-title">' + d('f_title') + ' *</label><input id="f-title"></div>'
       + '<div><label for="f-type">' + d('f_type') + ' *</label><select id="f-type">' + Object.keys(TYPES).map(k => '<option value="' + k + '"' + (k === 'memo' ? ' selected' : '') + '>' + h(typeLbl(k)) + '</option>').join('') + '</select></div>'
       + '<div><label for="f-ref">' + d('f_ref') + '</label><input id="f-ref"></div>'
-      + '<div><label for="f-rev">' + d('f_rev') + ' *</label><input id="f-rev" value="0"></div>'
+      + '<div><label for="f-issue">' + d('f_issue') + ' *</label><input id="f-issue" placeholder="01" required></div>'
+      + '<div><label for="f-rev">' + d('f_rev') + ' *</label><input id="f-rev" placeholder="00" required></div>'
       + '<div><label for="f-due">' + d('f_due') + '</label><input id="f-due" type="date"></div>'
       + '<div class="full"><label class="chk"><input type="checkbox" id="f-mand" checked> ' + d('f_mand') + '</label></div>'
       + '<div class="full"><label for="f-desc">' + d('f_desc') + '</label><textarea id="f-desc"></textarea></div>'
@@ -1110,8 +1111,8 @@ resolveRole();
     ty.onchange = () => { mand.checked = ty.value !== 'document'; };
     m.querySelector('#f-sup').onchange = e => {
       const o = S.docs.find(x => x.id === e.target.value); if(!o) return;
-      const t = m.querySelector('#f-title'), r = m.querySelector('#f-ref');
-      if(!t.value) t.value = o.title; if(!r.value) r.value = o.reference || ''; ty.value = o.doc_type; mand.checked = o.mandatory;
+      const t = m.querySelector('#f-title'), r = m.querySelector('#f-ref'), issue = m.querySelector('#f-issue');
+      if(!t.value) t.value = o.title; if(!r.value) r.value = o.reference || ''; if(!issue.value) issue.value = o.issue || ''; ty.value = o.doc_type; mand.checked = o.mandatory;
     };
     m.querySelector('#f-go').onclick = () => publish(m);
   }
@@ -1123,6 +1124,7 @@ resolveRole();
     err.textContent = '';
     if(S.aal !== 'aal2'){ err.textContent = d('e_mfa'); return; }
     if(!v('#f-title')){ err.textContent = d('e_title'); return; }
+    if(!v('#f-issue')){ err.textContent = d('e_issue'); return; }
     if(!v('#f-rev')){ err.textContent = d('e_rev'); return; }
     if(!file){ err.textContent = d('e_file'); return; }
     if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)){ err.textContent = d('e_pdf'); return; }
@@ -1136,7 +1138,7 @@ resolveRole();
       if(up.error) throw up.error;
       go.textContent = d('f_saving');
       const sup = v('#f-sup') || null;
-      const row = { title:v('#f-title'), doc_type:v('#f-type'), reference:v('#f-ref') || null, revision:v('#f-rev'),
+      const row = { title:v('#f-title'), doc_type:v('#f-type'), reference:v('#f-ref') || null, issue:v('#f-issue'), revision:v('#f-rev'),
         description:v('#f-desc') || null, mandatory:m.querySelector('#f-mand').checked, due_date:v('#f-due') || null,
         storage_path:path, file_name:file.name, file_size:file.size, sha256:hash, supersedes:sup };
       const ins = await C().from('portal_docs').insert(row).select().single();
@@ -1151,7 +1153,7 @@ resolveRole();
     const x = S.docs.find(y => y.id === id); if(!x) return;
     const rd = readersOf(id), miss = missingOf(id);
     const m = modal('<div class="dbox-head"><div>' + typeBadge(x.doc_type) + '<h3 style="margin-top:8px">' + h(x.title) + '</h3><p class="dsub">'
-      + [x.reference, d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at) + (x.published_by ? ' (' + x.published_by + ')' : ''), x.due_date ? d('due') + ' ' + fd(x.due_date) : '', x.status !== 'published' ? d('withdrawn') + ' ' + fd(x.withdrawn_at) : ''].filter(Boolean).map(h).join(' · ')
+      + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at) + (x.published_by ? ' (' + x.published_by + ')' : ''), x.due_date ? d('due') + ' ' + fd(x.due_date) : '', x.status !== 'published' ? d('withdrawn') + ' ' + fd(x.withdrawn_at) : ''].filter(Boolean).map(h).join(' · ')
       + '</p></div><button class="btn sm" type="button" data-close>✕</button></div>'
       + '<div class="cols2"><div><p class="dmeta" style="font-weight:600;color:var(--ok)">' + d('readers') + ' (' + rd.length + ')</p><div class="dtable-wrap"><table class="dtable"><tbody>'
       + (rd.length ? rd.map(r => '<tr><td><strong>' + h(r.full_name || r.user_email) + '</strong><div class="dmeta">' + h(r.user_email) + '</div></td><td>' + fdt(r.read_at) + '<div class="dmeta">' + d('rev') + ' ' + h(r.revision || '') + '</div></td></tr>').join('') : '<tr><td>' + d('nobody') + '</td></tr>')
