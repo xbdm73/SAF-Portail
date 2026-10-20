@@ -617,6 +617,9 @@ function syncDocsView(){
   const permitted = ['admin','editor','reader','staff'].includes(userRole);
   const isOpen = requested && permitted;
   document.body.classList.toggle('docs-open',isOpen);
+  /* Une seule vue visible : catalogue ou espace documentaire. */
+  const docs = document.getElementById('docs');
+  if(docs) docs.hidden = !isOpen;
   const back = document.getElementById('docs-return');
   if(back) back.hidden = !isOpen;
   const nav = document.querySelector('.side a[data-nav="systems"]');
