@@ -150,8 +150,12 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
 /* ================================================================
    DOCUMENTS & LECTURES OBLIGATOIRES — 19.10.2026
    ================================================================ */
-body.is-staff .tools, body.is-staff #grid, body.is-staff .note, body.is-staff .head{display:none}
-body.is-staff .side a[data-nav="systems"]{display:none}
+/* L'espace documentaire est une carte du catalogue et non une section toujours ouverte. */
+body:not(.docs-open) #docs{display:none!important}
+body.docs-open .head,body.docs-open .tools,body.docs-open #grid,body.docs-open .note{display:none!important}
+body.is-staff .side a[data-nav="systems"]{display:flex}
+.docs-return{margin-bottom:16px}
+
 .docs{margin-bottom:34px}
 .docs-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .docs-head h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
@@ -300,8 +304,9 @@ body.is-staff .side a[data-nav="systems"]{display:none}
   </nav>
 
   <main>
+    <div class="docs-return" id="docs-return" hidden><a class="btn" href="#systems">← <span data-i18n="nav_systems">Systèmes</span></a></div>
     <section class="docs" id="docs" hidden aria-label="Documents"></section>
-    <div class="head">
+    <div class="head" id="systems">
       <div>
         <h1 data-i18n="title">Systèmes</h1>
         <p class="sub" data-i18n="subtitle">Choisissez le système dans lequel vous voulez travailler.</p>
@@ -347,6 +352,10 @@ const SAF_SMS_URL = './';   /* portail publié dans le même site que le SMS : l
 const SAF_SMS_HOME = SAF_SMS_URL + 'index.html';
 
 const SAF_SYSTEMS = [
+  { id:'docs', color:'#3fa58e', icon:'notes',
+    name:{fr:'Documents & lectures',en:'Company documents & reading'},
+    desc:{fr:'Consulter les documents SAF, confirmer les lectures obligatoires et suivre les accusés de lecture.',en:'Read SAF documents, acknowledge mandatory reading and track confirmations.'},
+    url:'#docs', roles:['admin','editor','reader','staff'] },
   { id:'sms', color:'#e3a33b', icon:'shield',
     name:{fr:'Safety Management System', en:'Safety Management System'},
     desc:{fr:'Registre des risques, journal des occurrences, Compliance Monitoring et appendices OMM.',
@@ -464,6 +473,7 @@ function applyLang(){
   document.getElementById('btn-lang').textContent = lang==='fr'?'EN':'FR';
   renderWho(); render(); applyGate();
   if(typeof window.safDocsRender==='function') window.safDocsRender();
+  syncDocsView();
 }
 
 /* ---------- session Supabase du SMS (lecture locale uniquement) ---------- */
@@ -529,7 +539,7 @@ async function resolveRole(){
     }catch(e){ role = 'none'; }
   }
   if(seq !== roleSeq) return;     // une lecture plus récente a pris le relais
-  userRole = role; applyGate(); render();
+  userRole = role; applyGate(); render(); syncDocsView();
 }
 /* Portail réservé aux rôles SMS admin, editor et reader. Confort d'interface :
    les données restent protégées par la RLS de chaque système. */
@@ -551,7 +561,7 @@ function applyGate(){
 
 /* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
    le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
-const visible = s => userRole!=='staff' && (!s.roles || (userRole && s.roles.includes(userRole)));
+const visible = s => (userRole!=='staff' || s.id==='docs') && (!s.roles || (userRole && s.roles.includes(userRole)));
 
 /* ---------- état de chaque système ---------- */
 async function check(sys){
@@ -569,10 +579,10 @@ async function check(sys){
 
 /* ---------- rendu ---------- */
 function card(s){
-  const st = health[s.id] || (s.url?'pending':'cfg');
+  const st = s.id==='docs' ? 'ok' : (health[s.id] || (s.url?'pending':'cfg'));
   const label = {ok:t('s_ok'),err:t('s_err'),pending:t('s_pending'),cfg:t('s_cfg'),ext:t('s_ext')}[st];
-  const path = s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg');
-  const last = recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never');
+  const path = s.id==='docs' ? (lang==='fr'?'Accès réservé · Supabase':'Restricted access · Supabase') : (s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg'));
+  const last = s.id==='docs' ? (lang==='fr'?'Ouvrir':'Open') : (recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never'));
   const alt = (userRole==='reader' && s.reader) ? s.reader : null, nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
   const inner = `
     <div class="sys-top">
@@ -602,6 +612,19 @@ function render(){
 }
 
 /* ---------- événements ---------- */
+function syncDocsView(){
+  const requested = location.hash === '#docs';
+  const permitted = ['admin','editor','reader','staff'].includes(userRole);
+  const isOpen = requested && permitted;
+  document.body.classList.toggle('docs-open',isOpen);
+  const back = document.getElementById('docs-return');
+  if(back) back.hidden = !isOpen;
+  const nav = document.querySelector('.side a[data-nav="systems"]');
+  if(nav) nav.setAttribute('aria-current',isOpen?'false':'page');
+  const dnav = document.querySelector('.side a[data-nav="docs"]');
+  if(dnav) dnav.setAttribute('aria-current',isOpen?'page':'false');
+}
+window.addEventListener('hashchange',syncDocsView);
 document.getElementById('grid').addEventListener('click',e=>{
   const a=e.target.closest('a.sys'); if(!a) return;
   recent[a.dataset.id]=Date.now(); store.set('saf_portal_recent',recent);
@@ -633,7 +656,8 @@ window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); }
 document.getElementById('btn-login').href = SAF_SMS_HOME + '?next=SAF_Portail.html';
 document.getElementById('gate-btn').href = SAF_SMS_HOME + '?next=SAF_Portail.html';
 applyTheme(); applyLang();
-SAF_SYSTEMS.forEach(check);
+SAF_SYSTEMS.filter(s=>s.id!=='docs').forEach(check);
+syncDocsView();
 resolveRole();
 </script>
 <script>
