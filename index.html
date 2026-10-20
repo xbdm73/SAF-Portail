@@ -701,21 +701,31 @@ window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); }
       if(f.error)throw f.error;
       const factors=(f.data&&f.data.totp||[]).filter(x=>x.status==='verified');
       if(!factors.length)throw Error('Aucun second facteur TOTP activé. Configurez-le d’abord dans votre compte SMS.');
-      factorId=factors[0].id;form.hidden=true;mfa.hidden=false;
+      factorId=factors[0].id;
+      let select=document.getElementById('admin-mfa-factor');
+      if(!select){select=document.createElement('select');select.id='admin-mfa-factor';select.style.cssText='width:100%;padding:10px;margin-bottom:8px';mfa.insertBefore(select,document.getElementById('admin-mfa-code'));}
+      select.replaceChildren();
+      factors.forEach(f=>{const option=document.createElement('option');option.value=f.id;option.textContent=f.friendly_name||('Appareil MFA '+f.id.slice(0,8));select.appendChild(option);});
+      select.hidden=factors.length<2;
+      select.onchange=()=>{factorId=select.value;};
+      document.getElementById('admin-mfa-code').value='';
+      form.hidden=true;mfa.hidden=false;
       document.getElementById('admin-mfa-code').focus();
     }catch(err){msg.textContent=err.message||String(err);}
     finally{signin.disabled=false;}
   });
   verify.addEventListener('click',async()=>{
-    const code=document.getElementById('admin-mfa-code').value.trim();
+    const code=document.getElementById('admin-mfa-code').value.replace(/\D/g,'');
     if(!/^\d{6}$/.test(code)){msg.textContent='Saisissez les six chiffres du second facteur.';return;}
     verify.disabled=true;msg.textContent='';
     try{
       const c=getClient();const r=await c.auth.mfa.challengeAndVerify({factorId,code});
       if(r.error)throw r.error;
+      const assurance=await c.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(assurance.error||assurance.data?.currentLevel!=='aal2')throw Error('La validation MFA ne fournit pas encore le niveau aal2.');
       panel.hidden=true;form.hidden=false;mfa.hidden=true;document.getElementById('admin-password').value='';
       await resolveRole();
-    }catch(e){msg.textContent=e.message||String(e);}
+    }catch(e){msg.textContent=e.message||String(e);document.getElementById('admin-mfa-code').value='';}
     finally{verify.disabled=false;}
   });
 })();
