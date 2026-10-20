@@ -260,8 +260,22 @@ body.is-staff .side a[data-nav="systems"]{display:flex}
     <h1 id="gate-title"></h1>
     <p id="gate-msg"></p>
     <div class="gate-actions">
-      <a class="iconbtn" id="gate-btn" href="index.html?next=SAF_Portail.html"></a>
+      <button class="iconbtn" id="gate-btn" type="button"></button>
       <a class="gate-report" href="SAF_Report.html" data-i18n="gate_report"></a>
+    </div>
+    <div id="admin-login" hidden style="margin:14px 0;padding:16px;border:1px solid var(--line);border-radius:10px;text-align:left">
+      <h2 style="font-size:16px;margin:0 0 12px">Administrateur / Éditeur — MFA</h2>
+      <form id="admin-login-form" autocomplete="on">
+        <input id="admin-email" type="email" placeholder="Adresse e-mail professionnelle" autocomplete="username" required style="width:100%;margin-bottom:8px;padding:10px">
+        <input id="admin-password" type="password" placeholder="Mot de passe SMS" autocomplete="current-password" required style="width:100%;margin-bottom:8px;padding:10px">
+        <button class="btn primary" type="submit" id="admin-submit">Se connecter</button>
+      </form>
+      <div id="admin-mfa-step" hidden style="margin-top:12px">
+        <p style="font-size:13px">Entrez le code à 6 chiffres de votre application d'authentification.</p>
+        <input id="admin-mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Code MFA" style="width:100%;margin-bottom:8px;padding:10px">
+        <button class="btn primary" type="button" id="admin-mfa-submit">Valider le second facteur</button>
+      </div>
+      <p id="admin-login-error" role="alert" style="font-size:13px;margin:8px 0 0"></p>
     </div>
     <!-- Personnel SAF : connexion par code reçu par e-mail (19.10.2026) -->
     <div class="otp" id="otp" hidden>
@@ -656,8 +670,56 @@ window.addEventListener('storage',e=>{ if(e.key && e.key.startsWith('sb-')){ ren
 window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); });
 
 /* ---------- démarrage ---------- */
-document.getElementById('btn-login').href = SAF_SMS_HOME + '?next=SAF_Portail.html';
-document.getElementById('gate-btn').href = SAF_SMS_HOME + '?next=SAF_Portail.html';
+/* Connexion directe des administrateurs/éditeurs sur l'origine du portail officiel.
+   Le second facteur TOTP conserve la contrainte Supabase aal2. */
+(function(){
+  const toggle=document.getElementById('gate-btn'), panel=document.getElementById('admin-login');
+  const form=document.getElementById('admin-login-form'), mfa=document.getElementById('admin-mfa-step');
+  const msg=document.getElementById('admin-login-error'), signin=document.getElementById('admin-submit');
+  const verify=document.getElementById('admin-mfa-submit');
+  let factorId=null;
+  toggle.addEventListener('click',()=>{ panel.hidden=!panel.hidden; if(!panel.hidden) document.getElementById('admin-email').focus(); });
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();msg.textContent='';signin.disabled=true;
+    try{
+      const client=getClient();if(!client)throw Error('Supabase indisponible');
+      const email=document.getElementById('admin-email').value.trim().toLowerCase();
+      const password=document.getElementById('admin-password').value;
+      const auth=await client.auth.signInWithPassword({email,password});
+      if(auth.error)throw auth.error;
+      const role=await client.rpc('portal_role');
+      if(role.error)throw role.error;
+      if(!['admin','editor'].includes(String(role.data||'').toLowerCase())) {
+        await client.auth.signOut();throw Error('Compte non autorisé comme administrateur ou éditeur.');
+      }
+      const level=await client.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(level.error)throw level.error;
+      if(level.data&&level.data.currentLevel==='aal2') {
+        panel.hidden=true;await resolveRole();return;
+      }
+      const f=await client.auth.mfa.listFactors();
+      if(f.error)throw f.error;
+      const factors=(f.data&&f.data.totp||[]).filter(x=>x.status==='verified');
+      if(!factors.length)throw Error('Aucun second facteur TOTP activé. Configurez-le d’abord dans votre compte SMS.');
+      factorId=factors[0].id;form.hidden=true;mfa.hidden=false;
+      document.getElementById('admin-mfa-code').focus();
+    }catch(err){msg.textContent=err.message||String(err);}
+    finally{signin.disabled=false;}
+  });
+  verify.addEventListener('click',async()=>{
+    const code=document.getElementById('admin-mfa-code').value.trim();
+    if(!/^\d{6}$/.test(code)){msg.textContent='Saisissez les six chiffres du second facteur.';return;}
+    verify.disabled=true;msg.textContent='';
+    try{
+      const c=getClient();const r=await c.auth.mfa.challengeAndVerify({factorId,code});
+      if(r.error)throw r.error;
+      panel.hidden=true;form.hidden=false;mfa.hidden=true;document.getElementById('admin-password').value='';
+      await resolveRole();
+    }catch(e){msg.textContent=e.message||String(e);}
+    finally{verify.disabled=false;}
+  });
+})();
+document.getElementById('btn-login').href = '#';
 applyTheme(); applyLang();
 SAF_SYSTEMS.filter(s=>s.id!=='docs').forEach(check);
 syncDocsView();
