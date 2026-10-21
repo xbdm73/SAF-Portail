@@ -826,8 +826,11 @@ resolveRole();
       e_size:'Le fichier dépasse 50 Mo.', e_mfa:'Publier exige une connexion SMS avec second facteur (ouvrez le SMS, connectez-vous, puis revenez).',
       t_doc:'Document', t_readers:'Lu par', t_progress:'Avancement', t_detail:'Détail', t_mand:'Obligatoire', t_status:'Statut',
       withdrawn:'Retiré', active:'Publié', readers:'Ont lu', missing:'N’ont pas encore lu', nobody:'Personne', everybody:'Tout le monde a lu.',
-      csv:'CSV', pdf:'PDF', remind:'Relancer par e-mail', withdraw:'Retirer le document', withdraw_q:'Retirer « {t} » ? Il ne sera plus proposé à la lecture. Les accusés déjà enregistrés sont conservés.',
-      withdraw_ok:'Document retiré', del_doc:'Supprimer définitivement', del_ok:'Document supprimé', del_denied:'Suppression refusée par la base (script SQL de suppression passé ? compte admin/éditeur avec second facteur ?).',
+      csv:'CSV', pdf:'PDF', withdraw:'Retirer le document', withdraw_q:'Retirer « {t} » ? Il ne sera plus proposé à la lecture. Les accusés déjà enregistrés sont conservés.',
+      withdraw_ok:'Document retiré', f_notify:'Prévenir le personnel par e-mail (puis rappel 3 jours avant la date limite et avis de retard)',
+      remind:'Relancer depuis ma messagerie', remind_now:'Envoyer un rappel maintenant', remind_now_ok:'Rappel envoyé à {n} personne(s)', remind_now_none:'Personne à relancer : tout le monde a lu.',
+      remind_now_cfg:'E-mail non envoyé : la clé Resend n’est pas dans le coffre Supabase (resend_api_key).', n_test:'mode test', n_ok:'accepté par Resend', n_wait:'en attente de la réponse de Resend', n_err:'échec',
+      n_title:'E-mails envoyés', n_none:'Aucun e-mail envoyé pour ce document.', n_publish:'Publication', n_reminder:'Rappel avant échéance', n_overdue:'Avis de retard', n_manual:'Rappel manuel', n_to:'{n} destinataire(s)', del_doc:'Supprimer définitivement', del_ok:'Document supprimé', del_denied:'Suppression refusée par la base (script SQL de suppression passé ? compte admin/éditeur avec second facteur ?).',
       del_q:'Supprimer définitivement « {t} » (rév. {r}) ?\n\nLe document et son PDF seront effacés du portail. Cette action est irréversible et tracée.',
       del_reads:'Ce document a déjà {n} accusé(s) de lecture : il ne peut pas être supprimé, seulement retiré (les accusés restent la preuve de lecture).',
       del_file:'Document supprimé, mais le PDF n’a pas pu être effacé du stockage', export_all:'Exporter tous les accusés (CSV)',
@@ -872,8 +875,11 @@ resolveRole();
       e_size:'The file exceeds 50 MB.', e_mfa:'Publishing requires an SMS sign-in with second factor (open the SMS, sign in, then come back).',
       t_doc:'Document', t_readers:'Read by', t_progress:'Progress', t_detail:'Details', t_mand:'Mandatory', t_status:'Status',
       withdrawn:'Withdrawn', active:'Published', readers:'Have read', missing:'Have not read yet', nobody:'Nobody', everybody:'Everybody has read it.',
-      csv:'CSV', pdf:'PDF', remind:'Send reminder e-mail', withdraw:'Withdraw document', withdraw_q:'Withdraw “{t}”? It will no longer be offered for reading. Recorded acknowledgements are kept.',
-      withdraw_ok:'Document withdrawn', del_doc:'Delete permanently', del_ok:'Document deleted', del_denied:'Deletion refused by the database (deletion SQL script run? admin/editor account with second factor?).',
+      csv:'CSV', pdf:'PDF', withdraw:'Withdraw document', withdraw_q:'Withdraw “{t}”? It will no longer be offered for reading. Recorded acknowledgements are kept.',
+      withdraw_ok:'Document withdrawn', f_notify:'Notify staff by e-mail (then a reminder 3 days before the deadline and an overdue notice)',
+      remind:'Remind from my mail app', remind_now:'Send a reminder now', remind_now_ok:'Reminder sent to {n} person(s)', remind_now_none:'Nobody to remind: everyone has read it.',
+      remind_now_cfg:'E-mail not sent: the Resend key is not in the Supabase vault (resend_api_key).', n_test:'test mode', n_ok:'accepted by Resend', n_wait:'awaiting Resend response', n_err:'failed',
+      n_title:'E-mails sent', n_none:'No e-mail sent for this document.', n_publish:'Publication', n_reminder:'Pre-deadline reminder', n_overdue:'Overdue notice', n_manual:'Manual reminder', n_to:'{n} recipient(s)', del_doc:'Delete permanently', del_ok:'Document deleted', del_denied:'Deletion refused by the database (deletion SQL script run? admin/editor account with second factor?).',
       del_q:'Permanently delete “{t}” (rev. {r})?\n\nThe document and its PDF will be removed from the portal. This cannot be undone and is logged.',
       del_reads:'This document already has {n} reading acknowledgement(s): it cannot be deleted, only withdrawn (acknowledgements remain the proof of reading).',
       del_file:'Document deleted, but the PDF could not be removed from storage', export_all:'Export all acknowledgements (CSV)',
@@ -902,7 +908,7 @@ resolveRole();
   const typeBadge = k => '<span class="dtype" style="--tc:' + (TYPES[k] || TYPES.document).c + '">' + h(typeLbl(k)) + '</span>';
   const C = () => (typeof getClient === 'function') ? getClient() : null;
 
-  const S = { role:null, uid:null, email:null, aal:null, person:null, docs:[], reads:[], my:{}, people:[], folders:[], folder:null, noFolders:false, tab:null, q:'', ftype:'', state:'idle', err:'', impOpen:false, imp:[], impMsg:'', impBusy:false };
+  const S = { role:null, uid:null, email:null, aal:null, person:null, docs:[], reads:[], my:{}, people:[], folders:[], folder:null, notes:[], noFolders:false, tab:null, q:'', ftype:'', state:'idle', err:'', impOpen:false, imp:[], impMsg:'', impBusy:false };
   /* Accusé de lecture : toute personne inscrite au personnel (portal_people, actif),
      quel que soit son rôle. Le lecteur partagé sms@ n'y est pas inscrit : consultation seule. */
   const canAck = () => !!(S.person && S.person.active);
@@ -970,7 +976,8 @@ resolveRole();
       if(r2.error) throw r2.error;
       S.reads = r2.data || []; S.my = {};
       S.reads.forEach(r => { if(r.user_id === S.uid) S.my[r.doc_id] = r; });
-      if(isMgr()){ const r3 = await c.from('portal_people').select('*').order('full_name'); S.people = r3.error ? [] : (r3.data || []); }
+      if(isMgr()){ const r3 = await c.from('portal_people').select('*').order('full_name'); S.people = r3.error ? [] : (r3.data || []);
+        const r4 = await c.from('portal_notify_log').select('doc_id,kind,n,sent_at,sent_by,test_mode,status,error').order('sent_at', { ascending:true }); S.notes = r4.error ? [] : (r4.data || []); }
       else { const r3 = await c.from('portal_people').select('*').eq('email', String(S.email || '').toLowerCase()); S.people = r3.error ? [] : (r3.data || []); }
       S.person = S.people.find(p => String(p.email).toLowerCase() === String(S.email || '').toLowerCase()) || null;
       S.state = 'ready';
@@ -1404,6 +1411,7 @@ resolveRole();
       + '<div><label for="f-revdate">' + d('f_revdate') + ' *</label><input id="f-revdate" type="date" required></div>'
       + '<div><label for="f-due">' + d('f_due') + '</label><input id="f-due" type="date"></div>'
       + '<div class="full"><label class="chk"><input type="checkbox" id="f-mand" checked> ' + d('f_mand') + '</label></div>'
+      + '<div class="full" id="f-notify-row"><label class="chk"><input type="checkbox" id="f-notify" checked> ' + d('f_notify') + '</label></div>'
       + '<div class="full"><label for="f-desc">' + d('f_desc') + '</label><textarea id="f-desc"></textarea></div>'
       + (S.noFolders ? '' : '<div class="full"><label for="f-folder">' + d('f_folder') + '</label><select id="f-folder">' + treeOptions(S.folder, null) + '</select></div>')
       + '<div class="full"><label for="f-sup">' + d('f_supersedes') + '</label><select id="f-sup"><option value="">' + d('f_none') + '</option>' + opts + '</select></div>'
@@ -1411,7 +1419,9 @@ resolveRole();
       + '</div><p class="derr" id="f-err"></p>'
       + '<div class="dfoot"><button class="btn" type="button" data-close>' + d('close') + '</button><button class="btn primary" type="button" id="f-go">' + d('f_submit') + '</button></div>');
     const ty = m.querySelector('#f-type'), mand = m.querySelector('#f-mand');
-    ty.onchange = () => { mand.checked = ty.value !== 'document'; };
+    const nrow = m.querySelector('#f-notify-row'), syncN = () => { nrow.hidden = !mand.checked; };
+    ty.onchange = () => { mand.checked = ty.value !== 'document'; syncN(); };
+    mand.onchange = syncN;
     m.querySelector('#f-sup').onchange = e => {
       const o = S.docs.find(x => x.id === e.target.value); if(!o) return;
       const t = m.querySelector('#f-title'), r = m.querySelector('#f-ref'), issue = m.querySelector('#f-issue');
@@ -1447,6 +1457,7 @@ resolveRole();
         description:v('#f-desc') || null, mandatory:m.querySelector('#f-mand').checked, due_date:v('#f-due') || null,
         storage_path:path, file_name:file.name, file_size:file.size, sha256:hash, supersedes:sup };
       const fsel = m.querySelector('#f-folder'); if(fsel) row.folder_id = fsel.value || null;
+      if(row.mandatory && !m.querySelector('#f-notify').checked) row.notify = false;
       const ins = await C().from('portal_docs').insert(row).select().single();
       if(ins.error) throw ins.error;
       if(sup){ const w = await C().from('portal_docs').update({ status:'withdrawn' }).eq('id', sup); if(w.error) toast(w.error.message, true); }
@@ -1467,15 +1478,37 @@ resolveRole();
       + (miss.length ? miss.map(p => '<tr><td><strong>' + h(p.full_name) + '</strong><div class="dmeta">' + h(p.email) + (p.fonction ? ' · ' + h(p.fonction) : '') + '</div></td></tr>').join('') : '<tr><td>' + d('everybody') + '</td></tr>')
       + '</tbody></table></div></div></div>'
       + '<div class="dfoot"><button class="btn sm" type="button" id="dt-csv">⤓ ' + d('csv') + '</button><button class="btn sm" type="button" id="dt-pdf">⤓ ' + d('pdf') + '</button>'
-      + (x.status === 'published' ? '<button class="btn sm" type="button" id="dt-mail">✉ ' + d('remind') + ' (' + miss.length + ')</button><button class="btn sm danger" type="button" id="dt-wd">' + d('withdraw') + '</button>' : '')
+      + notesHTML(x)
+      + (x.status === 'published' ? '<button class="btn sm primary" type="button" id="dt-now">✉ ' + d('remind_now') + ' (' + miss.length + ')</button><button class="btn sm" type="button" id="dt-mail">✉ ' + d('remind') + '</button><button class="btn sm danger" type="button" id="dt-wd">' + d('withdraw') + '</button>' : '')
       + (rd.length ? '' : '<button class="btn sm danger" type="button" id="dt-del">🗑 ' + d('del_doc') + '</button>')
       + '</div>', true);
     revDateForm(m, x, m.querySelector('.dfoot'), () => openDetail(x.id));
     m.querySelector('#dt-csv').onclick = () => csvDoc(x);
     m.querySelector('#dt-pdf').onclick = () => pdfDoc(x);
     const ml = m.querySelector('#dt-mail'); if(ml) ml.onclick = () => remind(x, miss);
+    const mn = m.querySelector('#dt-now'); if(mn) mn.onclick = () => remindNow(x, miss, mn);
     const wd = m.querySelector('#dt-wd'); if(wd) wd.onclick = () => withdraw(x);
     const dl = m.querySelector('#dt-del'); if(dl) dl.onclick = () => removeDoc(x);
+  }
+  function notesHTML(x){
+    const list = S.notes.filter(n => n.doc_id === x.id);
+    const lbl = { publish:d('n_publish'), reminder:d('n_reminder'), overdue:d('n_overdue'), manual:d('n_manual') };
+    return '<div style="flex-basis:100%;margin:0 0 10px"><p class="dmeta" style="font-weight:600;margin:0 0 4px">' + d('n_title') + '</p>'
+      + (list.length ? list.map(n => '<p class="dmeta" style="margin:0">' + fdt(n.sent_at) + ' — ' + h(lbl[n.kind] || n.kind) + ' — ' + d('n_to', { n:n.n })
+          + (n.sent_by && n.sent_by !== 'auto' ? ' (' + h(n.sent_by) + ')' : '') + (n.test_mode ? ' — <b>' + d('n_test') + '</b>' : '')
+          + (n.status == null ? ' — ' + d('n_wait') : n.status >= 200 && n.status < 300 && !n.error ? ' — <span style="color:var(--ok)">✓ ' + d('n_ok') + '</span>'
+             : ' — <span style="color:var(--err)">✗ ' + d('n_err') + (n.error ? ' : ' + h(String(n.error).slice(0, 160)) : '') + '</span>') + '</p>').join('') : '<p class="dmeta" style="margin:0">' + d('n_none') + '</p>') + '</div>';
+  }
+  async function remindNow(x, miss, btn){
+    if(!miss.length){ toast(d('remind_now_none')); return; }
+    if(S.aal !== 'aal2'){ toast(d('e_mfa'), true); return; }
+    btn.disabled = true;
+    const r = await C().rpc('portal_notify_now', { p_doc:x.id });
+    btn.disabled = false;
+    if(r.error){ toast(r.error.message, true); return; }
+    if(r.data === -1){ toast(d('remind_now_cfg'), true); return; }
+    if(!r.data){ toast(d('remind_now_none')); return; }
+    toast(d('remind_now_ok', { n:r.data })); await load(); openDetail(x.id);
   }
   function portalUrl(){ return location.origin + location.pathname; }
   function remind(x, miss){
