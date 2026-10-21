@@ -238,6 +238,9 @@ body.is-staff .side a[data-nav="systems"]{display:flex}
 .dcrumb button:hover{background:var(--card-hover);color:var(--text)}
 .dcrumb button[aria-current="page"]{color:var(--text);font-weight:600}
 .dcrumb .sep{color:var(--faint)}
+.dcrumb .dup{border:1px solid var(--line);color:var(--text);font-weight:600;margin-right:8px}
+.dparent .dficon{font-size:20px;color:var(--muted)}
+.dparent .dtitle{letter-spacing:.1em}
 .dficon{min-width:104px;display:flex;justify-content:center;color:var(--warn)}
 .dfolder .dtitle{font-weight:600}
 .dchev{font-size:18px;color:var(--faint);margin-left:2px}
@@ -795,7 +798,7 @@ resolveRole();
       i_run:'Créer {n} accès', i_running:'Création {i} / {n}…', i_done:'Import terminé : {ok} créé(s), {ko} en erreur, {skip} ignoré(s).', i_created:'Créé', i_existing:'Compte existant — inscrit', i_err:'Erreur',
       i_none:'Aucune adresse trouvée dans le texte collé.', i_include:'Inclure', i_status:'État',
       h:'Documents compagnie', sub:'Mémos, Safety Alerts, communications et documents de la compagnie, classés par dossier.',
-      root:'Documents compagnie', new_folder:'＋ Nouveau dossier', f_folder:'Dossier', in_folder:'Dans : {p}', folder_root:'Racine',
+      root:'Documents compagnie', up:'Remonter', up_to:'Remonter vers « {n} »', parent:'Dossier parent', new_folder:'＋ Nouveau dossier', f_folder:'Dossier', in_folder:'Dans : {p}', folder_root:'Racine',
       rename:'Renommer', del:'Supprimer', move:'Déplacer', move_to:'Déplacer « {n} » vers', fold_name:'Nom du dossier', fold_create:'Créer', save:'Enregistrer',
       fold_ok:'Dossier créé', fold_ren_ok:'Dossier renommé', fold_del_ok:'Dossier supprimé', fold_del_q:'Supprimer le dossier « {n} » ?', move_ok:'Déplacé',
       fold_not_empty:'Ce dossier n’est pas vide : déplacez ou retirez d’abord ses sous-dossiers et documents.', fold_dup:'Un dossier de ce nom existe déjà à cet endroit.',
@@ -837,7 +840,7 @@ resolveRole();
       i_run:'Create {n} accounts', i_running:'Creating {i} / {n}…', i_done:'Import finished: {ok} created, {ko} failed, {skip} skipped.', i_created:'Created', i_existing:'Existing account — registered', i_err:'Error',
       i_none:'No address found in the pasted text.', i_include:'Include', i_status:'Status',
       h:'Company documents', sub:'Company memos, Safety Alerts, communications and documents, organised by folder.',
-      root:'Company documents', new_folder:'＋ New folder', f_folder:'Folder', in_folder:'In: {p}', folder_root:'Root',
+      root:'Company documents', up:'Up', up_to:'Up to “{n}”', parent:'Parent folder', new_folder:'＋ New folder', f_folder:'Folder', in_folder:'In: {p}', folder_root:'Root',
       rename:'Rename', del:'Delete', move:'Move', move_to:'Move “{n}” to', fold_name:'Folder name', fold_create:'Create', save:'Save',
       fold_ok:'Folder created', fold_ren_ok:'Folder renamed', fold_del_ok:'Folder deleted', fold_del_q:'Delete folder “{n}”?', move_ok:'Moved',
       fold_not_empty:'This folder is not empty: move or withdraw its subfolders and documents first.', fold_dup:'A folder with this name already exists here.',
@@ -1012,13 +1015,19 @@ resolveRole();
     }
     const crumb = (id, label, last) => '<button type="button" data-crumb="' + h(id || '') + '" data-drop="' + h(id || '') + '"' + (last ? ' aria-current="page"' : '') + '>' + h(label) + '</button>';
     const path = folderPath(S.folder);
-    o += '<nav class="dcrumb" aria-label="' + h(d('f_folder')) + '">' + crumb(null, d('root'), !path.length)
+    const up = path.length ? (path.length > 1 ? path[path.length - 2] : null) : undefined;
+    const upName = up ? up.name : d('root');
+    o += '<nav class="dcrumb" aria-label="' + h(d('f_folder')) + '">'
+      + (up !== undefined ? '<button type="button" class="dup" data-crumb="' + h(up ? up.id : '') + '" data-drop="' + h(up ? up.id : '') + '" title="' + h(d('up_to', { n:upName })) + '">↑ ' + d('up') + '</button>' : '')
+      + crumb(null, d('root'), !path.length)
       + path.map((f, i) => '<span class="sep" aria-hidden="true">›</span>' + crumb(f.id, f.name, i === path.length - 1)).join('') + '</nav>';
     const subs = childFolders(S.folder);
     const docs = published().filter(x => docFolder(x) === (S.folder || null))
       .sort((a, b) => natural((a.reference || '') + ' ' + a.title, (b.reference || '') + ' ' + b.title));
-    if(!subs.length && !docs.length) o += '<div class="dempty">' + ((published().length || S.folders.length) ? d('fold_empty') : d('none_all')) + '</div>';
-    else o += '<div class="dlist">' + subs.map(folderRow).join('') + docs.map(x => docRow(x, false)).join('') + '</div>';
+    const upRow = up === undefined ? '' : '<div class="drow clickable dfolder dparent" data-folder="' + h(up ? up.id : '') + '" data-drop="' + h(up ? up.id : '') + '" tabindex="0" role="button" title="' + h(d('up_to', { n:upName })) + '">'
+      + '<span class="dficon" aria-hidden="true">↰</span><div><p class="dtitle">..</p><p class="dmeta">' + h(d('parent')) + ' · ' + h(upName) + '</p></div><div class="dside"></div></div>';
+    if(!subs.length && !docs.length) o += (upRow ? '<div class="dlist">' + upRow + '</div>' : '') + '<div class="dempty"' + (upRow ? ' style="margin-top:10px"' : '') + '>' + ((published().length || S.folders.length) ? d('fold_empty') : d('none_all')) + '</div>';
+    else o += '<div class="dlist">' + upRow + subs.map(folderRow).join('') + docs.map(x => docRow(x, false)).join('') + '</div>';
     if(canFold() && (subs.length || docs.length || path.length)) o += '<p class="dmeta" style="margin:8px 2px 0">' + d('drag_hint') + '</p>';
     return o;
   }
@@ -1540,6 +1549,16 @@ resolveRole();
     else { S.docs = []; S.reads = []; S.my = {}; S.state = 'idle'; render(); }
   };
   window.safDocsRender = render;
+  /* Remonter d'un niveau au clavier : Retour arrière (hors saisie) ou Alt+↑ */
+  document.addEventListener('keydown', e => {
+    if(!S.folder || S.tab !== 'all' || S.q || S.ftype) return;
+    const box = document.getElementById('docs'); if(!box || box.hidden || !document.body.classList.contains('docs-open')) return;
+    const md = document.getElementById('dmodal'); if(md && md.classList.contains('open')) return;
+    const tg = e.target, typing = tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable);
+    if((e.key === 'Backspace' && !typing) || (e.altKey && e.key === 'ArrowUp')){
+      e.preventDefault(); const f = fById(S.folder); S.folder = f && f.parent_id ? f.parent_id : null; render();
+    }
+  });
   otpBind();
 })();
 </script>
