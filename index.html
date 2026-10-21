@@ -821,7 +821,8 @@ resolveRole();
       f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF (50 Mo maximum)',
       f_supersedes:'Remplace (nouvelle révision d’un document publié)', f_none:'— aucun —', f_submit:'Publier',
       f_uploading:'Envoi du PDF…', f_saving:'Enregistrement…', f_ok:'Document publié',
-      e_title:'Indiquer un titre.', e_issue:'Indiquer l’édition / Issue.', e_rev:'Indiquer la révision.', e_file:'Choisir un fichier PDF.', e_pdf:'Le fichier doit être un PDF.',
+      e_title:'Indiquer un titre.', e_issue:'Indiquer l’édition / Issue.', e_rev:'Indiquer la révision.', e_revdate:'Indiquer la date de la révision.', f_revdate:'Date de la révision', rev_of:'du',
+      revdate_set:'Date de la révision', revdate_save:'Enregistrer la date', revdate_ok:'Date de révision enregistrée', revdate_missing:'Date de révision non renseignée', e_file:'Choisir un fichier PDF.', e_pdf:'Le fichier doit être un PDF.',
       e_size:'Le fichier dépasse 50 Mo.', e_mfa:'Publier exige une connexion SMS avec second facteur (ouvrez le SMS, connectez-vous, puis revenez).',
       t_doc:'Document', t_readers:'Lu par', t_progress:'Avancement', t_detail:'Détail', t_mand:'Obligatoire', t_status:'Statut',
       withdrawn:'Retiré', active:'Publié', readers:'Ont lu', missing:'N’ont pas encore lu', nobody:'Personne', everybody:'Tout le monde a lu.',
@@ -863,7 +864,8 @@ resolveRole();
       f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file (50 MB maximum)',
       f_supersedes:'Replaces (new revision of a published document)', f_none:'— none —', f_submit:'Publish',
       f_uploading:'Uploading the PDF…', f_saving:'Saving…', f_ok:'Document published',
-      e_title:'Enter a title.', e_issue:'Enter the edition / issue.', e_rev:'Enter the revision.', e_file:'Choose a PDF file.', e_pdf:'The file must be a PDF.',
+      e_title:'Enter a title.', e_issue:'Enter the edition / issue.', e_rev:'Enter the revision.', e_revdate:'Enter the revision date.', f_revdate:'Revision date', rev_of:'of',
+      revdate_set:'Revision date', revdate_save:'Save the date', revdate_ok:'Revision date saved', revdate_missing:'Revision date not set', e_file:'Choose a PDF file.', e_pdf:'The file must be a PDF.',
       e_size:'The file exceeds 50 MB.', e_mfa:'Publishing requires an SMS sign-in with second factor (open the SMS, sign in, then come back).',
       t_doc:'Document', t_readers:'Read by', t_progress:'Progress', t_detail:'Details', t_mand:'Mandatory', t_status:'Status',
       withdrawn:'Withdrawn', active:'Published', readers:'Have read', missing:'Have not read yet', nobody:'Nobody', everybody:'Everybody has read it.',
@@ -889,6 +891,7 @@ resolveRole();
   const fd = iso => { if(!iso) return ''; const x = new Date(iso); return isNaN(x) ? String(iso) : pad(x.getDate()) + '/' + pad(x.getMonth()+1) + '/' + x.getFullYear(); };
   const fdt = iso => { if(!iso) return ''; const x = new Date(iso); return isNaN(x) ? String(iso) : fd(iso) + ' ' + pad(x.getHours()) + ':' + pad(x.getMinutes()); };
   const today = () => { const x = new Date(); return x.getFullYear() + '-' + pad(x.getMonth()+1) + '-' + pad(x.getDate()); };
+  const revTxt = x => d('rev') + ' ' + (x.revision || '') + (x.revision_date ? ' ' + d('rev_of') + ' ' + fd(x.revision_date) : '');
   const typeLbl = k => (TYPES[k] || TYPES.document)[L()];
   const typeBadge = k => '<span class="dtype" style="--tc:' + (TYPES[k] || TYPES.document).c + '">' + h(typeLbl(k)) + '</span>';
   const C = () => (typeof getClient === 'function') ? getClient() : null;
@@ -974,7 +977,7 @@ resolveRole();
   function docRow(x, showPath){
     const r = S.my[x.id], late = x.mandatory && !r && x.due_date && x.due_date < today();
     const fp = showPath && docFolder(x) ? '<span class="dpath">' + FOLDER_SVG.replace(/22/g, '12') + ' ' + h(pathLabel(docFolder(x))) + '</span>' : '';
-    const meta = [fp, x.reference ? h(x.reference) : '', (x.issue ? d('issue') + ' ' + h(x.issue) : ''), d('rev') + ' ' + h(x.revision), d('published') + ' ' + fd(x.published_at),
+    const meta = [fp, x.reference ? h(x.reference) : '', (x.issue ? d('issue') + ' ' + h(x.issue) : ''), h(revTxt(x)), d('published') + ' ' + fd(x.published_at),
                   x.mandatory && x.due_date ? '<span class="' + (late ? 'late' : '') + '">' + d('due') + ' ' + fd(x.due_date) + (late ? ' — ' + d('late') : '') + '</span>' : '']
                  .filter(Boolean).join(' · ');
     const pill = x.status !== 'published' ? '<span class="pill info"><i></i>' + d('withdrawn') + '</span>'
@@ -1009,7 +1012,7 @@ resolveRole();
     if(isMgr() && S.noFolders) o += '<p class="dmeta" style="color:var(--warn);margin:-4px 0 12px">' + d('fold_sql') + '</p>';
     if(filtering){
       const list = published().filter(x => (!S.ftype || x.doc_type === S.ftype)
-        && (!q || [x.title, x.reference, x.description, x.revision, pathLabel(docFolder(x))].join(' ').toLowerCase().includes(q)));
+        && (!q || [x.title, x.reference, x.description, x.revision, fd(x.revision_date), pathLabel(docFolder(x))].join(' ').toLowerCase().includes(q)));
       o += '<p class="dmeta" style="margin:0 0 8px">' + d('results_all') + '</p>';
       return o + (list.length ? '<div class="dlist">' + list.map(x => docRow(x, true)).join('') + '</div>' : '<div class="dempty">' + d('none_match') + '</div>');
     }
@@ -1074,7 +1077,7 @@ resolveRole();
     o += '<div class="dtable-wrap"><table class="dtable"><thead><tr><th>' + d('t_doc') + '</th><th>' + d('t_status') + '</th><th>' + d('t_progress') + '</th><th></th></tr></thead><tbody>';
     docs.forEach(x => {
       const n = N - missingOf(x.id).length, pct = N ? Math.round(n * 100 / N) : 0;
-      o += '<tr><td>' + typeBadge(x.doc_type) + ' <strong>' + h(x.title) + '</strong><div class="dmeta">' + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision, x.due_date ? d('due') + ' ' + fd(x.due_date) : '', docFolder(x) ? pathLabel(docFolder(x)) : ''].filter(Boolean).map(h).join(' · ') + '</div></td>'
+      o += '<tr><td>' + typeBadge(x.doc_type) + ' <strong>' + h(x.title) + '</strong><div class="dmeta">' + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + revTxt(x), x.due_date ? d('due') + ' ' + fd(x.due_date) : '', docFolder(x) ? pathLabel(docFolder(x)) : ''].filter(Boolean).map(h).join(' · ') + '</div></td>'
         + '<td>' + (x.status === 'published' ? d('active') : d('withdrawn')) + '</td>'
         + '<td><div style="display:flex;align-items:center;gap:10px"><div class="bar"><span style="width:' + pct + '%"></span></div><span class="dmeta" style="margin:0">' + n + ' / ' + N + '</span></div></td>'
         + '<td style="text-align:right"><button class="btn sm" type="button" data-detail="' + h(x.id) + '">' + d('t_detail') + '</button></td></tr>';
@@ -1260,6 +1263,23 @@ resolveRole();
   }
   function closeModal(){ const m = document.getElementById('dmodal'); if(m){ m.classList.remove('open'); m.innerHTML = ''; } document.body.style.overflow = ''; }
 
+  /* Date de révision d'un document publié avant son introduction (21.10.2026) : saisie unique, figée ensuite par la base */
+  function revDateForm(m, x, before, reopen){
+    if(!isMgr() || x.revision_date || !before) return;
+    const box = document.createElement('div');
+    box.className = 'dform'; box.style.cssText = 'grid-template-columns:auto auto;justify-content:start;align-items:end;margin:12px 0;padding:12px 0;border-top:1px solid var(--line)';
+    box.innerHTML = '<div><label for="rd-date">' + d('revdate_set') + ' — ' + d('rev') + ' ' + h(x.revision) + '</label><input id="rd-date" type="date"></div>'
+      + '<button class="btn sm primary" type="button" id="rd-go" style="height:34px">' + d('revdate_save') + '</button><p class="derr" id="rd-err" style="grid-column:1/-1;margin:0"></p>';
+    before.parentNode.insertBefore(box, before);
+    box.querySelector('#rd-go').onclick = async () => {
+      const v = box.querySelector('#rd-date').value, er = box.querySelector('#rd-err'); er.textContent = '';
+      if(!v){ er.textContent = d('e_revdate'); return; }
+      if(S.aal !== 'aal2'){ er.textContent = d('e_mfa'); return; }
+      const r = await C().from('portal_docs').update({ revision_date:v }).eq('id', x.id);
+      if(r.error){ er.textContent = r.error.message; return; }
+      toast(d('revdate_ok')); await load(); reopen();
+    };
+  }
   async function openDoc(id){
     const x = S.docs.find(y => y.id === id); if(!x) return;
     const r = S.my[x.id];
@@ -1267,14 +1287,15 @@ resolveRole();
     if(!x.mandatory) ack = '<p class="dmeta" style="margin:0">' + d('ack_none') + '</p>';
     else if(!canAck()) ack = '<p class="dmeta" style="margin:0">' + d('ack_shared') + '</p>';
     else if(r) ack = '<p class="done" style="margin:0">' + d('ack_done', { d:fdt(r.read_at), r:h(r.revision || x.revision) }) + '</p>';
-    else ack = '<label><input type="checkbox" id="ack-chk" disabled> <span>' + d('ack_label', { r:h(x.revision) }) + '</span></label>'
+    else ack = '<label><input type="checkbox" id="ack-chk" disabled> <span>' + d('ack_label', { r:h(x.revision + (x.revision_date ? ' ' + d('rev_of') + ' ' + fd(x.revision_date) : '')) }) + '</span></label>'
       + '<div class="dfoot" style="justify-content:flex-start"><button class="btn primary" type="button" id="ack-btn" disabled>' + d('ack_btn') + '</button></div>';
     const m = modal('<div class="dbox-head"><div>' + typeBadge(x.doc_type) + '<h3 style="margin-top:8px">' + h(x.title) + '</h3>'
-      + '<p class="dsub">' + [docFolder(x) ? pathLabel(docFolder(x)) : '', x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at), x.due_date && x.mandatory ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</p>'
+      + '<p class="dsub">' + [docFolder(x) ? pathLabel(docFolder(x)) : '', x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + revTxt(x), d('published') + ' ' + fd(x.published_at), x.due_date && x.mandatory ? d('due') + ' ' + fd(x.due_date) : ''].filter(Boolean).map(h).join(' · ') + '</p>'
       + (x.description ? '<p style="margin:0 0 10px;font-size:13px">' + h(x.description) + '</p>' : '') + '</div>'
       + '<button class="btn sm" type="button" data-close>✕ ' + d('close') + '</button></div>'
       + '<div id="viewer-wrap"><div class="dempty">' + d('viewer_loading') + '</div></div>'
       + '<div class="ack">' + ack + '</div>', true);
+    revDateForm(m, x, m.querySelector('#viewer-wrap'), () => openDoc(x.id));
     try{
       const s = await C().storage.from(BUCKET).createSignedUrl(x.storage_path, 900);
       if(s.error || !s.data || !s.data.signedUrl) throw (s.error || new Error('url'));
@@ -1362,7 +1383,7 @@ resolveRole();
 
   /* ── Publication ──────────────────────────────────────────────── */
   function openPublish(){
-    const opts = published().map(x => '<option value="' + h(x.id) + '">' + h((x.reference ? x.reference + ' — ' : '') + x.title + ' (' + (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision + ')') + '</option>').join('');
+    const opts = published().map(x => '<option value="' + h(x.id) + '">' + h((x.reference ? x.reference + ' — ' : '') + x.title + ' (' + (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + revTxt(x) + ')') + '</option>').join('');
     const m = modal('<div class="dbox-head"><h3>' + d('publish').replace('＋ ', '') + '</h3><button class="btn sm" type="button" data-close>✕</button></div>'
       + '<div class="dform">'
       + '<div class="full"><label for="f-title">' + d('f_title') + ' *</label><input id="f-title"></div>'
@@ -1370,6 +1391,7 @@ resolveRole();
       + '<div><label for="f-ref">' + d('f_ref') + '</label><input id="f-ref"></div>'
       + '<div><label for="f-issue">' + d('f_issue') + ' *</label><input id="f-issue" placeholder="01" required></div>'
       + '<div><label for="f-rev">' + d('f_rev') + ' *</label><input id="f-rev" placeholder="00" required></div>'
+      + '<div><label for="f-revdate">' + d('f_revdate') + ' *</label><input id="f-revdate" type="date" required></div>'
       + '<div><label for="f-due">' + d('f_due') + '</label><input id="f-due" type="date"></div>'
       + '<div class="full"><label class="chk"><input type="checkbox" id="f-mand" checked> ' + d('f_mand') + '</label></div>'
       + '<div class="full"><label for="f-desc">' + d('f_desc') + '</label><textarea id="f-desc"></textarea></div>'
@@ -1398,6 +1420,7 @@ resolveRole();
     if(!v('#f-title')){ err.textContent = d('e_title'); return; }
     if(!v('#f-issue')){ err.textContent = d('e_issue'); return; }
     if(!v('#f-rev')){ err.textContent = d('e_rev'); return; }
+    if(!v('#f-revdate')){ err.textContent = d('e_revdate'); return; }
     if(!file){ err.textContent = d('e_file'); return; }
     if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)){ err.textContent = d('e_pdf'); return; }
     if(file.size > MAX){ err.textContent = d('e_size'); return; }
@@ -1410,7 +1433,7 @@ resolveRole();
       if(up.error) throw up.error;
       go.textContent = d('f_saving');
       const sup = v('#f-sup') || null;
-      const row = { title:v('#f-title'), doc_type:v('#f-type'), reference:v('#f-ref') || null, issue:v('#f-issue'), revision:v('#f-rev'),
+      const row = { title:v('#f-title'), doc_type:v('#f-type'), reference:v('#f-ref') || null, issue:v('#f-issue'), revision:v('#f-rev'), revision_date:v('#f-revdate'),
         description:v('#f-desc') || null, mandatory:m.querySelector('#f-mand').checked, due_date:v('#f-due') || null,
         storage_path:path, file_name:file.name, file_size:file.size, sha256:hash, supersedes:sup };
       const fsel = m.querySelector('#f-folder'); if(fsel) row.folder_id = fsel.value || null;
@@ -1426,7 +1449,7 @@ resolveRole();
     const x = S.docs.find(y => y.id === id); if(!x) return;
     const rd = readersOf(id), miss = missingOf(id);
     const m = modal('<div class="dbox-head"><div>' + typeBadge(x.doc_type) + '<h3 style="margin-top:8px">' + h(x.title) + '</h3><p class="dsub">'
-      + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + d('rev') + ' ' + x.revision, d('published') + ' ' + fd(x.published_at) + (x.published_by ? ' (' + x.published_by + ')' : ''), x.due_date ? d('due') + ' ' + fd(x.due_date) : '', x.status !== 'published' ? d('withdrawn') + ' ' + fd(x.withdrawn_at) : ''].filter(Boolean).map(h).join(' · ')
+      + [x.reference, (x.issue ? d('issue') + ' ' + x.issue + ' · ' : '') + revTxt(x), d('published') + ' ' + fd(x.published_at) + (x.published_by ? ' (' + x.published_by + ')' : ''), x.due_date ? d('due') + ' ' + fd(x.due_date) : '', x.status !== 'published' ? d('withdrawn') + ' ' + fd(x.withdrawn_at) : ''].filter(Boolean).map(h).join(' · ')
       + '</p></div><button class="btn sm" type="button" data-close>✕</button></div>'
       + '<div class="cols2"><div><p class="dmeta" style="font-weight:600;color:var(--ok)">' + d('readers') + ' (' + rd.length + ')</p><div class="dtable-wrap"><table class="dtable"><tbody>'
       + (rd.length ? rd.map(r => '<tr><td><strong>' + h(r.full_name || r.user_email) + '</strong><div class="dmeta">' + h(r.user_email) + '</div></td><td>' + fdt(r.read_at) + '<div class="dmeta">' + d('rev') + ' ' + h(r.revision || '') + '</div></td></tr>').join('') : '<tr><td>' + d('nobody') + '</td></tr>')
@@ -1436,6 +1459,7 @@ resolveRole();
       + '<div class="dfoot"><button class="btn sm" type="button" id="dt-csv">⤓ ' + d('csv') + '</button><button class="btn sm" type="button" id="dt-pdf">⤓ ' + d('pdf') + '</button>'
       + (x.status === 'published' ? '<button class="btn sm" type="button" id="dt-mail">✉ ' + d('remind') + ' (' + miss.length + ')</button><button class="btn sm danger" type="button" id="dt-wd">' + d('withdraw') + '</button>' : '')
       + '</div>', true);
+    revDateForm(m, x, m.querySelector('.dfoot'), () => openDetail(x.id));
     m.querySelector('#dt-csv').onclick = () => csvDoc(x);
     m.querySelector('#dt-pdf').onclick = () => pdfDoc(x);
     const ml = m.querySelector('#dt-mail'); if(ml) ml.onclick = () => remind(x, miss);
@@ -1463,14 +1487,14 @@ resolveRole();
   const csv = rows => '\uFEFF' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
   const slug = s => String(s || 'document').replace(/[^\w.-]+/g, '_').slice(0, 60);
   function csvDoc(x){
-    const rows = [['Document','Référence','Révision','Statut lecture','Nom','E-mail','Fonction','Lu le','Révision lue']];
-    readersOf(x.id).forEach(r => rows.push([x.title, x.reference, x.revision, 'Lu', r.full_name, r.user_email, (S.people.find(p => p.email.toLowerCase() === String(r.user_email).toLowerCase()) || {}).fonction, fdt(r.read_at), r.revision]));
-    missingOf(x.id).forEach(p => rows.push([x.title, x.reference, x.revision, 'Non lu', p.full_name, p.email, p.fonction, '', '']));
+    const rows = [['Document','Référence','Révision','Date de révision','Statut lecture','Nom','E-mail','Fonction','Lu le','Révision lue']];
+    readersOf(x.id).forEach(r => rows.push([x.title, x.reference, x.revision, fd(x.revision_date), 'Lu', r.full_name, r.user_email, (S.people.find(p => p.email.toLowerCase() === String(r.user_email).toLowerCase()) || {}).fonction, fdt(r.read_at), r.revision]));
+    missingOf(x.id).forEach(p => rows.push([x.title, x.reference, x.revision, fd(x.revision_date), 'Non lu', p.full_name, p.email, p.fonction, '', '']));
     download('Lectures_' + slug(x.reference || x.title) + '_rev' + slug(x.revision) + '_' + today() + '.csv', csv(rows), 'text/csv;charset=utf-8');
   }
   function exportAll(){
-    const rows = [['Document','Type','Référence','Révision','Publié le','Nom','E-mail','Lu le','Révision lue','Empreinte SHA-256']];
-    S.reads.forEach(r => { const x = S.docs.find(y => y.id === r.doc_id) || {}; rows.push([x.title, typeLbl(x.doc_type), x.reference, x.revision, fd(x.published_at), r.full_name, r.user_email, fdt(r.read_at), r.revision, x.sha256]); });
+    const rows = [['Document','Type','Référence','Révision','Date de révision','Publié le','Nom','E-mail','Lu le','Révision lue','Empreinte SHA-256']];
+    S.reads.forEach(r => { const x = S.docs.find(y => y.id === r.doc_id) || {}; rows.push([x.title, typeLbl(x.doc_type), x.reference, x.revision, fd(x.revision_date), fd(x.published_at), r.full_name, r.user_email, fdt(r.read_at), r.revision, x.sha256]); });
     download('Accuses_de_lecture_SAF_' + today() + '.csv', csv(rows), 'text/csv;charset=utf-8');
   }
   function pdfDoc(x){
@@ -1478,7 +1502,7 @@ resolveRole();
     const w = window.open('', '_blank'); if(!w){ toast('Pop-up', true); return; }
     w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Lectures — ' + h(x.title) + '</title><style>body{font:12px/1.5 Arial,sans-serif;margin:28px;color:#111}h1{font-size:17px;margin:0 0 4px}h2{font-size:13px;margin:18px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}th{background:#f2f4f7}.m{color:#555;font-size:11px}@media print{button{display:none}}</style></head><body>'
       + '<button onclick="window.print()" style="float:right;padding:6px 14px">Imprimer / PDF</button>'
-      + '<h1>Suivi de lecture — ' + h(x.title) + '</h1><div class="m">SAF International · ' + h(typeLbl(x.doc_type)) + ' · ' + h(x.reference || '') + ' · Rév. ' + h(x.revision) + ' · publié le ' + fd(x.published_at) + (x.due_date ? ' · à lire avant le ' + fd(x.due_date) : '') + '<br>Empreinte SHA-256 du PDF : ' + h(x.sha256 || '—') + '</div>'
+      + '<h1>Suivi de lecture — ' + h(x.title) + '</h1><div class="m">SAF International · ' + h(typeLbl(x.doc_type)) + ' · ' + h(x.reference || '') + ' · Rév. ' + h(x.revision) + (x.revision_date ? ' du ' + fd(x.revision_date) : '') + ' · publié le ' + fd(x.published_at) + (x.due_date ? ' · à lire avant le ' + fd(x.due_date) : '') + '<br>Empreinte SHA-256 du PDF : ' + h(x.sha256 || '—') + '</div>'
       + '<h2>Ont lu (' + rd.length + ')</h2><table><tr><th>Nom</th><th>E-mail</th><th>Lu et compris le</th><th>Révision</th></tr>' + (rd.length ? rd.map(r => '<tr><td>' + h(r.full_name || '') + '</td><td>' + h(r.user_email) + '</td><td>' + fdt(r.read_at) + '</td><td>' + h(r.revision || '') + '</td></tr>').join('') : '<tr><td colspan="4">—</td></tr>') + '</table>'
       + '<h2>N’ont pas encore lu (' + miss.length + ')</h2><table><tr><th>Nom</th><th>E-mail</th><th>Fonction</th></tr>' + (miss.length ? miss.map(p => '<tr><td>' + h(p.full_name) + '</td><td>' + h(p.email) + '</td><td>' + h(p.fonction || '') + '</td></tr>').join('') : '<tr><td colspan="3">—</td></tr>') + '</table>'
       + '<p class="m" style="margin-top:18px">Édité le ' + fdt(new Date().toISOString()) + ' par ' + h(S.email || '') + '</p></body></html>');
