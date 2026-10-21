@@ -1490,7 +1490,9 @@ resolveRole();
     sy_e_row:'Complétez le titre, l’édition, la révision et la date de révision des lignes surlignées.',
     sy_run:'Publication {i} / {n}…', sy_folders:'Création des dossiers…',
     sy_done:'Synchronisation terminée : {a} nouveau(x), {b} révision(s), {c} retiré(s).', sy_partial:'Synchronisation interrompue après {k} opération(s) : {e}',
-    sy_denied:'Accès au dossier refusé par le navigateur.'
+    sy_denied:'Accès au dossier refusé par le navigateur.',
+    sy_ex_h:'Dossiers synchronisés — {n} exclu(s), {f} fichier(s) laissé(s) de côté',
+    sy_ex_help:'Décochez un dossier pour ne pas le publier (ses sous-dossiers suivent). Les dossiers de sauvegarde, d’archives et de brouillons sont décochés d’office. Le choix est retenu pour les prochaines synchronisations sur ce navigateur.'
   });
   Object.assign(D.en, {
     sy_btn:'⟳ Sync SharePoint', sy_h:'Sync from SharePoint',
@@ -1508,7 +1510,9 @@ resolveRole();
     sy_e_row:'Fill in title, issue, revision and revision date on the highlighted rows.',
     sy_run:'Publishing {i} / {n}…', sy_folders:'Creating folders…',
     sy_done:'Sync complete: {a} new, {b} revision(s), {c} withdrawn.', sy_partial:'Sync stopped after {k} operation(s): {e}',
-    sy_denied:'The browser refused access to the folder.'
+    sy_denied:'The browser refused access to the folder.',
+    sy_ex_h:'Synced folders — {n} excluded, {f} file(s) left out',
+    sy_ex_help:'Untick a folder to keep it off the portal (its subfolders follow). Backup, archive and draft folders are unticked by default. The choice is kept for the next syncs in this browser.'
   });
 
   /* poignée du dossier mémorisée dans IndexedDB (le navigateur redemande l'autorisation) */
@@ -1552,9 +1556,10 @@ resolveRole();
            && (await hd.requestPermission({ mode:'read' })) !== 'granted'){ m.querySelector('#sy-err').textContent = d('sy_denied'); return; }
         m.querySelectorAll('.dfoot button').forEach(b => b.disabled = true);
         await sySetHandle(hd);
-        const plan = await syScan(hd, m.querySelector('#sy-prog'));
-        plan.last = last;
-        syPreview(plan);
+        const ctx = await syList(hd, m.querySelector('#sy-prog'));
+        ctx.excl = syExclLoad(ctx.root); ctx.last = last;
+        const plan = await syPlan(ctx, m.querySelector('#sy-prog'));
+        syPreview(plan, ctx);
       }catch(e){ m.querySelectorAll('.dfoot button').forEach(b => b.disabled = false);
         if(e && e.name === 'AbortError') return; m.querySelector('#sy-err').textContent = (e && e.message) || String(e); }
     };
@@ -1562,33 +1567,63 @@ resolveRole();
     const ag = m.querySelector('#sy-again'); if(ag) ag.onclick = () => go(saved);
   }
 
-  async function syScan(root, prog){
-    const files = [], skipped = [];
+  /* exclusions de dossiers : mémorisées par dossier racine dans ce navigateur ;
+     par défaut, les dossiers de sauvegarde, d'archives ou de brouillons sont exclus */
+  const SY_AUTO_EXCL = /backup|sauvegarde|archive|obsol|supersed|p[ée]rim|brouillon|draft|^old$|^ancien/i;
+  const syExclKey = r => 'saf-portal-sync-excl:' + r;
+  function syExclLoad(root){ try{ return JSON.parse(localStorage.getItem(syExclKey(root)) || '{}') || {}; }catch(e){ return {}; } }
+  function syExclSave(root, map){ try{ localStorage.setItem(syExclKey(root), JSON.stringify(map)); }catch(e){} }
+  /* un dossier est exclu s'il l'est lui-même (choix explicite, sinon règle automatique) ou si un parent l'est */
+  function syIsExcl(path, map){
+    const parts = path.split('/');
+    for(let i = 1; i <= parts.length; i++){
+      const p = parts.slice(0, i).join('/');
+      const own = (p in map) ? map[p] : SY_AUTO_EXCL.test(parts[i - 1]);
+      if(own) return true;
+    }
+    return false;
+  }
+
+  async function syList(root, prog){
+    const files = [], folders = [], other = [];
     async function walk(dir, parts, depth){
       if(depth > 12) return;
       for await (const [name, e] of dir.entries()){
         if(/^[.~]|^desktop\.ini$|^thumbs\.db$/i.test(name)) continue;
-        if(e.kind === 'directory'){ await walk(e, parts.concat(name), depth + 1); continue; }
+        if(e.kind === 'directory'){ folders.push(parts.concat(name).join('/')); await walk(e, parts.concat(name), depth + 1); continue; }
         const path = parts.concat(name).join('/');
-        if(!/\.pdf$/i.test(name)){ skipped.push({ path, why:d('sy_why_pdf') }); continue; }
+        if(!/\.pdf$/i.test(name)){ other.push({ path, dirs:parts }); continue; }
         files.push({ path, dirs:parts, name, entry:e });
         prog.textContent = d('sy_scan', { n:files.length });
       }
     }
     await walk(root, [], 0);
-    files.sort((a, b) => natural(a.path, b.path));
-    const ok = [];
-    for(let i = 0; i < files.length; i++){
-      const f = files[i]; prog.textContent = d('sy_hash', { i:i + 1, n:files.length, f:f.name });
-      const file = await f.entry.getFile();   /* un fichier OneDrive « à la demande » est téléchargé ici */
-      if(!file.size){ skipped.push({ path:f.path, why:d('sy_why_empty') }); continue; }
-      if(file.size > MAX){ skipped.push({ path:f.path, why:d('sy_why_size') }); continue; }
-      f.file = file; f.sha = await sha256(await file.arrayBuffer()); ok.push(f);
+    files.sort((a, b) => natural(a.path, b.path)); folders.sort(natural);
+    return { root:root.name, files, folders, other };
+  }
+
+  async function syPlan(ctx, prog){
+    const excl = ctx.excl, inDir = f => f.dirs.length ? syIsExcl(f.dirs.join('/'), excl) : false;
+    const skipped = ctx.other.filter(o => !inDir(o)).map(o => ({ path:o.path, why:d('sy_why_pdf') }));
+    const todo = ctx.files.filter(f => !inDir(f)), ok = [];
+    for(let i = 0; i < todo.length; i++){
+      const f = todo[i];
+      if(f.sha === undefined){   /* empreinte calculée une seule fois, gardée si on change les exclusions */
+        prog.textContent = d('sy_hash', { i:i + 1, n:todo.length, f:f.name });
+        const file = await f.entry.getFile();   /* un fichier OneDrive « à la demande » est téléchargé ici */
+        f.file = file;
+        f.sha = !file.size || file.size > MAX ? null : await sha256(await file.arrayBuffer());
+      }
+      if(!f.file.size){ skipped.push({ path:f.path, why:d('sy_why_empty') }); continue; }
+      if(f.file.size > MAX){ skipped.push({ path:f.path, why:d('sy_why_size') }); continue; }
+      ok.push(f);
     }
+    prog.textContent = '';
     /* comparaison avec le portail */
     const pub = published(), byPath = new Map(), bySha = new Map(), seen = new Set();
     pub.forEach(x => { if(x.source_path) byPath.set(x.source_path, x); if(x.sha256 && !bySha.has(x.sha256)) bySha.set(x.sha256, x); });
-    const plan = { root:root.name, neu:[], rev:[], moved:[], adopt:[], gone:[], skipped, same:0 };
+    const plan = { root:ctx.root, neu:[], rev:[], moved:[], adopt:[], gone:[], skipped, same:0,
+                   nExclFiles:ctx.files.length - todo.length + ctx.other.length - ctx.other.filter(o => !inDir(o)).length };
     const pending = [];
     ok.forEach(f => {
       const x = byPath.get(f.path);
@@ -1605,7 +1640,7 @@ resolveRole();
     return plan;
   }
 
-  function syPreview(plan){
+  function syPreview(plan, ctx){
     const tOpts = sel => Object.keys(TYPES).map(k => '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + h(typeLbl(k)) + '</option>').join('');
     const inp = (cls, v, extra) => '<input class="' + cls + '" value="' + h(v || '') + '"' + (extra || '') + ' style="width:100%;height:28px;padding:0 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text)">';
     const chk = (cls, on) => '<input type="checkbox" class="' + cls + '"' + (on ? ' checked' : '') + '>';
@@ -1631,12 +1666,22 @@ resolveRole();
     const skipRows = plan.skipped.map(s => '<tr>' + fileCell(s.path) + td('<span class="dmeta">' + h(s.why) + '</span>') + '</tr>').join('');
     const tbl = (h1, body) => '<div class="dtable-wrap" style="max-height:34vh"><table class="dtable">' + h1 + '<tbody>' + body + '</tbody></table></div>';
     const todo = plan.neu.length + plan.rev.length + plan.moved.length + plan.adopt.length + plan.gone.length;
-    const warn = plan.last && plan.last.root_name && plan.last.root_name !== plan.root
-      ? '<p class="derr" style="margin:0 0 8px">' + h(d('sy_root_warn', { a:plan.last.root_name, b:plan.root })) + '</p>' : '';
+    const warn = ctx.last && ctx.last.root_name && ctx.last.root_name !== plan.root
+      ? '<p class="derr" style="margin:0 0 8px">' + h(d('sy_root_warn', { a:ctx.last.root_name, b:plan.root })) + '</p>' : '';
+    const nEx = ctx.folders.filter(p => syIsExcl(p, ctx.excl)).length;
+    const exclBox = ctx.folders.length ? '<details style="margin:12px 0 0"' + (nEx ? ' open' : '') + '><summary class="dmeta" style="cursor:pointer;font-weight:600">'
+      + h(d('sy_ex_h', { n:nEx, f:plan.nExclFiles })) + '</summary><p class="dmeta" style="margin:6px 0">' + d('sy_ex_help') + '</p>'
+      + '<div class="dtable-wrap" style="max-height:26vh;padding:6px 10px">' + ctx.folders.map(p => {
+          const depth = p.split('/').length - 1, name = p.split('/').pop();
+          const parentEx = depth > 0 && syIsExcl(p.split('/').slice(0, -1).join('/'), ctx.excl), own = syIsExcl(p, ctx.excl);
+          return '<label class="chk" style="display:flex;gap:6px;align-items:center;padding:2px 0 2px ' + (depth * 18) + 'px;font-size:12.5px' + (own ? ';opacity:.55' : '') + '">'
+            + '<input type="checkbox" class="s-ex" data-p="' + h(p) + '"' + (own ? '' : ' checked') + (parentEx ? ' disabled' : '') + '> ' + h(name) + '</label>'; }).join('')
+      + '</div></details>' : '';
 
     const m = modal('<div class="dbox-head"><div><h3>' + d('sy_h') + ' — ' + h(plan.root) + '</h3><p class="dsub">' + d('sy_same', { n:plan.same })
       + (todo ? '' : ' ' + d('sy_nothing')) + '</p></div><button class="btn sm" type="button" data-close>✕</button></div>' + warn
       + (S.noFolders ? '' : '<div class="dform" style="grid-template-columns:1fr"><div><label for="sy-base">' + d('sy_base') + '</label><select id="sy-base">' + treeOptions(S.folder, null) + '</select></div></div>')
+      + exclBox
       + sec(d('sy_new', { n:plan.neu.length }), plan.neu.length, tbl(head(cols), newRows))
       + sec(d('sy_rev', { n:plan.rev.length }), plan.rev.length, tbl(head(cols), revRows))
       + sec(d('sy_moved', { n:plan.moved.length }), plan.moved.length, tbl('', infoRows(plan.moved)))
@@ -1648,6 +1693,12 @@ resolveRole();
       + (todo ? '<button class="btn primary" type="button" id="sy-go">' + d('sy_apply') + '</button>' : '') + '</div>', true);
     m.querySelectorAll('tr[data-k] .s-mand').forEach(c => { const n = c.closest('tr').querySelector('.s-notify'); const s = () => { n.disabled = !c.checked; }; c.onchange = s; s(); });
     m.querySelectorAll('tr[data-k] .s-type').forEach(t => t.onchange = () => { const c = t.closest('tr').querySelector('.s-mand'); c.checked = t.value !== 'document'; c.onchange(); });
+    m.querySelectorAll('.s-ex').forEach(c => c.onchange = async () => {
+      ctx.excl[c.dataset.p] = !c.checked; syExclSave(ctx.root, ctx.excl);
+      m.querySelectorAll('.s-ex, .dfoot button').forEach(b => b.disabled = true);
+      try{ const p2 = await syPlan(ctx, m.querySelector('#sy-prog')); syPreview(p2, ctx); }
+      catch(e){ m.querySelector('#sy-err').textContent = (e && e.message) || String(e); }
+    });
     const go = m.querySelector('#sy-go'); if(go) go.onclick = () => syApply(m, plan);
   }
 
