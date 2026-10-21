@@ -1058,7 +1058,7 @@ resolveRole();
     updateBadge();
     if(!allowed) return;
     let html = '<div class="docs-head"><div><h2>' + d('h') + '</h2><p>' + d('sub') + '</p></div>'
-      + (isMgr() ? '<div class="docs-actions"><button class="btn primary" type="button" id="d-publish">' + d('publish') + '</button></div>' : '') + '</div>';
+      + (isMgr() ? '<div class="docs-actions"><button class="btn" type="button" id="d-sync" title="' + h(d('sy_h')) + '">' + d('sy_btn') + '</button><button class="btn primary" type="button" id="d-publish">' + d('publish') + '</button></div>' : '') + '</div>';
     if(S.state === 'loading' || S.state === 'idle'){ box.innerHTML = html + '<div class="dempty">' + d('loading') + '</div>'; bind(); return; }
     if(S.state === 'error'){ box.innerHTML = html + '<div class="dempty" style="color:var(--err)">' + d('err_load') + ' — ' + h(S.err) + '</div>'; bind(); return; }
     if(!canAck() && S.tab === 'todo') S.tab = 'all';
@@ -1214,6 +1214,7 @@ resolveRole();
     const q = document.getElementById('d-q'); if(q) q.oninput = () => { S.q = q.value; const p = q.selectionStart; render(); const n = document.getElementById('d-q'); if(n){ n.focus(); try{ n.setSelectionRange(p, p); }catch(e){} } };
     const ty = document.getElementById('d-type'); if(ty) ty.onchange = () => { S.ftype = ty.value; render(); };
     const pb = document.getElementById('d-publish'); if(pb) pb.onclick = openPublish;
+    const sb = document.getElementById('d-sync'); if(sb) sb.onclick = openSync;
     const goFolder = id => { S.folder = id || null; render(); const t = document.querySelector('.dcrumb'); if(t && t.scrollIntoView) t.scrollIntoView({ block:'nearest' }); };
     box.querySelectorAll('.drow[data-folder]').forEach(r => {
       r.onclick = e => { if(e.target.closest('button')) return; goFolder(r.dataset.folder); };
@@ -1463,6 +1464,260 @@ resolveRole();
       if(sup){ const w = await C().from('portal_docs').update({ status:'withdrawn' }).eq('id', sup); if(w.error) toast(w.error.message, true); }
       closeModal(); toast(d('f_ok')); S.tab = 'all'; if(fsel) S.folder = fsel.value || null; await load();
     }catch(e){ go.disabled = false; go.textContent = d('f_submit'); err.textContent = (e && e.message) || String(e); }
+  }
+
+  /* ── Synchronisation depuis SharePoint — 21.10.2026 ──────────────
+     Le dossier SharePoint « Documents compagnie » est synchronisé sur le
+     PC par OneDrive. Le navigateur (Edge / Chrome) relit ce dossier local
+     et publie dans Supabase les PDF nouveaux ou modifiés, en reproduisant
+     les sous-dossiers. Aucun accès Microsoft côté serveur.
+     Lien fichier ↔ document : portal_docs.source_path (chemin relatif).
+     Version : empreinte SHA-256 ; contenu changé = nouvelle révision
+     (nouvelle ligne + supersedes), donc nouvel accusé « lu et compris ». */
+  Object.assign(D.fr, {
+    sy_btn:'⟳ Synchroniser SharePoint', sy_h:'Synchroniser depuis SharePoint',
+    sy_intro:'Choisissez sur ce PC le dossier SharePoint synchronisé par OneDrive (par exemple « SAF Aero Group › SAFINTLSPO - Documents compagnie »). Le portail le relit et vous montre ce qui va changer avant de publier quoi que ce soit.',
+    sy_pick:'Choisir le dossier…', sy_again:'Relire « {n} »', sy_nofs:'Cette fonction demande Edge ou Chrome sur ordinateur (lecture d’un dossier local).',
+    sy_last:'Dernière synchronisation : {d} par {b} ({r})', sy_never:'Aucune synchronisation pour l’instant.',
+    sy_scan:'Lecture du dossier… {n} fichier(s)', sy_hash:'Analyse {i} / {n} : {f}',
+    sy_root_warn:'Attention : la dernière synchronisation venait du dossier « {a} », vous avez choisi « {b} ». Si ce n’est pas le même dossier, tous les documents apparaîtront comme nouveaux et les anciens comme supprimés.',
+    sy_base:'Placer dans le dossier du portail', sy_new:'Nouveaux documents ({n})', sy_rev:'Documents modifiés → nouvelle révision ({n})',
+    sy_moved:'Déplacés ou renommés, contenu identique ({n})', sy_adopt:'Déjà publiés à la main, rattachés au fichier SharePoint ({n})',
+    sy_gone:'Supprimés de SharePoint → retirer du portail ({n})', sy_skip:'Ignorés ({n})', sy_same:'{n} document(s) inchangé(s).',
+    sy_nothing:'Rien à publier : le portail est à jour.', sy_was:'Actuellement {r}', sy_apply:'Publier les changements', sy_cancel:'Annuler',
+    sy_c_file:'Fichier', sy_c_title:'Titre', sy_c_type:'Type', sy_c_ref:'Référence', sy_c_issue:'Éd.', sy_c_rev:'Rév.', sy_c_date:'Date rév.', sy_c_mand:'Lecture oblig.', sy_c_notify:'Prévenir', sy_c_wd:'Retirer',
+    sy_why_pdf:'pas un PDF', sy_why_size:'plus de 50 Mo', sy_why_empty:'fichier vide',
+    sy_e_row:'Complétez le titre, l’édition, la révision et la date de révision des lignes surlignées.',
+    sy_run:'Publication {i} / {n}…', sy_folders:'Création des dossiers…',
+    sy_done:'Synchronisation terminée : {a} nouveau(x), {b} révision(s), {c} retiré(s).', sy_partial:'Synchronisation interrompue après {k} opération(s) : {e}',
+    sy_denied:'Accès au dossier refusé par le navigateur.'
+  });
+  Object.assign(D.en, {
+    sy_btn:'⟳ Sync SharePoint', sy_h:'Sync from SharePoint',
+    sy_intro:'Choose on this PC the SharePoint folder synced by OneDrive (for example “SAF Aero Group › SAFINTLSPO - Company documents”). The portal reads it and shows you what will change before publishing anything.',
+    sy_pick:'Choose the folder…', sy_again:'Read “{n}” again', sy_nofs:'This feature needs Edge or Chrome on a computer (it reads a local folder).',
+    sy_last:'Last sync: {d} by {b} ({r})', sy_never:'No sync yet.',
+    sy_scan:'Reading the folder… {n} file(s)', sy_hash:'Checking {i} / {n}: {f}',
+    sy_root_warn:'Warning: the last sync came from folder “{a}”, you chose “{b}”. If it is not the same folder, every document will appear as new and the previous ones as deleted.',
+    sy_base:'Place in portal folder', sy_new:'New documents ({n})', sy_rev:'Changed documents → new revision ({n})',
+    sy_moved:'Moved or renamed, same content ({n})', sy_adopt:'Already published manually, linked to the SharePoint file ({n})',
+    sy_gone:'Deleted from SharePoint → withdraw from the portal ({n})', sy_skip:'Skipped ({n})', sy_same:'{n} document(s) unchanged.',
+    sy_nothing:'Nothing to publish: the portal is up to date.', sy_was:'Currently {r}', sy_apply:'Publish the changes', sy_cancel:'Cancel',
+    sy_c_file:'File', sy_c_title:'Title', sy_c_type:'Type', sy_c_ref:'Reference', sy_c_issue:'Iss.', sy_c_rev:'Rev.', sy_c_date:'Rev. date', sy_c_mand:'Mandatory', sy_c_notify:'Notify', sy_c_wd:'Withdraw',
+    sy_why_pdf:'not a PDF', sy_why_size:'over 50 MB', sy_why_empty:'empty file',
+    sy_e_row:'Fill in title, issue, revision and revision date on the highlighted rows.',
+    sy_run:'Publishing {i} / {n}…', sy_folders:'Creating folders…',
+    sy_done:'Sync complete: {a} new, {b} revision(s), {c} withdrawn.', sy_partial:'Sync stopped after {k} operation(s): {e}',
+    sy_denied:'The browser refused access to the folder.'
+  });
+
+  /* poignée du dossier mémorisée dans IndexedDB (le navigateur redemande l'autorisation) */
+  const SY_DB = 'saf-portal-sync';
+  function syIdb(mode, fn){
+    return new Promise((res, rej) => {
+      const o = indexedDB.open(SY_DB, 1);
+      o.onupgradeneeded = () => o.result.createObjectStore('h');
+      o.onerror = () => rej(o.error);
+      o.onsuccess = () => { const t = o.result.transaction('h', mode), st = t.objectStore('h'), r = fn(st);
+        t.oncomplete = () => res(r && 'result' in r ? r.result : undefined); t.onerror = () => rej(t.error); };
+    });
+  }
+  const syGetHandle = () => syIdb('readonly', st => st.get('root')).catch(() => null);
+  const sySetHandle = hd => syIdb('readwrite', st => st.put(hd, 'root')).catch(() => {});
+
+  async function syLast(){
+    const r = await C().from('portal_sync_log').select('*').order('synced_at', { ascending:false }).limit(1);
+    return r.error || !r.data || !r.data.length ? null : r.data[0];
+  }
+  const syGuessType = p => /safety[\s_-]*alert|(^|[\/\s_-])SA[\s_-]?\d/i.test(p) ? 'safety_alert'
+    : /m[ée]mo/i.test(p) ? 'memo' : /communic|(^|[\/\s_-])COM[\s_-]?\d/i.test(p) ? 'communication' : 'document';
+  const syNextRev = r => { const s = String(r || ''); return /^\d+$/.test(s) ? String(+s + 1).padStart(s.length, '0') : s; };
+  const syIsoDay = ms => { const x = new Date(ms); return x.getFullYear() + '-' + pad(x.getMonth()+1) + '-' + pad(x.getDate()); };
+
+  async function openSync(){
+    if(!window.showDirectoryPicker){ toast(d('sy_nofs'), true); return; }
+    if(S.aal !== 'aal2'){ toast(d('e_mfa'), true); return; }
+    const [last, saved] = await Promise.all([syLast(), syGetHandle()]);
+    const m = modal('<div class="dbox-head"><div><h3>' + d('sy_h') + '</h3><p class="dsub">'
+      + (last ? h(d('sy_last', { d:fdt(last.synced_at), b:last.synced_by || '—', r:last.root_name || '—' })) : d('sy_never')) + '</p></div>'
+      + '<button class="btn sm" type="button" data-close>✕</button></div>'
+      + '<p class="dmeta" style="font-size:13px;line-height:1.5">' + d('sy_intro') + '</p>'
+      + '<p class="derr" id="sy-err"></p><p class="dmeta" id="sy-prog"></p>'
+      + '<div class="dfoot"><button class="btn" type="button" data-close>' + d('sy_cancel') + '</button>'
+      + (saved ? '<button class="btn" type="button" id="sy-again">' + h(d('sy_again', { n:saved.name })) + '</button>' : '')
+      + '<button class="btn primary" type="button" id="sy-pick">' + d('sy_pick') + '</button></div>');
+    const go = async hd => {
+      try{
+        if(hd.queryPermission && (await hd.queryPermission({ mode:'read' })) !== 'granted'
+           && (await hd.requestPermission({ mode:'read' })) !== 'granted'){ m.querySelector('#sy-err').textContent = d('sy_denied'); return; }
+        m.querySelectorAll('.dfoot button').forEach(b => b.disabled = true);
+        await sySetHandle(hd);
+        const plan = await syScan(hd, m.querySelector('#sy-prog'));
+        plan.last = last;
+        syPreview(plan);
+      }catch(e){ m.querySelectorAll('.dfoot button').forEach(b => b.disabled = false);
+        if(e && e.name === 'AbortError') return; m.querySelector('#sy-err').textContent = (e && e.message) || String(e); }
+    };
+    m.querySelector('#sy-pick').onclick = async () => { let hd; try{ hd = await window.showDirectoryPicker({ id:'saf-portal-docs', mode:'read' }); }catch(e){ return; } go(hd); };
+    const ag = m.querySelector('#sy-again'); if(ag) ag.onclick = () => go(saved);
+  }
+
+  async function syScan(root, prog){
+    const files = [], skipped = [];
+    async function walk(dir, parts, depth){
+      if(depth > 12) return;
+      for await (const [name, e] of dir.entries()){
+        if(/^[.~]|^desktop\.ini$|^thumbs\.db$/i.test(name)) continue;
+        if(e.kind === 'directory'){ await walk(e, parts.concat(name), depth + 1); continue; }
+        const path = parts.concat(name).join('/');
+        if(!/\.pdf$/i.test(name)){ skipped.push({ path, why:d('sy_why_pdf') }); continue; }
+        files.push({ path, dirs:parts, name, entry:e });
+        prog.textContent = d('sy_scan', { n:files.length });
+      }
+    }
+    await walk(root, [], 0);
+    files.sort((a, b) => natural(a.path, b.path));
+    const ok = [];
+    for(let i = 0; i < files.length; i++){
+      const f = files[i]; prog.textContent = d('sy_hash', { i:i + 1, n:files.length, f:f.name });
+      const file = await f.entry.getFile();   /* un fichier OneDrive « à la demande » est téléchargé ici */
+      if(!file.size){ skipped.push({ path:f.path, why:d('sy_why_empty') }); continue; }
+      if(file.size > MAX){ skipped.push({ path:f.path, why:d('sy_why_size') }); continue; }
+      f.file = file; f.sha = await sha256(await file.arrayBuffer()); ok.push(f);
+    }
+    /* comparaison avec le portail */
+    const pub = published(), byPath = new Map(), bySha = new Map(), seen = new Set();
+    pub.forEach(x => { if(x.source_path) byPath.set(x.source_path, x); if(x.sha256 && !bySha.has(x.sha256)) bySha.set(x.sha256, x); });
+    const plan = { root:root.name, neu:[], rev:[], moved:[], adopt:[], gone:[], skipped, same:0 };
+    const pending = [];
+    ok.forEach(f => {
+      const x = byPath.get(f.path);
+      if(x){ seen.add(x.id); if(x.sha256 === f.sha) plan.same++; else plan.rev.push({ f, old:x }); }
+      else pending.push(f);
+    });
+    pending.forEach(f => {
+      const x = bySha.get(f.sha);
+      if(x && !seen.has(x.id) && (!x.source_path || !ok.some(g => g.path === x.source_path))){
+        seen.add(x.id); (x.source_path ? plan.moved : plan.adopt).push({ f, old:x });
+      } else plan.neu.push({ f });
+    });
+    pub.forEach(x => { if(x.source_path && !seen.has(x.id)) plan.gone.push({ old:x }); });
+    return plan;
+  }
+
+  function syPreview(plan){
+    const tOpts = sel => Object.keys(TYPES).map(k => '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + h(typeLbl(k)) + '</option>').join('');
+    const inp = (cls, v, extra) => '<input class="' + cls + '" value="' + h(v || '') + '"' + (extra || '') + ' style="width:100%;height:28px;padding:0 6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--text)">';
+    const chk = (cls, on) => '<input type="checkbox" class="' + cls + '"' + (on ? ' checked' : '') + '>';
+    const sec = (title, n, body) => n ? '<p class="dmeta" style="font-weight:600;margin:16px 0 6px">' + title + '</p>' + body : '';
+    const head = cols => '<thead><tr>' + cols.map(c => '<th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px">' + c + '</th>').join('') + '</tr></thead>';
+    const td = s => '<td style="padding:4px 6px;vertical-align:middle">' + s + '</td>';
+    const fileCell = p => td('<span class="dmeta" style="word-break:break-all">' + h(p) + '</span>');
+    const cols = [d('sy_c_file'), d('sy_c_title'), d('sy_c_type'), d('sy_c_ref'), d('sy_c_issue'), d('sy_c_rev'), d('sy_c_date'), d('sy_c_mand'), d('sy_c_notify')];
+
+    const newRows = plan.neu.map((r, i) => { const ty = syGuessType(r.f.path);
+      return '<tr data-k="neu" data-i="' + i + '">' + fileCell(r.f.path)
+        + td(inp('s-title', r.f.name.replace(/\.pdf$/i, '').replace(/[_]+/g, ' ').trim())) + td('<select class="s-type" style="height:28px">' + tOpts(ty) + '</select>')
+        + td(inp('s-ref', '')) + td(inp('s-issue', '01', ' size="3"')) + td(inp('s-rev', '00', ' size="3"'))
+        + td(inp('s-date', syIsoDay(r.f.file.lastModified), ' type="date"')) + td(chk('s-mand', ty !== 'document')) + td(chk('s-notify', true)) + '</tr>'; }).join('');
+    const revRows = plan.rev.map((r, i) => { const o = r.old;
+      return '<tr data-k="rev" data-i="' + i + '">' + fileCell(r.f.path)
+        + td(inp('s-title', o.title) + '<div class="dmeta">' + h(d('sy_was', { r:(o.issue ? d('issue') + ' ' + o.issue + ' · ' : '') + revTxt(o) })) + '</div>')
+        + td('<select class="s-type" style="height:28px">' + tOpts(o.doc_type) + '</select>') + td(inp('s-ref', o.reference))
+        + td(inp('s-issue', o.issue, ' size="3"')) + td(inp('s-rev', syNextRev(o.revision), ' size="3"'))
+        + td(inp('s-date', syIsoDay(r.f.file.lastModified), ' type="date"')) + td(chk('s-mand', o.mandatory)) + td(chk('s-notify', true)) + '</tr>'; }).join('');
+    const infoRows = list => list.map(r => '<tr>' + fileCell(r.f.path) + td(h(r.old.title)) + td('<span class="dmeta">' + h(r.old.source_path || '') + '</span>') + '</tr>').join('');
+    const goneRows = plan.gone.map((r, i) => '<tr data-k="gone" data-i="' + i + '">' + fileCell(r.old.source_path) + td(h(r.old.title)) + td(chk('s-wd', true)) + '</tr>').join('');
+    const skipRows = plan.skipped.map(s => '<tr>' + fileCell(s.path) + td('<span class="dmeta">' + h(s.why) + '</span>') + '</tr>').join('');
+    const tbl = (h1, body) => '<div class="dtable-wrap" style="max-height:34vh"><table class="dtable">' + h1 + '<tbody>' + body + '</tbody></table></div>';
+    const todo = plan.neu.length + plan.rev.length + plan.moved.length + plan.adopt.length + plan.gone.length;
+    const warn = plan.last && plan.last.root_name && plan.last.root_name !== plan.root
+      ? '<p class="derr" style="margin:0 0 8px">' + h(d('sy_root_warn', { a:plan.last.root_name, b:plan.root })) + '</p>' : '';
+
+    const m = modal('<div class="dbox-head"><div><h3>' + d('sy_h') + ' — ' + h(plan.root) + '</h3><p class="dsub">' + d('sy_same', { n:plan.same })
+      + (todo ? '' : ' ' + d('sy_nothing')) + '</p></div><button class="btn sm" type="button" data-close>✕</button></div>' + warn
+      + (S.noFolders ? '' : '<div class="dform" style="grid-template-columns:1fr"><div><label for="sy-base">' + d('sy_base') + '</label><select id="sy-base">' + treeOptions(S.folder, null) + '</select></div></div>')
+      + sec(d('sy_new', { n:plan.neu.length }), plan.neu.length, tbl(head(cols), newRows))
+      + sec(d('sy_rev', { n:plan.rev.length }), plan.rev.length, tbl(head(cols), revRows))
+      + sec(d('sy_moved', { n:plan.moved.length }), plan.moved.length, tbl('', infoRows(plan.moved)))
+      + sec(d('sy_adopt', { n:plan.adopt.length }), plan.adopt.length, tbl('', infoRows(plan.adopt)))
+      + sec(d('sy_gone', { n:plan.gone.length }), plan.gone.length, tbl(head([d('sy_c_file'), d('sy_c_title'), d('sy_c_wd')]), goneRows))
+      + sec(d('sy_skip', { n:plan.skipped.length }), plan.skipped.length, tbl('', skipRows))
+      + '<p class="derr" id="sy-err"></p><p class="dmeta" id="sy-prog"></p>'
+      + '<div class="dfoot"><button class="btn" type="button" data-close>' + d('sy_cancel') + '</button>'
+      + (todo ? '<button class="btn primary" type="button" id="sy-go">' + d('sy_apply') + '</button>' : '') + '</div>', true);
+    m.querySelectorAll('tr[data-k] .s-mand').forEach(c => { const n = c.closest('tr').querySelector('.s-notify'); const s = () => { n.disabled = !c.checked; }; c.onchange = s; s(); });
+    m.querySelectorAll('tr[data-k] .s-type').forEach(t => t.onchange = () => { const c = t.closest('tr').querySelector('.s-mand'); c.checked = t.value !== 'document'; c.onchange(); });
+    const go = m.querySelector('#sy-go'); if(go) go.onclick = () => syApply(m, plan);
+  }
+
+  async function syApply(m, plan){
+    const err = m.querySelector('#sy-err'), prog = m.querySelector('#sy-prog'), go = m.querySelector('#sy-go');
+    err.textContent = '';
+    if(S.aal !== 'aal2'){ err.textContent = d('e_mfa'); return; }
+    /* lecture et contrôle des lignes */
+    let bad = false;
+    const rowVal = tr => { const q = c => tr.querySelector(c), v = c => q(c).value.trim();
+      const o = { title:v('.s-title'), doc_type:q('.s-type').value, reference:v('.s-ref') || null, issue:v('.s-issue'), revision:v('.s-rev'),
+                  revision_date:v('.s-date'), mandatory:q('.s-mand').checked, notify:q('.s-notify').checked };
+      const ko = !o.title || !o.issue || !o.revision || !o.revision_date; tr.style.background = ko ? 'color-mix(in srgb,var(--err) 14%,transparent)' : '';
+      if(ko) bad = true; return o; };
+    plan.neu.forEach((r, i) => { r.v = rowVal(m.querySelector('tr[data-k="neu"][data-i="' + i + '"]')); });
+    plan.rev.forEach((r, i) => { r.v = rowVal(m.querySelector('tr[data-k="rev"][data-i="' + i + '"]')); });
+    plan.gone.forEach((r, i) => { r.wd = m.querySelector('tr[data-k="gone"][data-i="' + i + '"] .s-wd').checked; });
+    if(bad){ err.textContent = d('sy_e_row'); return; }
+    m.querySelectorAll('.dfoot button, [data-close]').forEach(b => b.disabled = true);
+    const baseSel = m.querySelector('#sy-base'), base = baseSel ? (baseSel.value || null) : null;
+    let k = 0; const cnt = { a:0, b:0, c:0 };
+    try{
+      /* dossiers : retrouvés par nom sous leur parent, créés au besoin */
+      prog.textContent = d('sy_folders');
+      const cache = new Map();
+      async function folderFor(dirs){
+        if(S.noFolders) return null;
+        let pid = base;
+        for(const name of dirs){
+          const key = (pid || '') + '/' + name.toLowerCase();
+          if(cache.has(key)){ pid = cache.get(key); continue; }
+          let f = S.folders.find(x => (x.parent_id || null) === (pid || null) && String(x.name).toLowerCase() === name.toLowerCase());
+          if(!f){ const r = await C().from('portal_folders').insert({ name, parent_id:pid || null }).select().single(); if(r.error) throw r.error; f = r.data; S.folders.push(f); }
+          cache.set(key, f.id); pid = f.id;
+        }
+        return pid || null;
+      }
+      const all = plan.neu.length + plan.rev.length;
+      const upload = async (r, sup) => {
+        prog.textContent = d('sy_run', { i:cnt.a + cnt.b + 1, n:all });
+        const buf = await r.f.file.arrayBuffer();
+        const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+        const path = new Date().getFullYear() + '/' + id + '.pdf';
+        const up = await C().storage.from(BUCKET).upload(path, new Blob([buf], { type:'application/pdf' }), { contentType:'application/pdf', upsert:false });
+        if(up.error) throw up.error;
+        const v = r.v, row = { title:v.title, doc_type:v.doc_type, reference:v.reference, issue:v.issue, revision:v.revision, revision_date:v.revision_date,
+          description:sup ? (sup.description || null) : null, mandatory:v.mandatory, due_date:null, storage_path:path, file_name:r.f.name,
+          file_size:r.f.file.size, sha256:r.f.sha, supersedes:sup ? sup.id : null, source_path:r.f.path, folder_id:await folderFor(r.f.dirs) };
+        if(row.mandatory && !v.notify) row.notify = false;
+        const ins = await C().from('portal_docs').insert(row).select().single();
+        if(ins.error){ await C().storage.from(BUCKET).remove([path]); throw ins.error; }
+        if(sup){ const w = await C().from('portal_docs').update({ status:'withdrawn' }).eq('id', sup.id); if(w.error) throw w.error; }
+        k++;
+      };
+      for(const r of plan.neu){ await upload(r, null); cnt.a++; }
+      for(const r of plan.rev){ await upload(r, r.old); cnt.b++; }
+      for(const r of plan.moved.concat(plan.adopt)){
+        const u = await C().from('portal_docs').update({ source_path:r.f.path, folder_id:await folderFor(r.f.dirs) }).eq('id', r.old.id);
+        if(u.error) throw u.error; k++;
+      }
+      for(const r of plan.gone){ if(!r.wd) continue;
+        const w = await C().from('portal_docs').update({ status:'withdrawn' }).eq('id', r.old.id); if(w.error) throw w.error; cnt.c++; k++; }
+      await C().from('portal_sync_log').insert({ root_name:plan.root, n_new:cnt.a, n_rev:cnt.b, n_withdrawn:cnt.c, n_skipped:plan.skipped.length });
+      closeModal(); toast(d('sy_done', cnt)); S.tab = 'all'; await load();
+    }catch(e){
+      if(k) await C().from('portal_sync_log').insert({ root_name:plan.root, n_new:cnt.a, n_rev:cnt.b, n_withdrawn:cnt.c, n_skipped:plan.skipped.length });
+      m.querySelectorAll('.dfoot button, [data-close]').forEach(b => b.disabled = false); if(go) go.disabled = true;
+      err.textContent = d('sy_partial', { k, e:(e && e.message) || String(e) }); prog.textContent = '';
+      await load();
+    }
   }
 
   /* ── Suivi d'un document ──────────────────────────────────────── */
