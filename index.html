@@ -827,7 +827,10 @@ resolveRole();
       t_doc:'Document', t_readers:'Lu par', t_progress:'Avancement', t_detail:'Détail', t_mand:'Obligatoire', t_status:'Statut',
       withdrawn:'Retiré', active:'Publié', readers:'Ont lu', missing:'N’ont pas encore lu', nobody:'Personne', everybody:'Tout le monde a lu.',
       csv:'CSV', pdf:'PDF', remind:'Relancer par e-mail', withdraw:'Retirer le document', withdraw_q:'Retirer « {t} » ? Il ne sera plus proposé à la lecture. Les accusés déjà enregistrés sont conservés.',
-      withdraw_ok:'Document retiré', export_all:'Exporter tous les accusés (CSV)',
+      withdraw_ok:'Document retiré', del_doc:'Supprimer définitivement', del_ok:'Document supprimé', del_denied:'Suppression refusée par la base (script SQL de suppression passé ? compte admin/éditeur avec second facteur ?).',
+      del_q:'Supprimer définitivement « {t} » (rév. {r}) ?\n\nLe document et son PDF seront effacés du portail. Cette action est irréversible et tracée.',
+      del_reads:'Ce document a déjà {n} accusé(s) de lecture : il ne peut pas être supprimé, seulement retiré (les accusés restent la preuve de lecture).',
+      del_file:'Document supprimé, mais le PDF n’a pas pu être effacé du stockage', export_all:'Exporter tous les accusés (CSV)',
       p_name:'Nom', p_email:'E-mail', p_fn:'Fonction', p_state:'Accès', p_add:'＋ Ajouter', p_on:'Actif', p_off:'Désactivé',
       p_disable:'Désactiver', p_enable:'Réactiver', p_pending:'Lectures en attente', p_intro:'Chaque personne ajoutée ici reçoit un compte lecteur individuel : connexion au portail par code e-mail, puis accès aux documents (avec accusé de lecture), au suivi de la flotte et au registre des risques du SMS en consultation.',
       p_ok:'Accès créé pour {e}', p_ok_existing:'{e} a déjà un compte : son rôle est conservé, ajouté au personnel attendu.', p_dis:'Accès désactivé pour {e}',
@@ -870,7 +873,10 @@ resolveRole();
       t_doc:'Document', t_readers:'Read by', t_progress:'Progress', t_detail:'Details', t_mand:'Mandatory', t_status:'Status',
       withdrawn:'Withdrawn', active:'Published', readers:'Have read', missing:'Have not read yet', nobody:'Nobody', everybody:'Everybody has read it.',
       csv:'CSV', pdf:'PDF', remind:'Send reminder e-mail', withdraw:'Withdraw document', withdraw_q:'Withdraw “{t}”? It will no longer be offered for reading. Recorded acknowledgements are kept.',
-      withdraw_ok:'Document withdrawn', export_all:'Export all acknowledgements (CSV)',
+      withdraw_ok:'Document withdrawn', del_doc:'Delete permanently', del_ok:'Document deleted', del_denied:'Deletion refused by the database (deletion SQL script run? admin/editor account with second factor?).',
+      del_q:'Permanently delete “{t}” (rev. {r})?\n\nThe document and its PDF will be removed from the portal. This cannot be undone and is logged.',
+      del_reads:'This document already has {n} reading acknowledgement(s): it cannot be deleted, only withdrawn (acknowledgements remain the proof of reading).',
+      del_file:'Document deleted, but the PDF could not be removed from storage', export_all:'Export all acknowledgements (CSV)',
       p_name:'Name', p_email:'E-mail', p_fn:'Function', p_state:'Access', p_add:'＋ Add', p_on:'Active', p_off:'Disabled',
       p_disable:'Disable', p_enable:'Re-enable', p_pending:'Pending readings', p_intro:'Each person added here gets an individual reader account: portal sign-in with an e-mail code, then access to documents (with reading acknowledgement), fleet tracking and the SMS risk register (read-only).',
       p_ok:'Access created for {e}', p_ok_existing:'{e} already has an account: added to expected staff.', p_dis:'Access disabled for {e}',
@@ -1294,7 +1300,11 @@ resolveRole();
       + (x.description ? '<p style="margin:0 0 10px;font-size:13px">' + h(x.description) + '</p>' : '') + '</div>'
       + '<button class="btn sm" type="button" data-close>✕ ' + d('close') + '</button></div>'
       + '<div id="viewer-wrap"><div class="dempty">' + d('viewer_loading') + '</div></div>'
-      + '<div class="ack">' + ack + '</div>', true);
+      + '<div class="ack">' + ack + '</div>'
+      + (isMgr() ? '<div class="dfoot" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">'
+          + (x.status === 'published' ? '<button class="btn sm danger" type="button" id="dv-wd">' + d('withdraw') + '</button>' : '')
+          + (readersOf(x.id).length ? '' : '<button class="btn sm danger" type="button" id="dv-del">🗑 ' + d('del_doc') + '</button>') + '</div>' : ''), true);
+    { const a = m.querySelector('#dv-wd'); if(a) a.onclick = () => withdraw(x); const b = m.querySelector('#dv-del'); if(b) b.onclick = () => removeDoc(x); }
     revDateForm(m, x, m.querySelector('#viewer-wrap'), () => openDoc(x.id));
     try{
       const s = await C().storage.from(BUCKET).createSignedUrl(x.storage_path, 900);
@@ -1458,12 +1468,14 @@ resolveRole();
       + '</tbody></table></div></div></div>'
       + '<div class="dfoot"><button class="btn sm" type="button" id="dt-csv">⤓ ' + d('csv') + '</button><button class="btn sm" type="button" id="dt-pdf">⤓ ' + d('pdf') + '</button>'
       + (x.status === 'published' ? '<button class="btn sm" type="button" id="dt-mail">✉ ' + d('remind') + ' (' + miss.length + ')</button><button class="btn sm danger" type="button" id="dt-wd">' + d('withdraw') + '</button>' : '')
+      + (rd.length ? '' : '<button class="btn sm danger" type="button" id="dt-del">🗑 ' + d('del_doc') + '</button>')
       + '</div>', true);
     revDateForm(m, x, m.querySelector('.dfoot'), () => openDetail(x.id));
     m.querySelector('#dt-csv').onclick = () => csvDoc(x);
     m.querySelector('#dt-pdf').onclick = () => pdfDoc(x);
     const ml = m.querySelector('#dt-mail'); if(ml) ml.onclick = () => remind(x, miss);
     const wd = m.querySelector('#dt-wd'); if(wd) wd.onclick = () => withdraw(x);
+    const dl = m.querySelector('#dt-del'); if(dl) dl.onclick = () => removeDoc(x);
   }
   function portalUrl(){ return location.origin + location.pathname; }
   function remind(x, miss){
@@ -1472,6 +1484,18 @@ resolveRole();
     const href = 'mailto:?bcc=' + encodeURIComponent(to) + '&subject=' + encodeURIComponent(d('remind_subj', { t:x.title }))
       + '&body=' + encodeURIComponent(d('remind_body', { t:x.title, r:x.revision, u:portalUrl() }));
     location.href = href;
+  }
+  async function removeDoc(x){
+    const n = readersOf(x.id).length;
+    if(n){ toast(d('del_reads', { n:n }), true); return; }
+    if(S.aal !== 'aal2'){ toast(d('e_mfa'), true); return; }
+    if(!confirm(d('del_q', { t:x.title, r:x.revision }))) return;
+    const r = await C().from('portal_docs').delete().eq('id', x.id).select('id');
+    if(r.error){ toast(/foreign key|portal_reads/i.test(r.error.message) ? d('del_reads', { n:'≥1' }) : r.error.message, true); return; }
+    if(!r.data || !r.data.length){ toast(d('del_denied'), true); return; }
+    let fileOk = true;
+    if(x.storage_path){ const f = await C().storage.from(BUCKET).remove([x.storage_path]); fileOk = !f.error && f.data && f.data.length > 0; }
+    closeModal(); toast(fileOk ? d('del_ok') : d('del_file'), !fileOk); await load();
   }
   async function withdraw(x){
     if(!confirm(d('withdraw_q', { t:x.title }))) return;
