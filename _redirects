@@ -1,0 +1,5 @@
+# Porte d'entrée unique (30.10.2026) : le SMS est servi sous le portail, à la même adresse,
+# pour que la connexion faite sur le portail soit valable dans tous les blocs.
+# Proxy Netlify (code 200) vers le site du SMS, toujours déployé depuis xbdm73/SAF_International-_SMS.
+/sms    /sms/    301!
+/sms/*  https://saf-international-sms.netlify.app/:splat  200!
