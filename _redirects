@@ -3,3 +3,17 @@
 # Proxy Netlify (code 200) vers le site du SMS, toujours déployé depuis xbdm73/SAF_International-_SMS.
 /sms    /sms/    301!
 /sms/*  https://saf-international-sms.netlify.app/:splat  200!
+
+# Retour sous /sms/ (02.11.2026) : le site du SMS réécrit /Page.html en /page (« pretty URLs »)
+# par une 301 à chemin absolu ; relayée par le proxy, elle fait perdre le préfixe /sms/.
+# Ces règles renvoient ces adresses égarées dans le SMS. Cible sans extension = pas de nouvelle 301.
+/saf_international_safety                            /sms/saf_international_safety                                301!
+/saf_international_compliance_monitoring_system      /sms/saf_international_compliance_monitoring_system          301!
+/saf_international_appendices_omm                    /sms/saf_international_appendices_omm                        301!
+/saf_synoptique_sms                                  /sms/saf_synoptique_sms                                      301!
+/saf_user_guide                                      /sms/saf_user_guide                                          301!
+/saf_report                                          /sms/saf_report                                              301!
+/saf_suivi_flotte                                    /sms/saf_suivi_flotte                                        301!
+/saf_suivi_b3                                        /sms/saf_suivi_b3                                            301!
+/saf_helicopter_trajectory_analyzer                  /sms/saf_helicopter_trajectory_analyzer                      301!
+/admin                                               /sms/admin                                                   301!
