@@ -63,6 +63,7 @@ button,input{font:inherit;color:inherit}
 .gate-logo img{height:96px;width:auto}
 @media (max-width:760px){ .org{display:none} .top{height:68px} .top-logo img{height:50px} }
 /* ---------- Accès réservé (admin, editor, reader) ---------- */
+.login-en{display:block;font-size:.84em;font-weight:400;color:var(--muted);line-height:1.45;margin-top:3px}
 body:not(.granted) .shell{display:none}
 .gate{display:none;min-height:calc(100% - 84px);align-items:center;justify-content:center;padding:32px 16px}
 body.gated .gate{display:flex}
@@ -419,35 +420,35 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <p id="gate-msg"></p>
     <div class="gate-actions">
       <button class="iconbtn" id="gate-btn" type="button"></button>
-      <a class="gate-report" href="/sms/SAF_Report.html" data-i18n="gate_report"></a>
+      <a class="gate-report" href="/sms/SAF_Report.html">Faire un signalement / Report an occurrence</a>
     </div>
     <div id="admin-login" hidden style="margin:14px 0;padding:16px;border:1px solid var(--line);border-radius:10px;text-align:left">
-      <h2 style="font-size:16px;margin:0 0 12px">Connexion par mot de passe <small style="font-weight:400;opacity:.75">(second facteur pour administrateurs et éditeurs)</small></h2>
+      <h2 style="font-size:16px;margin:0 0 12px">Connexion par mot de passe <span class="login-en">Password sign-in</span><small style="font-weight:400;opacity:.75;display:block">Second facteur pour administrateurs et éditeurs <span class="login-en">Two-factor authentication for administrators and editors</span></small></h2>
       <form id="admin-login-form" autocomplete="on">
-        <input id="admin-email" type="email" placeholder="Adresse e-mail professionnelle" autocomplete="username" required style="width:100%;margin-bottom:8px;padding:10px">
-        <input id="admin-password" type="password" placeholder="Mot de passe" autocomplete="current-password" required style="width:100%;margin-bottom:8px;padding:10px">
-        <button class="btn primary" type="submit" id="admin-submit">Se connecter</button>
+        <input id="admin-email" type="email" placeholder="Adresse e-mail / Work email" autocomplete="username" required style="width:100%;margin-bottom:8px;padding:10px">
+        <input id="admin-password" type="password" placeholder="Mot de passe / Password" autocomplete="current-password" required style="width:100%;margin-bottom:8px;padding:10px">
+        <button class="btn primary" type="submit" id="admin-submit">Se connecter / Sign in</button>
       </form>
       <div id="admin-mfa-step" hidden style="margin-top:12px">
-        <p style="font-size:13px">Entrez le code à 6 chiffres de votre application d'authentification.</p>
+        <p style="font-size:13px">Entrez le code à 6 chiffres de votre application d'authentification. <span class="login-en">Enter the 6-digit code from your authenticator app.</span></p>
         <input id="admin-mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Code MFA" style="width:100%;margin-bottom:8px;padding:10px">
-        <button class="btn primary" type="button" id="admin-mfa-submit">Valider le second facteur</button>
+        <button class="btn primary" type="button" id="admin-mfa-submit">Valider / Verify</button>
       </div>
       <p id="admin-login-error" role="alert" style="font-size:13px;margin:8px 0 0"></p>
     </div>
     <!-- Personnel SAF : connexion par code reçu par e-mail (19.10.2026) -->
     <div class="otp" id="otp" hidden>
-      <h2 data-i18n="otp_title">Personnel SAF</h2>
-      <p class="gate-otp-intro" data-i18n="otp_intro"></p>
+      <h2>Personnel SAF <span class="login-en">SAF staff</span></h2>
+      <p class="gate-otp-intro">Saisissez votre adresse e-mail pour recevoir un code de connexion à 6 chiffres. <span class="login-en">Enter your email address to receive a 6-digit sign-in code.</span></p>
       <div id="otp-step1">
-        <input type="email" id="otp-email" autocomplete="email" data-i18n-ph="otp_email_ph" aria-label="E-mail">
-        <button class="btn primary" type="button" id="otp-send" data-i18n="otp_send"></button>
+        <input type="email" id="otp-email" autocomplete="email" placeholder="Adresse e-mail / Email address" aria-label="E-mail">
+        <button class="btn primary" type="button" id="otp-send">Recevoir un code / Get a code</button>
       </div>
       <div id="otp-step2" hidden>
         <p id="otp-sent" style="margin:0 0 10px"></p>
         <input class="code" id="otp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Code">
-        <button class="btn primary" type="button" id="otp-verify" data-i18n="otp_verify"></button>
-        <button class="alt" type="button" id="otp-back" data-i18n="otp_back"></button>
+        <button class="btn primary" type="button" id="otp-verify">Se connecter / Sign in</button>
+        <button class="alt" type="button" id="otp-back">Changer d’adresse ou renvoyer un code / Change address or resend code</button>
       </div>
       <p class="derr" id="otp-err" role="alert"></p>
     </div>
@@ -658,6 +659,9 @@ function applyLang(){
   syncDocsView();
 }
 
+/* Connexion : le français et l'anglais sont présentés simultanément, quel que soit le choix global de langue. */
+function gateBi(key){ return dict.fr[key] + ' / ' + dict.en[key]; }
+
 /* ---------- session Supabase du SMS (lecture locale uniquement) ---------- */
 function renderWho(){
   const box=document.getElementById('who'), txt=document.getElementById('who-txt');
@@ -737,16 +741,16 @@ const SAF_PORTAL_ROLES = ['admin','editor','reader','staff','authority'];   /* s
 function applyGate(){
   const b=document.body, title=document.getElementById('gate-title'),
         msg=document.getElementById('gate-msg'), btn=document.getElementById('gate-btn');
-  title.textContent=t('gate_title');
+  title.textContent=gateBi('gate_title');
   b.classList.toggle('is-staff', userRole==='staff');
   const otp=document.getElementById('otp'); if(otp) otp.hidden = userRole!=='anon';
   if(typeof window.safDocsOnRole==='function') window.safDocsOnRole(userRole);
   if(userRole && SAF_PORTAL_ROLES.includes(userRole)){ b.classList.add('granted'); b.classList.remove('gated'); return; }
   b.classList.remove('granted'); b.classList.add('gated');
-  if(userRole===null){ msg.textContent=t('gate_wait'); btn.hidden=true; return; }
+  if(userRole===null){ msg.textContent=gateBi('gate_wait'); btn.hidden=true; return; }
   btn.hidden=false;
-  if(userRole==='anon'){ msg.textContent=t('gate_anon'); btn.textContent=t('gate_login'); btn.dataset.act='login'; }
-  else { msg.textContent=t('gate_denied'); btn.textContent=t('gate_sms'); btn.dataset.act='logout';
+  if(userRole==='anon'){ msg.textContent=gateBi('gate_anon'); btn.textContent=gateBi('gate_login'); btn.dataset.act='login'; }
+  else { msg.textContent=gateBi('gate_denied'); btn.textContent=gateBi('gate_sms'); btn.dataset.act='logout';
          const p=document.getElementById('admin-login'); if(p) p.hidden=true; }
 }
 
