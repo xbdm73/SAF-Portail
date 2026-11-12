@@ -63,6 +63,7 @@ button,input{font:inherit;color:inherit}
 .gate-logo img{height:96px;width:auto}
 @media (max-width:760px){ .org{display:none} .top{height:68px} .top-logo img{height:50px} }
 /* ---------- Accès réservé (admin, editor, reader) ---------- */
+.login-en{display:block;font-size:.84em;font-weight:400;color:var(--muted);line-height:1.45;margin-top:3px}
 body:not(.granted) .shell{display:none}
 .gate{display:none;min-height:calc(100% - 84px);align-items:center;justify-content:center;padding:32px 16px}
 body.gated .gate{display:flex}
@@ -152,6 +153,19 @@ a.sys:hover{border-color:var(--line-strong);background:var(--card-hover)}
    ================================================================ */
 /* L'espace documentaire est une carte du catalogue et non une section toujours ouverte. */
 body:not(.docs-open) #docs{display:none!important}
+/* Rubrique Modes d'emploi (12.11.2026) : même logique que l'espace documentaire. */
+body:not(.guides-open) #guides{display:none!important}
+body.guides-open .head,body.guides-open .tools,body.guides-open #grid,body.guides-open .note,body.guides-open #docs{display:none!important}
+.guides{margin-bottom:34px}
+.guides-head h2{margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.guides-head p{margin:3px 0 18px;color:var(--muted);font-size:13px}
+.guide-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.guide-item{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--line);border-left:3px solid #c9a227;border-radius:9px;background:var(--panel);color:var(--text);text-decoration:none}
+.guide-item:hover{border-color:var(--line-strong);border-left-color:#c9a227}
+.guide-item:focus-visible{outline:2px solid #c9a227;outline-offset:2px}
+.guide-item .g-lang{align-self:flex-start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;border:1px solid var(--line)}
+.guide-item .g-name{margin:0;font-weight:600}
+.guide-item .g-desc{margin:0;color:var(--muted);font-size:13px}
 body.docs-open .head,body.docs-open .tools,body.docs-open #grid,body.docs-open .note{display:none!important}
 body.is-staff .side a[data-nav="systems"]{display:flex}
 .docs-return{margin-bottom:16px}
@@ -419,35 +433,35 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <p id="gate-msg"></p>
     <div class="gate-actions">
       <button class="iconbtn" id="gate-btn" type="button"></button>
-      <a class="gate-report" href="/sms/SAF_Report.html" data-i18n="gate_report"></a>
+      <a class="gate-report" href="/sms/SAF_Report.html">Faire un signalement / Report an occurrence</a>
     </div>
     <div id="admin-login" hidden style="margin:14px 0;padding:16px;border:1px solid var(--line);border-radius:10px;text-align:left">
-      <h2 style="font-size:16px;margin:0 0 12px">Connexion par mot de passe <small style="font-weight:400;opacity:.75">(second facteur pour administrateurs et éditeurs)</small></h2>
+      <h2 style="font-size:16px;margin:0 0 12px">Connexion par mot de passe <span class="login-en">Password sign-in</span><small style="font-weight:400;opacity:.75;display:block">Second facteur pour administrateurs et éditeurs <span class="login-en">Two-factor authentication for administrators and editors</span></small></h2>
       <form id="admin-login-form" autocomplete="on">
-        <input id="admin-email" type="email" placeholder="Adresse e-mail professionnelle" autocomplete="username" required style="width:100%;margin-bottom:8px;padding:10px">
-        <input id="admin-password" type="password" placeholder="Mot de passe" autocomplete="current-password" required style="width:100%;margin-bottom:8px;padding:10px">
-        <button class="btn primary" type="submit" id="admin-submit">Se connecter</button>
+        <input id="admin-email" type="email" placeholder="Adresse e-mail / Work email" autocomplete="username" required style="width:100%;margin-bottom:8px;padding:10px">
+        <input id="admin-password" type="password" placeholder="Mot de passe / Password" autocomplete="current-password" required style="width:100%;margin-bottom:8px;padding:10px">
+        <button class="btn primary" type="submit" id="admin-submit">Se connecter / Sign in</button>
       </form>
       <div id="admin-mfa-step" hidden style="margin-top:12px">
-        <p style="font-size:13px">Entrez le code à 6 chiffres de votre application d'authentification.</p>
+        <p style="font-size:13px">Entrez le code à 6 chiffres de votre application d'authentification. <span class="login-en">Enter the 6-digit code from your authenticator app.</span></p>
         <input id="admin-mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Code MFA" style="width:100%;margin-bottom:8px;padding:10px">
-        <button class="btn primary" type="button" id="admin-mfa-submit">Valider le second facteur</button>
+        <button class="btn primary" type="button" id="admin-mfa-submit">Valider / Verify</button>
       </div>
       <p id="admin-login-error" role="alert" style="font-size:13px;margin:8px 0 0"></p>
     </div>
     <!-- Personnel SAF : connexion par code reçu par e-mail (19.10.2026) -->
     <div class="otp" id="otp" hidden>
-      <h2 data-i18n="otp_title">Personnel SAF</h2>
-      <p class="gate-otp-intro" data-i18n="otp_intro"></p>
+      <h2>Personnel SAF <span class="login-en">SAF staff</span></h2>
+      <p class="gate-otp-intro">Saisissez votre adresse e-mail pour recevoir un code de connexion à 6 chiffres. <span class="login-en">Enter your email address to receive a 6-digit sign-in code.</span></p>
       <div id="otp-step1">
-        <input type="email" id="otp-email" autocomplete="email" data-i18n-ph="otp_email_ph" aria-label="E-mail">
-        <button class="btn primary" type="button" id="otp-send" data-i18n="otp_send"></button>
+        <input type="email" id="otp-email" autocomplete="email" placeholder="Adresse e-mail / Email address" aria-label="E-mail">
+        <button class="btn primary" type="button" id="otp-send">Recevoir un code / Get a code</button>
       </div>
       <div id="otp-step2" hidden>
         <p id="otp-sent" style="margin:0 0 10px"></p>
         <input class="code" id="otp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Code">
-        <button class="btn primary" type="button" id="otp-verify" data-i18n="otp_verify"></button>
-        <button class="alt" type="button" id="otp-back" data-i18n="otp_back"></button>
+        <button class="btn primary" type="button" id="otp-verify">Se connecter / Sign in</button>
+        <button class="alt" type="button" id="otp-back">Changer d’adresse ou renvoyer un code / Change address or resend code</button>
       </div>
       <p class="derr" id="otp-err" role="alert"></p>
     </div>
@@ -464,6 +478,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
       <span data-i18n="nav_docs">Documents compagnie</span>
     </a>
+    <a href="#guides" data-nav="guides" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17.5v.5"/></svg>
+      <span data-i18n="nav_guides">Modes d’emploi</span>
+    </a>
     <a href="/sms/SAF_Report.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.5"/></svg>
       <span data-i18n="nav_report">Faire un signalement</span>
@@ -478,6 +496,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <main>
     <div class="docs-return" id="docs-return" hidden><a class="btn" href="#systems">← <span data-i18n="nav_systems">Systèmes</span></a></div>
     <section class="docs" id="docs" hidden aria-label="Documents compagnie"></section>
+  <section class="guides" id="guides" hidden aria-labelledby="guides-title"></section>
     <div class="head" id="systems">
       <div>
         <h1 data-i18n="title">Systèmes</h1>
@@ -531,6 +550,11 @@ const SAF_SYSTEMS = [
     name:{fr:'Documents compagnie',en:'Company documents'},
     desc:{fr:'Consulter les documents de la compagnie classés par dossier, confirmer les lectures obligatoires et suivre les accusés de lecture.',en:'Browse company documents by folder, acknowledge mandatory reading and track confirmations.'},
     url:'#docs', roles:['admin','editor','reader','staff'] },
+  { id:'guides', color:'#c9a227', icon:'help',
+    name:{fr:'Modes d’emploi', en:'User guides'},
+    desc:{fr:'Les modes d’emploi du système SAF, en français et en anglais, regroupés au même endroit.',
+          en:'The SAF system user guides, in French and English, gathered in one place.'},
+    url:'#guides', roles:['admin','editor','reader','authority'] },
   { id:'sms', color:'#e3a33b', icon:'shield',
     name:{fr:'Safety Management System', en:'Safety Management System'},
     desc:{fr:'Registre des risques, journal des occurrences, Compliance Monitoring et appendices OMM.',
@@ -581,6 +605,19 @@ const SAF_SYSTEMS = [
 ];
 
 /* Projet Supabase du SMS : session lue en local, rôle lu dans user_roles */
+/* Rubrique « Modes d'emploi » : ajouter ici tout nouveau mode d'emploi. */
+const SAF_GUIDES = [
+  { lang:'FR', url:SAF_SMS_URL + 'SAF_User_Guide.html',
+    name:{fr:'Mode d’emploi du système SAF', en:'SAF system user guide — French'},
+    desc:{fr:'Version française : SMS, CMS, Appendices OMM, signalement, sauvegardes et dépannage.',
+          en:'French version: SMS, CMS, OMM Appendices, reporting, backups and troubleshooting.'} },
+  { lang:'EN', url:SAF_SMS_URL + 'SAF_User_Guide_EN.html',
+    name:{fr:'Mode d’emploi du système SAF — anglais', en:'SAF system user guide'},
+    desc:{fr:'Version anglaise : SMS, CMS, Appendices OMM, signalement, sauvegardes et dépannage.',
+          en:'English version: SMS, CMS, OMM Appendices, reporting, backups and troubleshooting.'} }
+];
+const SAF_GUIDE_ROLES = ['admin','editor','reader','authority'];
+
 const SAF_SUPABASE_REF = 'qaqehmxoehcvzcojcqkm';
 const SAF_SUPABASE_URL = 'https://'+SAF_SUPABASE_REF+'.supabase.co';
 const SAF_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
@@ -592,12 +629,13 @@ const ICONS = {
   hook:'<path d="M12 2v9"/><path d="M8 6h8"/><path d="M12 11a4 4 0 1 1-4 4"/>',
   flame:'<path d="M12 22c4 0 7-2.8 7-7 0-4.5-4-7-4-11-3 2-5 5-5 8-1-1-2-2-2-4-2 2-3 4.5-3 7 0 4.2 3 7 7 7z"/>',
   notes:'<path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h4"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17.5v.5"/>',
   pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
   route:'<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/>'
 };
 
 const T = {
-  fr:{ nav_docs:'Documents compagnie', logout:'Déconnexion', otp_title:'Personnel SAF', otp_intro:'Saisissez votre adresse e-mail : vous recevrez un code de connexion à 6 chiffres. Vous aurez accès aux documents de la compagnie, au suivi de la flotte et au registre des risques.', otp_email_ph:'prenom.nom@exemple.com', otp_send:'Recevoir un code', otp_verify:'Se connecter', otp_back:'Changer d\u2019adresse ou renvoyer un code', otp_bad_email:'Adresse e-mail invalide.', otp_sent:'Code envoyé à {e}. Il est valable quelques minutes.', otp_unknown:'Adresse non enregistrée. Contactez le Safety Manager pour obtenir un accès.', otp_rate:'Trop de demandes : patientez une minute avant de redemander un code.', otp_bad_code:'Saisissez les 6 chiffres du code.', otp_wrong:'Code incorrect ou expiré.',
+  fr:{ nav_docs:'Documents compagnie', nav_guides:'Modes d\u2019emploi', guides_title:'Modes d\u2019emploi', guides_sub:'Choisissez la langue du mode d\u2019emploi.', logout:'Déconnexion', otp_title:'Personnel SAF', otp_intro:'Saisissez votre adresse e-mail : vous recevrez un code de connexion à 6 chiffres. Vous aurez accès aux documents de la compagnie, au suivi de la flotte et au registre des risques.', otp_email_ph:'prenom.nom@exemple.com', otp_send:'Recevoir un code', otp_verify:'Se connecter', otp_back:'Changer d\u2019adresse ou renvoyer un code', otp_bad_email:'Adresse e-mail invalide.', otp_sent:'Code envoyé à {e}. Il est valable quelques minutes.', otp_unknown:'Adresse non enregistrée. Contactez le Safety Manager pour obtenir un accès.', otp_rate:'Trop de demandes : patientez une minute avant de redemander un code.', otp_bad_code:'Saisissez les 6 chiffres du code.', otp_wrong:'Code incorrect ou expiré.',
        nav_org:'Organisation', nav_systems:'Systèmes', nav_report:'Faire un signalement', bases:'Sion · Albertville', gate_title:'Accès réservé', gate_anon:'Portail réservé au personnel SAF : c\u2019est la porte d\u2019entrée de tous les systèmes. Connectez-vous ici avec un code reçu par e-mail, ou avec votre mot de passe.', gate_denied:'Ce compte n\u2019a pas accès au portail. Contactez le Safety Manager si vous pensez qu\u2019il s\u2019agit d\u2019une erreur.', gate_wait:'Vérification de l\u2019accès…', gate_login:'Connexion par mot de passe', gate_sms:'Se déconnecter', gate_report:'Faire un signalement (ouvert à tous)',
        title:'Systèmes', subtitle:'Choisissez le système dans lequel vous voulez travailler.',
        search:'Rechercher un système', note:'Chaque système gère sa propre connexion et ses droits d\u2019accès.',
@@ -606,7 +644,7 @@ const T = {
        empty:'Aucun système ne correspond à « {q} ».',
        anon:'Non connecté', session:'Session SMS', expired:'Session SMS expirée', login:'Se connecter',
        ago_now:'à l\u2019instant', ago_m:'il y a {n} min', ago_h:'il y a {n} h', ago_d:'il y a {n} j' },
-  en:{ nav_docs:'Company documents', logout:'Sign out', otp_title:'SAF staff', otp_intro:'Enter your e-mail address: you will receive a 6-digit sign-in code. You will get access to company documents, fleet tracking and the risk register.', otp_email_ph:'firstname.lastname@example.com', otp_send:'Get a code', otp_verify:'Sign in', otp_back:'Change address or resend a code', otp_bad_email:'Invalid e-mail address.', otp_sent:'Code sent to {e}. It is valid for a few minutes.', otp_unknown:'Address not registered. Contact the Safety Manager to get access.', otp_rate:'Too many requests: wait a minute before asking for a new code.', otp_bad_code:'Enter the 6 digits of the code.', otp_wrong:'Incorrect or expired code.',
+  en:{ nav_docs:'Company documents', nav_guides:'User guides', guides_title:'User guides', guides_sub:'Choose the language of the user guide.', logout:'Sign out', otp_title:'SAF staff', otp_intro:'Enter your e-mail address: you will receive a 6-digit sign-in code. You will get access to company documents, fleet tracking and the risk register.', otp_email_ph:'firstname.lastname@example.com', otp_send:'Get a code', otp_verify:'Sign in', otp_back:'Change address or resend a code', otp_bad_email:'Invalid e-mail address.', otp_sent:'Code sent to {e}. It is valid for a few minutes.', otp_unknown:'Address not registered. Contact the Safety Manager to get access.', otp_rate:'Too many requests: wait a minute before asking for a new code.', otp_bad_code:'Enter the 6 digits of the code.', otp_wrong:'Incorrect or expired code.',
        nav_org:'Organisation', nav_systems:'Systems', nav_report:'Report an occurrence', bases:'Sion · Albertville', gate_title:'Restricted access', gate_anon:'Portal restricted to SAF staff: it is the entry point to every system. Sign in here with a code sent by e-mail, or with your password.', gate_denied:'This account has no access to the portal. Contact the Safety Manager if you think this is a mistake.', gate_wait:'Checking access…', gate_login:'Password sign-in', gate_sms:'Sign out', gate_report:'Report an occurrence (open to all)',
        title:'Systems', subtitle:'Choose the system you want to work in.',
        search:'Search systems', note:'Each system handles its own sign-in and access rights.',
@@ -655,8 +693,11 @@ function applyLang(){
   document.getElementById('btn-lang').textContent = lang==='fr'?'EN':'FR';
   renderWho(); render(); applyGate();
   if(typeof window.safDocsRender==='function') window.safDocsRender();
-  syncDocsView();
+  syncDocsView(); syncGuidesView();
 }
+
+/* Connexion : le français et l'anglais sont présentés simultanément, quel que soit le choix global de langue. */
+function gateBi(key){ return T.fr[key] + ' / ' + T.en[key]; }
 
 /* ---------- session Supabase du SMS (lecture locale uniquement) ---------- */
 function renderWho(){
@@ -729,7 +770,7 @@ async function resolveRole(){
   if(seq !== roleSeq) return;     // une lecture plus récente a pris le relais
   userRole = role;
   if(SAF_NEXT && ['admin','editor','reader','authority'].includes(role)){ location.replace(SAF_NEXT); return; }
-  applyGate(); render(); syncDocsView();
+  applyGate(); render(); syncDocsView(); syncGuidesView();
 }
 /* Portail réservé aux rôles SMS admin, editor et reader. Confort d'interface :
    les données restent protégées par la RLS de chaque système. */
@@ -737,22 +778,22 @@ const SAF_PORTAL_ROLES = ['admin','editor','reader','staff','authority'];   /* s
 function applyGate(){
   const b=document.body, title=document.getElementById('gate-title'),
         msg=document.getElementById('gate-msg'), btn=document.getElementById('gate-btn');
-  title.textContent=t('gate_title');
+  title.textContent=gateBi('gate_title');
   b.classList.toggle('is-staff', userRole==='staff');
   const otp=document.getElementById('otp'); if(otp) otp.hidden = userRole!=='anon';
   if(typeof window.safDocsOnRole==='function') window.safDocsOnRole(userRole);
   if(userRole && SAF_PORTAL_ROLES.includes(userRole)){ b.classList.add('granted'); b.classList.remove('gated'); return; }
   b.classList.remove('granted'); b.classList.add('gated');
-  if(userRole===null){ msg.textContent=t('gate_wait'); btn.hidden=true; return; }
+  if(userRole===null){ msg.textContent=gateBi('gate_wait'); btn.hidden=true; return; }
   btn.hidden=false;
-  if(userRole==='anon'){ msg.textContent=t('gate_anon'); btn.textContent=t('gate_login'); btn.dataset.act='login'; }
-  else { msg.textContent=t('gate_denied'); btn.textContent=t('gate_sms'); btn.dataset.act='logout';
+  if(userRole==='anon'){ msg.textContent=gateBi('gate_anon'); btn.textContent=gateBi('gate_login'); btn.dataset.act='login'; }
+  else { msg.textContent=gateBi('gate_denied'); btn.textContent=gateBi('gate_sms'); btn.dataset.act='logout';
          const p=document.getElementById('admin-login'); if(p) p.hidden=true; }
 }
 
 /* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
    le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
-const visible = s => (userRole!=='staff' || s.id==='docs') && (userRole!=='authority' || s.id==='sms') && (!s.roles || (userRole && s.roles.includes(userRole)));
+const visible = s => (userRole!=='staff' || s.id==='docs') && (userRole!=='authority' || s.id==='sms' || s.id==='guides') && (!s.roles || (userRole && s.roles.includes(userRole)));
 
 /* ---------- état de chaque système ---------- */
 async function check(sys){
@@ -770,10 +811,10 @@ async function check(sys){
 
 /* ---------- rendu ---------- */
 function card(s){
-  const st = s.id==='docs' ? 'ok' : (health[s.id] || (s.url?'pending':'cfg'));
+  const st = (s.id==='docs'||s.id==='guides') ? 'ok' : (health[s.id] || (s.url?'pending':'cfg'));
   const label = {ok:t('s_ok'),err:t('s_err'),pending:t('s_pending'),cfg:t('s_cfg'),ext:t('s_ext')}[st];
-  const path = s.id==='docs' ? (lang==='fr'?'Accès réservé · Supabase':'Restricted access · Supabase') : (s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg'));
-  const last = s.id==='docs' ? (lang==='fr'?'Ouvrir':'Open') : (recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never'));
+  const path = s.id==='docs' ? (lang==='fr'?'Accès réservé · Supabase':'Restricted access · Supabase') : s.id==='guides' ? 'FR · EN' : (s.url ? s.url.replace(/^https?:\/\//,'') : t('notcfg'));
+  const last = (s.id==='docs'||s.id==='guides') ? (lang==='fr'?'Ouvrir':'Open') : (recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never'));
   const alt = (userRole==='reader' && s.reader) ? s.reader : null, nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
   const inner = `
     <div class="sys-top">
@@ -819,6 +860,28 @@ function syncDocsView(){
   if(dnav) dnav.setAttribute('aria-current',isOpen?'page':'false');
 }
 window.addEventListener('hashchange',syncDocsView);
+function syncGuidesView(){
+  const permitted = SAF_GUIDE_ROLES.includes(userRole);
+  const gnav = document.querySelector('.side a[data-nav="guides"]');
+  if(gnav){ gnav.hidden = !permitted; gnav.style.display = permitted ? '' : 'none'; }
+  const isOpen = location.hash === '#guides' && permitted;
+  document.body.classList.toggle('guides-open',isOpen);
+  const sec = document.getElementById('guides');
+  if(sec){
+    sec.hidden = !isOpen;
+    if(isOpen) sec.innerHTML = '<div class="docs-return"><a class="btn" href="#systems">← '+esc(t('nav_systems'))+'</a></div>'
+      + '<div class="guides-head"><h2 id="guides-title">'+esc(t('guides_title'))+'</h2><p>'+esc(t('guides_sub'))+'</p></div>'
+      + '<div class="guide-list">' + SAF_GUIDES.map(g =>
+          '<a class="guide-item" href="'+esc(g.url)+'" hreflang="'+g.lang.toLowerCase()+'">'
+          + '<span class="g-lang">'+esc(g.lang)+'</span>'
+          + '<p class="g-name">'+esc(g.name[lang]||g.name.fr)+'</p>'
+          + '<p class="g-desc">'+esc(g.desc[lang]||g.desc.fr)+'</p></a>').join('') + '</div>';
+  }
+  const nav = document.querySelector('.side a[data-nav="systems"]');
+  if(nav && isOpen) nav.setAttribute('aria-current','false');
+  if(gnav) gnav.setAttribute('aria-current',isOpen?'page':'false');
+}
+window.addEventListener('hashchange',syncGuidesView);
 document.getElementById('grid').addEventListener('click',e=>{
   const a=e.target.closest('a.sys'); if(!a) return;
   recent[a.dataset.id]=Date.now(); store.set('saf_portal_recent',recent);
@@ -916,8 +979,8 @@ document.getElementById('btn-login').addEventListener('click',e=>{
   const p=document.getElementById('admin-login'); if(p && document.body.classList.contains('gated')){ p.hidden=false; document.getElementById('admin-email').focus(); }
 });
 applyTheme(); applyLang();
-SAF_SYSTEMS.filter(s=>s.id!=='docs').forEach(check);
-syncDocsView();
+SAF_SYSTEMS.filter(s=>s.id!=='docs'&&s.id!=='guides').forEach(check);
+syncDocsView(); syncGuidesView();
 resolveRole();
 </script>
 <script>
