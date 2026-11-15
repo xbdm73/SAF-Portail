@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAF — Préparation bilingue (prototype)</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#1b2833;background:#f5f7f9}main{max-width:960px;margin:30px auto;padding:20px;background:white;border:1px solid #dce3e9;border-radius:12px}h1{font-size:23px}p{line-height:1.5}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}button,select,input{padding:9px;border:1px solid #aab7c2;border-radius:6px}button{cursor:pointer;background:#143c5c;color:white}button:disabled{opacity:.4}section.block{border-top:1px solid #dce3e9;padding:12px 0}.en{white-space:pre-wrap}.fr{display:block;width:100%;min-height:60px;font-style:italic;font-size:.9em;margin-top:8px;box-sizing:border-box}small,.muted{color:#596a79}#status{font-weight:bold}.warning{background:#fff2d7;padding:12px;border-radius:8px}#preview .fr{border:0;white-space:pre-wrap}.hidden{display:none}
+</style></head><body><main>
+<h1>SAF International — Préparation de document bilingue</h1>
+<p class="warning"><strong>Prototype hors publication.</strong> L'anglais est extrait localement du PDF et reste non modifiable. L'extraction peut être incomplète ou incorrecte : comparaison humaine avec le PDF obligatoire. Aucune traduction automatique ni publication Supabase n'est effectuée ici.</p>
+<div class="bar"><label>PDF anglais <input id="pdf" type="file" accept=".pdf,application/pdf"></label><button id="extract">Extraire le texte</button></div>
+<p id="status" role="status">En attente d'un PDF.</p>
+<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><label>Affichage <select id="mode"><option value="both">EN + FR</option><option value="en">English</option><option value="fr">Français</option></select></label><button id="check">Contrôler l'anglais</button><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div id="blocks"></div></div>
+<p class="muted">Le PDF d'origine n'est pas envoyé à un serveur par cette page. Les schémas, tableaux, notes, images et ordre de lecture doivent être vérifiés sur le PDF source. Un résultat positif du contrôle de texte ne certifie pas l'identité au PDF.</p>
+</main>
+<script type="module">
+import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let source=[],hash='',name='',hasUncertain=false;
+async function sha256(b){const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+$('extract').onclick=async()=>{
+  const file=$('pdf').files[0];if(!file)return;
+  $('actions').classList.add('hidden');$('export').disabled=true;source=[];hasUncertain=false;
+  try{
+    $('status').textContent='Extraction…';
+    const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;
+    const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
+    for(let p=1;p<=doc.numPages;p++){
+      const page=await doc.getPage(p),data=await page.getTextContent();
+      if(!data.items.length){hasUncertain=true;continue;}
+      // PDF text items are not guaranteed to be in visual reading order.
+      // Preserve returned order exactly; do not silently normalize whitespace.
+      data.items.forEach((item,i)=>{if(typeof item.str==='string'&&item.str.length)source.push({id:'p'+p+'-i'+i,page:p,text:item.str});});
+    }
+    if(!source.length)throw Error('Aucun texte extractible : PDF scanné ou protégé.');
+    const root=$('blocks');root.replaceChildren();
+    source.forEach(b=>{
+      const section=document.createElement('section');section.className='block';section.dataset.id=b.id;
+      const cap=document.createElement('small');cap.textContent='Page '+b.page+' · '+b.id;
+      const en=document.createElement('p');en.className='en';en.textContent=b.text;en.dataset.english=b.id;
+      const fr=document.createElement('textarea');fr.className='fr';fr.placeholder='Traduction française à valider';fr.setAttribute('aria-label','Traduction '+b.id);
+      section.append(cap,en,fr);root.append(section);
+    });
+    $('actions').classList.remove('hidden');
+    $('status').textContent=source.length+' segments extraits sur '+doc.numPages+' pages. SHA-256 : '+hash+(hasUncertain?' — pages sans texte détectées':'')+'. Vérification visuelle obligatoire.';
+  }catch(e){$('status').textContent='Échec : '+e.message;}
+};
+function verify(){
+  const elements=[...document.querySelectorAll('#blocks section.block')];
+  if(elements.length!==source.length)return false;
+  return source.every((b,i)=>elements[i].dataset.id===b.id&&elements[i].querySelector('.en').textContent===b.text);
+}
+$('check').onclick=()=>{const ok=verify();$('export').disabled=!ok;$('status').textContent=ok?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Contrôle visuel du PDF toujours obligatoire.':'ERREUR : texte anglais ou ordre des segments modifié.';};
+$('mode').onchange=()=>{
+ const mode=$('mode').value;
+ document.querySelectorAll('#blocks section.block').forEach(s=>{
+ s.querySelector('.en').hidden=mode==='fr';s.querySelector('.fr').hidden=mode==='en';});
+};
+$('export').onclick=()=>{
+ if(!verify()){ $('export').disabled=true;return; }
+ const mode=$('mode').value;
+ const rows=source.map((b,i)=>{
+ const fr=document.querySelectorAll('#blocks textarea.fr')[i].value;
+ return '<section data-source-id="'+esc(b.id)+'" data-page="'+b.page+'">'+
+ (mode==='fr'?'':'<p lang="en" class="en">'+esc(b.text)+'</p>')+
+ (mode==='en'?'':'<p lang="fr" class="fr">'+esc(fr)+'</p>')+'</section>';
+ }).join('\n');
+ const html='<!doctype html><html lang="fr"><meta charset="utf-8"><title>'+esc(name)+'</title><style>body{font:16px Arial,sans-serif;max-width:900px;margin:2rem auto;padding:1rem}section{border-bottom:1px solid #ddd;padding:.7rem 0}.en{white-space:pre-wrap}.fr{white-space:pre-wrap;font-size:.9em;font-style:italic;color:#596a79}</style><h1>'+esc(name)+'</h1><p>Prévisualisation non validée — PDF SHA-256 : '+hash+'</p>'+rows+'</html>';
+ const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download=name.replace(/\.pdf$/i,'')+'-bilingue-PREVIEW.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+</script></body></html>
