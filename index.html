@@ -1594,6 +1594,7 @@ resolveRole();
       + (S.noFolders ? '' : '<div class="full"><label for="f-folder">' + d('f_folder') + '</label><select id="f-folder">' + treeOptions(S.folder, null) + '</select></div>')
       + '<div class="full"><label for="f-sup">' + d('f_supersedes') + '</label><select id="f-sup"><option value="">' + d('f_none') + '</option>' + opts + '</select></div>'
       + '<div class="full"><label for="f-file">' + d('f_file') + ' *</label><input id="f-file" type="file" accept="application/pdf,.pdf" style="height:auto;padding:7px"></div>'
+      + '<div class="full"><label class="chk"><input type="checkbox" id="f-bilingual"> Préparer une version HTML bilingue EN–FR (brouillon uniquement)</label><small style="display:block;opacity:.75">La préparation s’ouvre séparément. Le PDF ne sera pas publié par cette option.</small></div>'
       + '</div><p class="derr" id="f-err"></p>'
       + '<div class="dfoot"><button class="btn" type="button" data-close>' + d('close') + '</button><button class="btn primary" type="button" id="f-go">' + d('f_submit') + '</button></div>');
     const ty = m.querySelector('#f-type'), mand = m.querySelector('#f-mand');
@@ -1606,7 +1607,27 @@ resolveRole();
       if(!t.value) t.value = o.title; if(!r.value) r.value = o.reference || ''; if(!issue.value) issue.value = o.issue || ''; ty.value = o.doc_type; mand.checked = o.mandatory;
       const fo = m.querySelector('#f-folder'); if(fo) fo.value = docFolder(o) || '';
     };
-    m.querySelector('#f-go').onclick = () => publish(m);
+    const bilingual = m.querySelector('#f-bilingual');
+    bilingual.onchange = () => {
+      let link = m.querySelector('#f-bilingual-link');
+      if(bilingual.checked){
+        if(!link){
+          link = document.createElement('a'); link.id='f-bilingual-link'; link.href='/bilingual-preview.html';
+          link.target='_blank'; link.rel='noopener noreferrer'; link.className='btn';
+          link.textContent='Ouvrir la préparation EN–FR (nouvel onglet)';
+          bilingual.closest('.full').append(link);
+        }
+        link.hidden=false;
+      } else if(link) link.hidden=true;
+    };
+    m.querySelector('#f-go').onclick = () => {
+      if(bilingual.checked){
+        const err=m.querySelector('#f-err');
+        err.textContent='La conversion bilingue est un brouillon distinct. Ouvrez la préparation EN–FR ci-dessus. Pour publier le PDF original, décochez cette option.';
+        return;
+      }
+      publish(m);
+    };
   }
   async function sha256(buf){ const x = await crypto.subtle.digest('SHA-256', buf); return Array.from(new Uint8Array(x)).map(b => b.toString(16).padStart(2, '0')).join(''); }
   async function publish(m){
