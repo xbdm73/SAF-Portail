@@ -82,7 +82,7 @@ async function images(D, el, store) {
 
 async function convert(docxFiles, code, start, prevFr) {
   prevFr = prevFr || {};
-  const isChap = n => /^\d+-\d+ - /.test(n);
+  const isChap = n => /^\d+-\d+[\s_]+-[\s_]+/.test(n);
   const chapters = docxFiles.filter(f => isChap(f.base)).sort((a, b) => { const x = a.base.match(/(\d+)-(\d+)/), y = b.base.match(/(\d+)-(\d+)/); return x[1] - y[1] || x[2] - y[2]; });
   const mains = docxFiles.filter(f => !isChap(f.base));
   const segs = [], imgs = {}; let n = 0; const counters = [0, 0, 0, 0];
@@ -181,16 +181,16 @@ async function read(list){
         put({ base: ent.name.split("/").pop(), data: await ent.async("arraybuffer") });
     } else if (/\.docx$/i.test(file.name)) put({ base: file.name, data: await file.arrayBuffer() });
   }
-  const isChap = n => /^\d+-\d+ - /.test(n);
+  const isChap = n => /^\d+-\d+[\s_]+-[\s_]+/.test(n);
   out.sort((a, b) => (isChap(a.base) - isChap(b.base)) || a.base.localeCompare(b.base, "fr", { numeric: true }));
   return out;
 }
 async function headings(files){
-  const isChap = n => /^\d+-\d+ - /.test(n);
+  const isChap = n => /^\d+-\d+[\s_]+-[\s_]+/.test(n);
   const first = files.find(f => !isChap(f.base)) || files[0]; if (!first) return { heads: [], issue: "", title: "" };
   const D = await loadDocx(first.base, first.data); const heads = []; let issue = "";
   for (const p of desc(D.body, W, "p")) { const t = ptext(p); if (style(D, p).startsWith("Heading")) heads.push(t); else if (!issue && /^(Issue|Edition)\s/.test(t)) issue = t; }
-  return { heads, issue, title: first.base.replace(/\.docx$/i, "").replace(/^\d+-\d+ - /, ""), webManuals: files.some(f => isChap(f.base)) };
+  return { heads, issue, title: first.base.replace(/\.docx$/i, "").replace(/^\d+-\d+[\s_]+-[\s_]+/, ""), webManuals: files.some(f => isChap(f.base)) };
 }
 const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
 function inline(res){
