@@ -2,13 +2,13 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SAF — Préparation bilingue (prototype)</title>
 <style>
-:root{font-family:Arial,sans-serif;color:#1b2833;background:#f5f7f9}main{max-width:960px;margin:30px auto;padding:20px;background:white;border:1px solid #dce3e9;border-radius:12px}h1{font-size:23px}p{line-height:1.5}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}button,select,input{padding:9px;border:1px solid #aab7c2;border-radius:6px}button{cursor:pointer;background:#143c5c;color:white}button:disabled{opacity:.4}section.block{border-top:1px solid #dce3e9;padding:12px 0}.en{white-space:pre-wrap}.fr{display:block;width:100%;min-height:60px;font-style:italic;font-size:.9em;margin-top:8px;box-sizing:border-box}small,.muted{color:#596a79}#status{font-weight:bold}.warning{background:#fff2d7;padding:12px;border-radius:8px}#preview .fr{border:0;white-space:pre-wrap}.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.compare iframe{width:100%;height:70vh;border:1px solid #aab7c2}.compare #blocks{height:70vh;overflow:auto;border:1px solid #dce3e9;padding:10px}.compare[hidden]{display:none}@media(max-width:700px){.compare{grid-template-columns:1fr}.compare iframe,.compare #blocks{height:48vh}}.hidden{display:none}
+:root{font-family:Arial,sans-serif;color:#1b2833;background:#f5f7f9}main{max-width:960px;margin:30px auto;padding:20px;background:white;border:1px solid #dce3e9;border-radius:12px}h1{font-size:23px}p{line-height:1.5}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}button,select,input{padding:9px;border:1px solid #aab7c2;border-radius:6px}button{cursor:pointer;background:#143c5c;color:white}button:disabled{opacity:.4}section.block{border-top:1px solid #dce3e9;padding:12px 0}.en{white-space:pre-wrap}.fr{display:block;width:100%;min-height:60px;font-style:italic;font-size:.9em;margin-top:8px;box-sizing:border-box}small,.muted{color:#596a79}#status{font-weight:bold}.warning{background:#fff2d7;padding:12px;border-radius:8px}#preview .fr{border:0;white-space:pre-wrap}.compare{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin:16px 0}.compare>div{min-width:0}.pdf-panel{height:70vh;overflow:auto;border:1px solid #aab7c2;background:#e7ebef;padding:8px}.pdf-panel canvas{display:block;max-width:100%;height:auto;margin:auto;background:white;box-shadow:0 1px 5px #aab7c2}.pdf-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}.pdf-nav button{padding:6px 10px}.compare #blocks{height:70vh;overflow:auto;border:1px solid #dce3e9;padding:10px}.compare[hidden]{display:none}@media(max-width:700px){.compare{grid-template-columns:1fr}.compare .pdf-panel,.compare #blocks{height:48vh}}.hidden{display:none}
 </style></head><body><main>
 <h1>SAF International — Préparation de document bilingue</h1>
 <p class="warning"><strong>Prototype hors publication.</strong> L'anglais est extrait localement du PDF et reste non modifiable. L'extraction peut être incomplète ou incorrecte : comparaison humaine avec le PDF obligatoire. Aucune traduction automatique ni publication Supabase n'est effectuée ici.</p>
 <div class="bar"><label>PDF anglais <input id="pdf" type="file" accept=".pdf,application/pdf"></label><button id="extract">Extraire le texte</button></div>
 <p id="status" role="status">En attente d'un PDF.</p>
-<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><label><input id="pdf-verified" type="checkbox"> Texte extrait comparé au PDF original</label><label><input id="approved" type="checkbox"> Traductions françaises validées</label><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div class="compare" id="compare" hidden><div><strong>PDF original</strong><iframe id="pdf-viewer" title="PDF original pour comparaison"></iframe></div><div><strong>Texte extrait (anglais) et traductions</strong><div id="blocks"></div></div></div></div>
+<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><label><input id="pdf-verified" type="checkbox"> Texte extrait comparé au PDF original</label><label><input id="approved" type="checkbox"> Traductions françaises validées</label><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div class="compare" id="compare" hidden><div><strong>PDF original</strong><div class="pdf-nav"><button type="button" id="pdf-prev">←</button><span id="pdf-page-label">Page 1</span><button type="button" id="pdf-next">→</button></div><div class="pdf-panel"><canvas id="pdf-canvas" aria-label="Page du PDF original"></canvas></div></div><div><strong>Texte extrait (anglais) et traductions</strong><div id="blocks"></div></div></div></div>
 <p class="muted">Le PDF d'origine n'est pas envoyé à un serveur par cette page. Les schémas, tableaux, notes, images et ordre de lecture doivent être vérifiés sur le PDF source. Un résultat positif du contrôle de texte ne certifie pas l'identité au PDF.</p>
 </main>
 <script type="module">
@@ -16,7 +16,7 @@ import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pd
 pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let source=[],hash='',name='',hasUncertain=false,pdfObjectUrl=null;
+let source=[],hash='',name='',hasUncertain=false,pdfDoc=null,pdfPage=1,pdfRenderTask=null;
 const handoffToken=new URLSearchParams(location.hash.slice(1)).get('handoff');
 if(handoffToken && window.opener){
   window.addEventListener('message',event=>{
@@ -38,8 +38,8 @@ $('extract').onclick=async()=>{
   $('actions').classList.add('hidden');$('export').disabled=true;$('approved').checked=false;$('pdf-verified').checked=false;$('compare').hidden=true;source=[];hasUncertain=false;
   try{
     $('status').textContent='Extraction…';
-    const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;if(pdfObjectUrl)URL.revokeObjectURL(pdfObjectUrl);pdfObjectUrl=URL.createObjectURL(file);$('pdf-viewer').src=pdfObjectUrl+'#toolbar=1';
-    const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
+    const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;
+    const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;pdfDoc=doc;pdfPage=1;
     for(let p=1;p<=doc.numPages;p++){
       const page=await doc.getPage(p),data=await page.getTextContent();
       if(!data.items.length){hasUncertain=true;continue;}
@@ -56,10 +56,25 @@ $('extract').onclick=async()=>{
       const fr=document.createElement('textarea');fr.className='fr';fr.placeholder='Traduction française à valider';fr.setAttribute('aria-label','Traduction '+b.id);
       section.append(cap,en,fr);root.append(section);
     });
-    $('actions').classList.remove('hidden');$('compare').hidden=false;
+    $('actions').classList.remove('hidden');$('compare').hidden=false;await renderPdfPage();
     $('status').textContent=source.length+' segments extraits sur '+doc.numPages+' pages. SHA-256 : '+hash+(hasUncertain?' — pages sans texte détectées':'')+'. Vérification visuelle obligatoire.';
   }catch(e){$('status').textContent='Échec : '+e.message;}
 };
+async function renderPdfPage(){
+ if(!pdfDoc)return;
+ if(pdfRenderTask){try{pdfRenderTask.cancel();await pdfRenderTask.promise;}catch(e){}pdfRenderTask=null;}
+ const page=await pdfDoc.getPage(pdfPage),panel=document.querySelector('.pdf-panel'),canvas=$('pdf-canvas');
+ const base=page.getViewport({scale:1}),scale=Math.min(2,Math.max(.4,(panel.clientWidth-20)/base.width));
+ const viewport=page.getViewport({scale}),ratio=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.ceil(viewport.width*ratio);canvas.height=Math.ceil(viewport.height*ratio);
+ canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
+ const ctx=canvas.getContext('2d');pdfRenderTask=page.render({canvasContext:ctx,viewport,transform:ratio===1?null:[ratio,0,0,ratio,0,0]});
+ try{await pdfRenderTask.promise;}catch(e){if(e.name!=='RenderingCancelledException')$('status').textContent='Affichage PDF impossible : '+e.message;}
+ $('pdf-page-label').textContent='Page '+pdfPage+' / '+pdfDoc.numPages;
+ $('pdf-prev').disabled=pdfPage===1;$('pdf-next').disabled=pdfPage===pdfDoc.numPages;
+}
+$('pdf-prev').onclick=()=>{if(pdfDoc&&pdfPage>1){pdfPage--;renderPdfPage();}};
+$('pdf-next').onclick=()=>{if(pdfDoc&&pdfPage<pdfDoc.numPages){pdfPage++;renderPdfPage();}};
 function verify(){
   const elements=[...document.querySelectorAll('#blocks section.block')];
   if(elements.length!==source.length)return false;
