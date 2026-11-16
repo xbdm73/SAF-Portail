@@ -45,7 +45,26 @@ $('extract').onclick=async()=>{
       if(!data.items.length){hasUncertain=true;continue;}
       // PDF text items are not guaranteed to be in visual reading order.
       // Preserve returned order exactly; do not silently normalize whitespace.
-      data.items.forEach((item,i)=>{if(typeof item.str==='string'&&item.str.length)source.push({id:'p'+p+'-i'+i,page:p,text:item.str});});
+      const height=page.view[3]-page.view[1];
+      // Exclude only top-of-page metadata lines explicitly labelled Date / Issue / Revision.
+      // Keep all body dates and revision references untouched.
+      const rows=new Map();
+      data.items.forEach((item,i)=>{
+        if(typeof item.str!=='string'||!item.str.trim())return;
+        const y=item.transform?.[5];
+        if(!Number.isFinite(y)||y<height*.83)return;
+        const row=Math.round(y/4)*4;
+        if(!rows.has(row))rows.set(row,[]);
+        rows.get(row).push({i,text:item.str});
+      });
+      const excluded=new Set();
+      for(const parts of rows.values()){
+        const line=parts.map(x=>x.text).join(' ').replace(/\\s+/g,' ').trim();
+        if(/\\b(?:date|issue|revision|rev\\.?|edition)\\s*[:#]?\\s*(?:\\d|$)/i.test(line) || /^(?:date|issue|revision|rev\\.?|edition)\\s*[:#]?/i.test(line)){
+          parts.forEach(x=>excluded.add(x.i));
+        }
+      }
+      data.items.forEach((item,i)=>{if(typeof item.str==='string'&&item.str.length&&!excluded.has(i))source.push({id:'p'+p+'-i'+i,page:p,text:item.str});});
     }
     if(!source.length)throw Error('Aucun texte extractible : PDF scanné ou protégé.');
     const root=$('blocks');root.replaceChildren();
@@ -94,7 +113,7 @@ $('export').onclick=()=>{
  const pages=[...new Set(selected.map(b=>b.page))];
  const grouped=pages.map(p=>({page:p,items:selected.map((b,i)=>({...b,fr:els[i].querySelector('textarea.fr').value})).filter(b=>b.page===p)}));
  const toc=grouped.map((p,i)=>'<a href="#page-'+p.page+'">PDF page '+p.page+'</a>').join('');
- const body=grouped.map((p,i)=>'<article class="page" id="page-'+p.page+'">'+(i===0?'<p class="ref">PDF page '+p.page+' · Chapter page / date / Issue / Revision : à vérifier dans le PDF</p>':'')+p.items.map(b=>'<section class="pair"><p lang="en" class="en">'+esc(b.text)+'</p><p lang="fr" class="fr">'+esc(b.fr)+'</p></section>').join('')+'</article>').join('');
+ const body=grouped.map((p,i)=>'<article class="page" id="page-'+p.page+'">'+p.items.map(b=>'<section class="pair"><p lang="en" class="en">'+esc(b.text)+'</p><p lang="fr" class="fr">'+esc(b.fr)+'</p></section>').join('')+'</article>').join('');
  const logo='SAF INTERNATIONAL';
  const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(name)+'</title><style>*,*:before,*:after{box-sizing:border-box}body{margin:0;font:16px/1.55 Arial,sans-serif;color:#182e40}details{position:fixed;top:0;left:0;z-index:3;width:260px;max-width:100%;background:#f0f5f8;border-right:1px solid #cbd6df;height:100vh;overflow:auto;padding:16px}summary{cursor:pointer;font-weight:bold;display:flex;align-items:center;gap:10px}summary .logo{font-size:12px;font-weight:800;color:#164d78}nav a{display:block;padding:9px;color:#164d78}main{margin-left:280px;max-width:1000px;padding:32px}.notice{font-size:12px;color:#526676}.page{padding:18px 0;border-top:1px solid #d5dce2;scroll-margin-top:65px}.pair{margin:15px 0}.en{margin:0;white-space:normal;overflow-wrap:break-word}.fr{margin:5px 0 0;font-size:.88em;font-style:italic;color:#526676;white-space:normal;overflow-wrap:break-word}@media(max-width:720px){details{height:auto;width:100%;border-right:0;border-bottom:1px solid #cbd6df;padding:12px}details:not([open]){max-height:56px}details[open]{max-height:70vh;overflow:auto}main{margin:72px 0 0;padding:16px}}@media print{details{display:none}main{margin:0}.page{break-before:page}}</style></head><body><details><summary><span class="logo">'+logo+'</span> Sommaire</summary><nav>'+toc+'</nav></details><main><h1>'+esc(name.replace(/\\.pdf$/i,''))+'</h1><p class="notice">Propriété de SAF INTERNATIONAL Reproduction et diffusion interdite - Property of SAF INTERNATIONAL. Reproduction and distribution prohibited</p>'+body+'</main></body></html>';
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
