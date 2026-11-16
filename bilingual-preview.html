@@ -2,13 +2,13 @@
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SAF — Préparation bilingue (prototype)</title>
 <style>
-:root{font-family:Arial,sans-serif;color:#1b2833;background:#f5f7f9}main{max-width:960px;margin:30px auto;padding:20px;background:white;border:1px solid #dce3e9;border-radius:12px}h1{font-size:23px}p{line-height:1.5}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}button,select,input{padding:9px;border:1px solid #aab7c2;border-radius:6px}button{cursor:pointer;background:#143c5c;color:white}button:disabled{opacity:.4}section.block{border-top:1px solid #dce3e9;padding:12px 0}.en{white-space:pre-wrap}.fr{display:block;width:100%;min-height:60px;font-style:italic;font-size:.9em;margin-top:8px;box-sizing:border-box}small,.muted{color:#596a79}#status{font-weight:bold}.warning{background:#fff2d7;padding:12px;border-radius:8px}#preview .fr{border:0;white-space:pre-wrap}.hidden{display:none}
+:root{font-family:Arial,sans-serif;color:#1b2833;background:#f5f7f9}main{max-width:960px;margin:30px auto;padding:20px;background:white;border:1px solid #dce3e9;border-radius:12px}h1{font-size:23px}p{line-height:1.5}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:16px 0}button,select,input{padding:9px;border:1px solid #aab7c2;border-radius:6px}button{cursor:pointer;background:#143c5c;color:white}button:disabled{opacity:.4}section.block{border-top:1px solid #dce3e9;padding:12px 0}.en{white-space:pre-wrap}.fr{display:block;width:100%;min-height:60px;font-style:italic;font-size:.9em;margin-top:8px;box-sizing:border-box}small,.muted{color:#596a79}#status{font-weight:bold}.warning{background:#fff2d7;padding:12px;border-radius:8px}#preview .fr{border:0;white-space:pre-wrap}.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}.compare iframe{width:100%;height:70vh;border:1px solid #aab7c2}.compare #blocks{height:70vh;overflow:auto;border:1px solid #dce3e9;padding:10px}.compare[hidden]{display:none}@media(max-width:700px){.compare{grid-template-columns:1fr}.compare iframe,.compare #blocks{height:48vh}}.hidden{display:none}
 </style></head><body><main>
 <h1>SAF International — Préparation de document bilingue</h1>
 <p class="warning"><strong>Prototype hors publication.</strong> L'anglais est extrait localement du PDF et reste non modifiable. L'extraction peut être incomplète ou incorrecte : comparaison humaine avec le PDF obligatoire. Aucune traduction automatique ni publication Supabase n'est effectuée ici.</p>
 <div class="bar"><label>PDF anglais <input id="pdf" type="file" accept=".pdf,application/pdf"></label><button id="extract">Extraire le texte</button></div>
 <p id="status" role="status">En attente d'un PDF.</p>
-<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><label><input id="approved" type="checkbox"> Comparaison au PDF et traductions validées</label><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div id="blocks"></div></div>
+<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><label><input id="pdf-verified" type="checkbox"> Texte extrait comparé au PDF original</label><label><input id="approved" type="checkbox"> Traductions françaises validées</label><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div class="compare" id="compare" hidden><div><strong>PDF original</strong><iframe id="pdf-viewer" title="PDF original pour comparaison"></iframe></div><div><strong>Texte extrait (anglais) et traductions</strong><div id="blocks"></div></div></div></div>
 <p class="muted">Le PDF d'origine n'est pas envoyé à un serveur par cette page. Les schémas, tableaux, notes, images et ordre de lecture doivent être vérifiés sur le PDF source. Un résultat positif du contrôle de texte ne certifie pas l'identité au PDF.</p>
 </main>
 <script type="module">
@@ -16,7 +16,7 @@ import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pd
 pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let source=[],hash='',name='',hasUncertain=false;
+let source=[],hash='',name='',hasUncertain=false,pdfObjectUrl=null;
 const handoffToken=new URLSearchParams(location.hash.slice(1)).get('handoff');
 if(handoffToken && window.opener){
   window.addEventListener('message',event=>{
@@ -35,10 +35,10 @@ if(handoffToken && window.opener){
 async function sha256(b){const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 $('extract').onclick=async()=>{
   const file=$('pdf').files[0];if(!file)return;
-  $('actions').classList.add('hidden');$('export').disabled=true;$('approved').checked=false;source=[];hasUncertain=false;
+  $('actions').classList.add('hidden');$('export').disabled=true;$('approved').checked=false;$('pdf-verified').checked=false;$('compare').hidden=true;source=[];hasUncertain=false;
   try{
     $('status').textContent='Extraction…';
-    const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;
+    const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;if(pdfObjectUrl)URL.revokeObjectURL(pdfObjectUrl);pdfObjectUrl=URL.createObjectURL(file);$('pdf-viewer').src=pdfObjectUrl+'#toolbar=1';
     const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
     for(let p=1;p<=doc.numPages;p++){
       const page=await doc.getPage(p),data=await page.getTextContent();
@@ -56,7 +56,7 @@ $('extract').onclick=async()=>{
       const fr=document.createElement('textarea');fr.className='fr';fr.placeholder='Traduction française à valider';fr.setAttribute('aria-label','Traduction '+b.id);
       section.append(cap,en,fr);root.append(section);
     });
-    $('actions').classList.remove('hidden');
+    $('actions').classList.remove('hidden');$('compare').hidden=false;
     $('status').textContent=source.length+' segments extraits sur '+doc.numPages+' pages. SHA-256 : '+hash+(hasUncertain?' — pages sans texte détectées':'')+'. Vérification visuelle obligatoire.';
   }catch(e){$('status').textContent='Échec : '+e.message;}
 };
@@ -65,10 +65,11 @@ function verify(){
   if(elements.length!==source.length)return false;
   return source.every((b,i)=>elements[i].dataset.id===b.id&&elements[i].querySelector('.en').textContent===b.text);
 }
-$('check').onclick=()=>{const ok=verify();$('export').disabled=!(ok&&$('approved').checked&&!hasUncertain);$('status').textContent=ok?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Contrôle visuel du PDF toujours obligatoire.':'ERREUR : texte anglais ou ordre des segments modifié.';};
-$('approved').onchange=()=>{$('export').disabled=!(verify()&&$('approved').checked&&!hasUncertain);};
+$('check').onclick=()=>{const ok=verify();$('export').disabled=!(ok&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain);$('status').textContent=ok?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Contrôle visuel du PDF toujours obligatoire.':'ERREUR : texte anglais ou ordre des segments modifié.';};
+$('pdf-verified').onchange=()=>{$('export').disabled=!(verify()&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain);};
+$('approved').onchange=()=>{$('export').disabled=!(verify()&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain);};
 $('export').onclick=()=>{
- if(!verify()||!$('approved').checked||hasUncertain){$('status').textContent='Export refusé : contrôle anglais, pages extraites et validation humaine requis.';return;}
+ if(!verify()||!$('approved').checked||!$('pdf-verified').checked||hasUncertain){$('status').textContent='Export refusé : contrôle anglais, pages extraites et validation humaine requis.';return;}
  const els=[...document.querySelectorAll('#blocks section.block')];
  if(els.some(x=>!x.querySelector('textarea.fr').value.trim())){$('status').textContent='Export refusé : chaque segment doit disposer d’une traduction française validée.';return;}
  const pages=[...new Set(source.map(b=>b.page))];
