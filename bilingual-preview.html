@@ -8,7 +8,7 @@
 <p class="warning"><strong>Prototype hors publication.</strong> L'anglais est extrait localement du PDF et reste non modifiable. L'extraction peut être incomplète ou incorrecte : comparaison humaine avec le PDF obligatoire. Aucune traduction automatique ni publication Supabase n'est effectuée ici.</p>
 <div class="bar"><label>PDF anglais <input id="pdf" type="file" accept=".pdf,application/pdf"></label><button id="extract">Extraire le texte</button></div>
 <p id="status" role="status">En attente d'un PDF.</p>
-<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><label>Affichage <select id="mode"><option value="both">EN + FR</option><option value="en">English</option><option value="fr">Français</option></select></label><button id="check">Contrôler l'anglais</button><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div id="blocks"></div></div>
+<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><button id="export" disabled>Exporter HTML de prévisualisation</button></div><div id="blocks"></div></div>
 <p class="muted">Le PDF d'origine n'est pas envoyé à un serveur par cette page. Les schémas, tableaux, notes, images et ordre de lecture doivent être vérifiés sur le PDF source. Un résultat positif du contrôle de texte ne certifie pas l'identité au PDF.</p>
 </main>
 <script type="module">
@@ -20,7 +20,7 @@ let source=[],hash='',name='',hasUncertain=false;
 async function sha256(b){const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 $('extract').onclick=async()=>{
   const file=$('pdf').files[0];if(!file)return;
-  $('actions').classList.add('hidden');$('export').disabled=true;source=[];hasUncertain=false;
+  $('actions').classList.add('hidden');$('export').disabled=true;$('approved').checked=false;source=[];hasUncertain=false;
   try{
     $('status').textContent='Extraction…';
     const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;
@@ -50,23 +50,19 @@ function verify(){
   if(elements.length!==source.length)return false;
   return source.every((b,i)=>elements[i].dataset.id===b.id&&elements[i].querySelector('.en').textContent===b.text);
 }
-$('check').onclick=()=>{const ok=verify();$('export').disabled=!ok;$('status').textContent=ok?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Contrôle visuel du PDF toujours obligatoire.':'ERREUR : texte anglais ou ordre des segments modifié.';};
-$('mode').onchange=()=>{
- const mode=$('mode').value;
- document.querySelectorAll('#blocks section.block').forEach(s=>{
- s.querySelector('.en').hidden=mode==='fr';s.querySelector('.fr').hidden=mode==='en';});
-};
+$('check').onclick=()=>{const ok=verify();$('export').disabled=!(ok&&$('approved').checked&&!hasUncertain);$('status').textContent=ok?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Contrôle visuel du PDF toujours obligatoire.':'ERREUR : texte anglais ou ordre des segments modifié.';};
+$('approved').onchange=()=>{$('export').disabled=!(verify()&&$('approved').checked&&!hasUncertain);};
 $('export').onclick=()=>{
- if(!verify()){ $('export').disabled=true;return; }
- const mode=$('mode').value;
- const rows=source.map((b,i)=>{
- const fr=document.querySelectorAll('#blocks textarea.fr')[i].value;
- return '<section data-source-id="'+esc(b.id)+'" data-page="'+b.page+'">'+
- (mode==='fr'?'':'<p lang="en" class="en">'+esc(b.text)+'</p>')+
- (mode==='en'?'':'<p lang="fr" class="fr">'+esc(fr)+'</p>')+'</section>';
- }).join('\n');
- const html='<!doctype html><html lang="fr"><meta charset="utf-8"><title>'+esc(name)+'</title><style>body{font:16px Arial,sans-serif;max-width:900px;margin:2rem auto;padding:1rem}section{border-bottom:1px solid #ddd;padding:.7rem 0}.en{white-space:pre-wrap}.fr{white-space:pre-wrap;font-size:.9em;font-style:italic;color:#596a79}</style><h1>'+esc(name)+'</h1><p>Prévisualisation non validée — PDF SHA-256 : '+hash+'</p>'+rows+'</html>';
+ if(!verify()||!$('approved').checked||hasUncertain){$('status').textContent='Export refusé : contrôle anglais, pages extraites et validation humaine requis.';return;}
+ const els=[...document.querySelectorAll('#blocks section.block')];
+ if(els.some(x=>!x.querySelector('textarea.fr').value.trim())){$('status').textContent='Export refusé : chaque segment doit disposer d’une traduction française validée.';return;}
+ const pages=[...new Set(source.map(b=>b.page))];
+ const grouped=pages.map(p=>({page:p,items:source.map((b,i)=>({...b,fr:els[i].querySelector('textarea.fr').value})).filter(b=>b.page===p)}));
+ const toc=grouped.map((p,i)=>'<a href="#page-'+p.page+'">PDF page '+p.page+'</a>').join('');
+ const body=grouped.map((p,i)=>'<article class="page" id="page-'+p.page+'">'+(i===0?'<p class="ref">PDF page '+p.page+' · Chapter page / date / Issue / Revision : à vérifier dans le PDF</p>':'')+p.items.map(b=>'<section class="pair"><p lang="en" class="en">'+esc(b.text)+'</p><p lang="fr" class="fr">'+esc(b.fr)+'</p></section>').join('')+'</article>').join('');
+ const logo='SAF INTERNATIONAL';
+ const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(name)+'</title><style>*,*:before,*:after{box-sizing:border-box}body{margin:0;font:16px/1.55 Arial,sans-serif;color:#182e40}details{position:fixed;top:0;left:0;z-index:3;width:260px;max-width:100%;background:#f0f5f8;border-right:1px solid #cbd6df;height:100vh;overflow:auto;padding:16px}summary{cursor:pointer;font-weight:bold;display:flex;align-items:center;gap:10px}summary .logo{font-size:12px;font-weight:800;color:#164d78}nav a{display:block;padding:9px;color:#164d78}main{margin-left:280px;max-width:1000px;padding:32px}.notice{font-size:12px;color:#526676}.page{padding:18px 0;border-top:1px solid #d5dce2;scroll-margin-top:65px}.pair{margin:15px 0}.en{margin:0;white-space:normal;overflow-wrap:break-word}.fr{margin:5px 0 0;font-size:.88em;font-style:italic;color:#526676;white-space:normal;overflow-wrap:break-word}@media(max-width:720px){details{height:auto;width:100%;border-right:0;border-bottom:1px solid #cbd6df;padding:12px}details:not([open]){max-height:56px}details[open]{max-height:70vh;overflow:auto}main{margin:72px 0 0;padding:16px}}@media print{details{display:none}main{margin:0}.page{break-before:page}}</style></head><body><details><summary><span class="logo">'+logo+'</span> Sommaire</summary><nav>'+toc+'</nav></details><main><h1>'+esc(name.replace(/\\.pdf$/i,''))+'</h1><p class="notice">Propriété de SAF INTERNATIONAL Reproduction et diffusion interdite - Property of SAF INTERNATIONAL. Reproduction and distribution prohibited</p>'+body+'</main></body></html>';
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
- const a=document.createElement('a');a.href=url;a.download=name.replace(/\.pdf$/i,'')+'-bilingue-PREVIEW.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const a=document.createElement('a');a.href=url;a.download=name.replace(/\\.pdf$/i,'')+'-EN-FR-VALIDATION.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 </script></body></html>
