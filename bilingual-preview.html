@@ -76,7 +76,7 @@ $('extract').onclick=async()=>{
       const fr=document.createElement('textarea');fr.className='fr';fr.placeholder='Traduction française à valider';fr.setAttribute('aria-label','Traduction '+b.id);
       section.append(cap,start,en,fr);root.append(section);
     });
-    $('actions').classList.remove('hidden');$('compare').hidden=false;await renderPdfPage();
+    $('actions').classList.remove('hidden');$('export').disabled=false;$('compare').hidden=false;await renderPdfPage();
     $('status').textContent=source.length+' segments extraits sur '+doc.numPages+' pages. SHA-256 : '+hash+(hasUncertain?' — pages sans texte détectées':'')+'. Vérification visuelle obligatoire.';
   }catch(e){$('status').textContent='Échec : '+e.message;}
 };
@@ -100,23 +100,24 @@ function verify(){
   if(elements.length!==source.length)return false;
   return source.every((b,i)=>elements[i].dataset.id===b.id&&elements[i].querySelector('.en').textContent===b.text);
 }
-$('check').onclick=()=>{const ok=verify();$('export').disabled=!(ok&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain);$('status').textContent=ok?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Contrôle visuel du PDF toujours obligatoire.':'ERREUR : texte anglais ou ordre des segments modifié.';};
-$('pdf-verified').onchange=()=>{$('export').disabled=!(verify()&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain);};
-$('approved').onchange=()=>{$('export').disabled=!(verify()&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain);};
+$('check').onclick=()=>{$('status').textContent=verify()?'Contrôle interne réussi : segments anglais inchangés depuis l’extraction. Cela ne garantit pas l’exhaustivité du PDF.':'ERREUR : texte anglais ou ordre des segments modifié.';};
+$('pdf-verified').onchange=()=>{};
+$('approved').onchange=()=>{};
 $('export').onclick=()=>{
- if(!verify()||!$('approved').checked||!$('pdf-verified').checked||hasUncertain){$('status').textContent='Export refusé : contrôle anglais, pages extraites et validation humaine requis.';return;}
+ if(!verify()){$('status').textContent='Export impossible : intégrité des segments anglais non confirmée.';return;}
  const allEls=[...document.querySelectorAll('#blocks section.block')];
  const startIndex=source.findIndex(b=>b.id===startId);
- if(startIndex<0){$('status').textContent='Export refusé : sélectionnez le premier bloc de la section 0 avec « Commencer le HTML ici ».';return;}
+ if(startIndex<0){$('status').textContent='Choisissez le premier bloc de la section 0 avec « Commencer le HTML ici ».';return;}
  const els=allEls.slice(startIndex),selected=source.slice(startIndex);
- if(els.some(x=>!x.querySelector('textarea.fr').value.trim())){$('status').textContent='Export refusé : chaque segment doit disposer d’une traduction française validée.';return;}
+ const complete=els.every(x=>x.querySelector('textarea.fr').value.trim())&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain;
  const pages=[...new Set(selected.map(b=>b.page))];
  const grouped=pages.map(p=>({page:p,items:selected.map((b,i)=>({...b,fr:els[i].querySelector('textarea.fr').value})).filter(b=>b.page===p)}));
  const toc=grouped.map((p,i)=>'<a href="#page-'+p.page+'">PDF page '+p.page+'</a>').join('');
  const body=grouped.map((p,i)=>'<article class="page" id="page-'+p.page+'">'+p.items.map(b=>'<section class="pair"><p lang="en" class="en">'+esc(b.text)+'</p><p lang="fr" class="fr">'+esc(b.fr)+'</p></section>').join('')+'</article>').join('');
  const logo='SAF INTERNATIONAL';
- const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(name)+'</title><style>*,*:before,*:after{box-sizing:border-box}body{margin:0;font:16px/1.55 Arial,sans-serif;color:#182e40}details{position:fixed;top:0;left:0;z-index:3;width:260px;max-width:100%;background:#f0f5f8;border-right:1px solid #cbd6df;height:100vh;overflow:auto;padding:16px}summary{cursor:pointer;font-weight:bold;display:flex;align-items:center;gap:10px}summary .logo{font-size:12px;font-weight:800;color:#164d78}nav a{display:block;padding:9px;color:#164d78}main{margin-left:280px;max-width:1000px;padding:32px}.notice{font-size:12px;color:#526676}.page{padding:18px 0;border-top:1px solid #d5dce2;scroll-margin-top:65px}.pair{margin:15px 0}.en{margin:0;white-space:normal;overflow-wrap:break-word}.fr{margin:5px 0 0;font-size:.88em;font-style:italic;color:#526676;white-space:normal;overflow-wrap:break-word}@media(max-width:720px){details{height:auto;width:100%;border-right:0;border-bottom:1px solid #cbd6df;padding:12px}details:not([open]){max-height:56px}details[open]{max-height:70vh;overflow:auto}main{margin:72px 0 0;padding:16px}}@media print{details{display:none}main{margin:0}.page{break-before:page}}</style></head><body><details><summary><span class="logo">'+logo+'</span> Sommaire</summary><nav>'+toc+'</nav></details><main><h1>'+esc(name.replace(/\\.pdf$/i,''))+'</h1><p class="notice">Propriété de SAF INTERNATIONAL Reproduction et diffusion interdite - Property of SAF INTERNATIONAL. Reproduction and distribution prohibited</p>'+body+'</main></body></html>';
+ const draftNotice=complete?'':'<p class="notice" style="font-weight:bold;color:#a33">BROUILLON DE PRÉVISUALISATION — NON VALIDÉ — NE PAS PUBLIER. Traductions françaises potentiellement absentes ou non vérifiées.</p>';
+ const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(name)+'</title><style>*,*:before,*:after{box-sizing:border-box}body{margin:0;font:16px/1.55 Arial,sans-serif;color:#182e40}details{position:fixed;top:0;left:0;z-index:3;width:260px;max-width:100%;background:#f0f5f8;border-right:1px solid #cbd6df;height:100vh;overflow:auto;padding:16px}summary{cursor:pointer;font-weight:bold;display:flex;align-items:center;gap:10px}summary .logo{font-size:12px;font-weight:800;color:#164d78}nav a{display:block;padding:9px;color:#164d78}main{margin-left:280px;max-width:1000px;padding:32px}.notice{font-size:12px;color:#526676}.page{padding:18px 0;border-top:1px solid #d5dce2;scroll-margin-top:65px}.pair{margin:15px 0}.en{margin:0;white-space:normal;overflow-wrap:break-word}.fr{margin:5px 0 0;font-size:.88em;font-style:italic;color:#526676;white-space:normal;overflow-wrap:break-word}@media(max-width:720px){details{height:auto;width:100%;border-right:0;border-bottom:1px solid #cbd6df;padding:12px}details:not([open]){max-height:56px}details[open]{max-height:70vh;overflow:auto}main{margin:72px 0 0;padding:16px}}@media print{details{display:none}main{margin:0}.page{break-before:page}}</style></head><body><details><summary><span class="logo">'+logo+'</span> Sommaire</summary><nav>'+toc+'</nav></details><main><h1>'+esc(name.replace(/\\.pdf$/i,''))+'</h1>'+draftNotice+'<p class="notice">Propriété de SAF INTERNATIONAL Reproduction et diffusion interdite - Property of SAF INTERNATIONAL. Reproduction and distribution prohibited</p>'+body+'</main></body></html>';
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
- const a=document.createElement('a');a.href=url;a.download=name.replace(/\\.pdf$/i,'')+'-EN-FR-VALIDATION.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const a=document.createElement('a');a.href=url;a.download=name.replace(/\\.pdf$/i,'')+(complete?'-EN-FR-VALIDATION.html':'-EN-FR-BROUILLON.html');a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 </script></body></html>
