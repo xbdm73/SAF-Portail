@@ -1608,24 +1608,36 @@ resolveRole();
       const fo = m.querySelector('#f-folder'); if(fo) fo.value = docFolder(o) || '';
     };
     const bilingual = m.querySelector('#f-bilingual');
+    const handoff = () => {
+      const file=m.querySelector('#f-file').files[0],err=m.querySelector('#f-err');
+      if(!file || (file.type!=='application/pdf' && !/\\.pdf$/i.test(file.name))){err.textContent='Sélectionnez d’abord un PDF.';return;}
+      if(file.size>MAX){err.textContent=d('e_size');return;}
+      const token=crypto.randomUUID();
+      const popup=window.open('/bilingual-preview.html#handoff='+encodeURIComponent(token),'_blank');
+      if(!popup){err.textContent='Autorisez les fenêtres contextuelles pour ouvrir la préparation EN–FR.';return;}
+      const onMessage=event=>{
+        if(event.origin!==location.origin || event.source!==popup)return;
+        if(event.data?.type!=='saf-bilingual-ready' || event.data?.token!==token)return;
+        window.removeEventListener('message',onMessage);
+        popup.postMessage({type:'saf-bilingual-pdf',token,file},location.origin);
+      };
+      window.addEventListener('message',onMessage);
+      setTimeout(()=>window.removeEventListener('message',onMessage),60000);
+      err.textContent='Préparation EN–FR ouverte : aucun document publié.';
+    };
     bilingual.onchange = () => {
-      let link = m.querySelector('#f-bilingual-link');
+      let btn=m.querySelector('#f-bilingual-link');
       if(bilingual.checked){
-        if(!link){
-          link = document.createElement('a'); link.id='f-bilingual-link'; link.href='/bilingual-preview.html';
-          link.target='_blank'; link.rel='noopener noreferrer'; link.className='btn';
-          link.textContent='Ouvrir la préparation EN–FR (nouvel onglet)';
-          bilingual.closest('.full').append(link);
+        if(!btn){
+          btn=document.createElement('button');btn.type='button';btn.id='f-bilingual-link';
+          btn.className='btn';btn.textContent='Préparer le PDF sélectionné en EN–FR';
+          btn.onclick=handoff;bilingual.closest('.full').append(btn);
         }
-        link.hidden=false;
-      } else if(link) link.hidden=true;
+        btn.hidden=false;
+      }else if(btn)btn.hidden=true;
     };
     m.querySelector('#f-go').onclick = () => {
-      if(bilingual.checked){
-        const err=m.querySelector('#f-err');
-        err.textContent='La conversion bilingue est un brouillon distinct. Ouvrez la préparation EN–FR ci-dessus. Pour publier le PDF original, décochez cette option.';
-        return;
-      }
+      if(bilingual.checked){handoff();return;}
       publish(m);
     };
   }
