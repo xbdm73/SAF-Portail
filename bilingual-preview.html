@@ -17,6 +17,21 @@ pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.1
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let source=[],hash='',name='',hasUncertain=false;
+const handoffToken=new URLSearchParams(location.hash.slice(1)).get('handoff');
+if(handoffToken && window.opener){
+  window.addEventListener('message',event=>{
+    if(event.origin!==location.origin || event.source!==window.opener)return;
+    if(event.data?.type!=='saf-bilingual-pdf'||event.data?.token!==handoffToken)return;
+    const file=event.data.file;
+    if(!(file instanceof File)||!(/\\.pdf$/i.test(file.name)||file.type==='application/pdf'))return;
+    const transfer=new DataTransfer();transfer.items.add(file);
+    $('pdf').files=transfer.files;
+    $('status').textContent='PDF transmis depuis Documents compagnie : '+file.name;
+    $('extract').click();
+  },{once:true});
+  window.opener.postMessage({type:'saf-bilingual-ready',token:handoffToken},location.origin);
+}
+
 async function sha256(b){const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 $('extract').onclick=async()=>{
   const file=$('pdf').files[0];if(!file)return;
