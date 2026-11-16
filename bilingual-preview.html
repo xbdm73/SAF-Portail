@@ -7,8 +7,8 @@
 <h1>SAF International — Préparation de document bilingue</h1>
 <p class="warning"><strong>Prototype hors publication.</strong> L'anglais est extrait localement du PDF et reste non modifiable. L'extraction peut être incomplète ou incorrecte : comparaison humaine avec le PDF obligatoire. Aucune traduction automatique ni publication Supabase n'est effectuée ici.</p>
 <div class="bar"><label>PDF anglais <input id="pdf" type="file" accept=".pdf,application/pdf"></label><button id="extract">Extraire le texte</button></div>
-<p id="status" role="status">En attente d'un PDF.</p>
-<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><label><input id="pdf-verified" type="checkbox"> Texte extrait comparé au PDF original</label><label><input id="approved" type="checkbox"> Traductions françaises validées</label><button id="export" disabled>Exporter HTML de prévisualisation</button></div><p id="start-status"><strong>Début du HTML :</strong> choisissez le premier bloc de la section 0 avec « Commencer le HTML ici ». Les pages précédentes seront exclues de l’export.</p><div class="compare" id="compare" hidden><div><strong>PDF original</strong><div class="pdf-nav"><button type="button" id="pdf-prev">←</button><span id="pdf-page-label">Page 1</span><button type="button" id="pdf-next">→</button></div><div class="pdf-panel"><canvas id="pdf-canvas" aria-label="Page du PDF original"></canvas></div></div><div><strong>Texte extrait (anglais) et traductions</strong><div id="blocks"></div></div></div></div>
+<div class="bar"><label>Première page PDF à convertir <input id="start-page" type="number" min="1" value="1" style="width:75px"></label><label>En-tête à exclure (%) <input id="top-margin" type="number" min="0" max="30" step="0.5" value="8" style="width:65px"></label><label>Pied de page à exclure (%) <input id="bottom-margin" type="number" min="0" max="30" step="0.5" value="7" style="width:65px"></label></div><p class="muted">Les zones d’en-tête et de pied de page sont exclues de l’extraction et de l’export HTML. Ajustez leurs hauteurs selon le modèle de PDF et vérifiez qu’elles ne recouvrent aucun contenu utile.</p><p id="status" role="status">En attente d'un PDF.</p>
+<div id="actions" class="hidden"><p>Le français peut être saisi ou collé dans chaque bloc. Les blocs anglais restent verrouillés.</p><div class="bar"><button id="check">Contrôler l'anglais</button><label><input id="pdf-verified" type="checkbox"> Texte extrait comparé au PDF original</label><label><input id="approved" type="checkbox"> Traductions françaises validées</label><button id="export" disabled>Exporter HTML de prévisualisation</button></div><p id="start-status"><strong>Début du HTML :</strong> la première page choisie ci-dessus. Optionnel : « Commencer le HTML ici » pour commencer à un paragraphe précis.</p><div class="compare" id="compare" hidden><div><strong>PDF original</strong><div class="pdf-nav"><button type="button" id="pdf-prev">←</button><span id="pdf-page-label">Page 1</span><button type="button" id="pdf-next">→</button></div><div class="pdf-panel"><canvas id="pdf-canvas" aria-label="Page du PDF original"></canvas></div></div><div><strong>Texte extrait (anglais) et traductions</strong><div id="blocks"></div></div></div></div>
 <p class="muted">Le PDF d'origine n'est pas envoyé à un serveur par cette page. Les schémas, tableaux, notes, images et ordre de lecture doivent être vérifiés sur le PDF source. Un résultat positif du contrôle de texte ne certifie pas l'identité au PDF.</p>
 </main>
 <script type="module">
@@ -16,7 +16,7 @@ import * as pdfjs from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pd
 pdfjs.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let source=[],hash='',name='',hasUncertain=false,pdfDoc=null,pdfPage=1,pdfRenderTask=null,startId=null;
+let source=[],hash='',name='',hasUncertain=false,pdfDoc=null,pdfPage=1,pdfRenderTask=null,startId=null,excludedCount=0;
 const handoffToken=new URLSearchParams(location.hash.slice(1)).get('handoff');
 if(handoffToken && window.opener){
   window.addEventListener('message',event=>{
@@ -35,36 +35,28 @@ if(handoffToken && window.opener){
 async function sha256(b){const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 $('extract').onclick=async()=>{
   const file=$('pdf').files[0];if(!file)return;
-  $('actions').classList.add('hidden');$('export').disabled=true;$('approved').checked=false;$('pdf-verified').checked=false;$('compare').hidden=true;source=[];startId=null;hasUncertain=false;
+  $('actions').classList.add('hidden');$('export').disabled=true;$('approved').checked=false;$('pdf-verified').checked=false;$('compare').hidden=true;source=[];startId=null;hasUncertain=false;excludedCount=0;
   try{
     $('status').textContent='Extraction…';
     const buf=await file.arrayBuffer();hash=await sha256(buf);name=file.name;
-    const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;pdfDoc=doc;pdfPage=1;
-    for(let p=1;p<=doc.numPages;p++){
+    const doc=await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;pdfDoc=doc;
+    const first=Number($('start-page').value),top=Number($('top-margin').value),bottom=Number($('bottom-margin').value);
+    if(!Number.isInteger(first)||first<1||first>doc.numPages)throw Error('Première page invalide (1 à '+doc.numPages+').');
+    if(!Number.isFinite(top)||!Number.isFinite(bottom)||top<0||bottom<0||top>30||bottom>30)throw Error('Marges invalides (0 à 30 %).');
+    pdfPage=first;
+    for(let p=first;p<=doc.numPages;p++){
       const page=await doc.getPage(p),data=await page.getTextContent();
       if(!data.items.length){hasUncertain=true;continue;}
-      // PDF text items are not guaranteed to be in visual reading order.
-      // Preserve returned order exactly; do not silently normalize whitespace.
-      const height=page.view[3]-page.view[1];
-      // Exclude only top-of-page metadata lines explicitly labelled Date / Issue / Revision.
-      // Keep all body dates and revision references untouched.
-      const rows=new Map();
+      const [x0,y0,x1,y1]=page.view,height=y1-y0;
+      const minY=y0+height*bottom/100,maxY=y1-height*top/100;
       data.items.forEach((item,i)=>{
-        if(typeof item.str!=='string'||!item.str.trim())return;
+        if(typeof item.str!=='string'||!item.str.length)return;
         const y=item.transform?.[5];
-        if(!Number.isFinite(y)||y<height*.83)return;
-        const row=Math.round(y/4)*4;
-        if(!rows.has(row))rows.set(row,[]);
-        rows.get(row).push({i,text:item.str});
+        // Unknown coordinates must not be silently discarded.
+        if(!Number.isFinite(y)){hasUncertain=true;source.push({id:'p'+p+'-i'+i,page:p,text:item.str});return;}
+        if(y<minY||y>maxY){excludedCount++;return;}
+        source.push({id:'p'+p+'-i'+i,page:p,text:item.str});
       });
-      const excluded=new Set();
-      for(const parts of rows.values()){
-        const line=parts.map(x=>x.text).join(' ').replace(/\\s+/g,' ').trim();
-        if(/\\b(?:date|issue|revision|rev\\.?|edition)\\s*[:#]?\\s*(?:\\d|$)/i.test(line) || /^(?:date|issue|revision|rev\\.?|edition)\\s*[:#]?/i.test(line)){
-          parts.forEach(x=>excluded.add(x.i));
-        }
-      }
-      data.items.forEach((item,i)=>{if(typeof item.str==='string'&&item.str.length&&!excluded.has(i))source.push({id:'p'+p+'-i'+i,page:p,text:item.str});});
     }
     if(!source.length)throw Error('Aucun texte extractible : PDF scanné ou protégé.');
     const root=$('blocks');root.replaceChildren();
@@ -77,7 +69,7 @@ $('extract').onclick=async()=>{
       section.append(cap,start,en,fr);root.append(section);
     });
     $('actions').classList.remove('hidden');$('export').disabled=false;$('compare').hidden=false;await renderPdfPage();
-    $('status').textContent=source.length+' segments extraits sur '+doc.numPages+' pages. SHA-256 : '+hash+(hasUncertain?' — pages sans texte détectées':'')+'. Vérification visuelle obligatoire.';
+    $('status').textContent=source.length+' segments extraits des pages '+first+' à '+doc.numPages+' ; '+excludedCount+' éléments en dehors des zones retenues. SHA-256 : '+hash+(hasUncertain?' — pages sans texte détectées':'')+'. Vérification visuelle obligatoire.';
   }catch(e){$('status').textContent='Échec : '+e.message;}
 };
 async function renderPdfPage(){
@@ -106,8 +98,8 @@ $('approved').onchange=()=>{};
 $('export').onclick=()=>{
  if(!verify()){$('status').textContent='Export impossible : intégrité des segments anglais non confirmée.';return;}
  const allEls=[...document.querySelectorAll('#blocks section.block')];
- const startIndex=source.findIndex(b=>b.id===startId);
- if(startIndex<0){$('status').textContent='Choisissez le premier bloc de la section 0 avec « Commencer le HTML ici ».';return;}
+ const startIndex=startId===null?0:source.findIndex(b=>b.id===startId);
+ if(startIndex<0){$('status').textContent='Début du document invalide.';return;}
  const els=allEls.slice(startIndex),selected=source.slice(startIndex);
  const complete=els.every(x=>x.querySelector('textarea.fr').value.trim())&&$('approved').checked&&$('pdf-verified').checked&&!hasUncertain;
  const pages=[...new Set(selected.map(b=>b.page))];
