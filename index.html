@@ -992,11 +992,11 @@ resolveRole();
       ack_shared:'Ce compte n’est pas inscrit au personnel : l’accusé de lecture n’est pas possible.',
       ack_none:'Document en consultation : pas d’accusé de lecture demandé.', close:'Fermer',
       f_title:'Titre', f_type:'Type', f_ref:'Référence (ex. SA-005, MEMO-2026-12)', f_issue:'Édition / Issue', f_rev:'Révision', f_desc:'Résumé (facultatif)',
-      f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF (50 Mo maximum)',
+      f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF, ou document Word (.docx, plusieurs chapitres ou zip Web Manuals) — 50 Mo maximum', f_start:'Premier titre à afficher (Word)', f_start_ph:'vide = depuis le début', f_word:'{n} fichier(s) Word : converti(s) en version de lecture EN/FR (ordinateur, tablette, téléphone).', f_converting:'Conversion du document Word…', e_word:'Aucun contenu trouvé : vérifier le « premier titre à afficher ».', e_mix:'Choisir soit un PDF, soit des fichiers Word, pas les deux.',
       f_supersedes:'Remplace (nouvelle révision d’un document publié)', f_none:'— aucun —', f_submit:'Publier',
       f_uploading:'Envoi du PDF…', f_saving:'Enregistrement…', f_ok:'Document publié',
       e_title:'Indiquer un titre.', e_issue:'Indiquer l’édition / Issue.', e_rev:'Indiquer la révision.', e_revdate:'Indiquer la date de la révision.', f_revdate:'Date de la révision', rev_of:'du',
-      revdate_set:'Date de la révision', revdate_save:'Enregistrer la date', revdate_ok:'Date de révision enregistrée', revdate_missing:'Date de révision non renseignée', e_file:'Choisir un fichier PDF.', e_pdf:'Le fichier doit être un PDF.',
+      revdate_set:'Date de la révision', revdate_save:'Enregistrer la date', revdate_ok:'Date de révision enregistrée', revdate_missing:'Date de révision non renseignée', e_file:'Choisir un fichier PDF ou Word.', e_pdf:'Le fichier doit être un PDF ou un document Word (.docx).',
       e_size:'Le fichier dépasse 50 Mo.', e_mfa:'Publier exige une connexion SMS avec second facteur (ouvrez le SMS, connectez-vous, puis revenez).',
       t_doc:'Document', t_readers:'Lu par', t_progress:'Avancement', t_detail:'Détail', t_mand:'Obligatoire', t_status:'Statut',
       withdrawn:'Retiré', active:'Publié', readers:'Ont lu', missing:'N’ont pas encore lu', nobody:'Personne', everybody:'Tout le monde a lu.',
@@ -1041,11 +1041,11 @@ resolveRole();
       ack_shared:'This account is not registered as staff: acknowledgement is not possible.',
       ack_none:'Reference document: no reading acknowledgement required.', close:'Close',
       f_title:'Title', f_type:'Type', f_ref:'Reference (e.g. SA-005, MEMO-2026-12)', f_issue:'Edition / Issue', f_rev:'Revision', f_desc:'Summary (optional)',
-      f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file (50 MB maximum)',
+      f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file, or Word document (.docx, several chapters or Web Manuals zip) — 50 MB maximum', f_start:'First heading to show (Word)', f_start_ph:'empty = from the start', f_word:'{n} Word file(s): converted into an EN/FR reading version (computer, tablet, phone).', f_converting:'Converting the Word document…', e_word:'No content found: check the “first heading to show”.', e_mix:'Choose either a PDF or Word files, not both.',
       f_supersedes:'Replaces (new revision of a published document)', f_none:'— none —', f_submit:'Publish',
       f_uploading:'Uploading the PDF…', f_saving:'Saving…', f_ok:'Document published',
       e_title:'Enter a title.', e_issue:'Enter the edition / issue.', e_rev:'Enter the revision.', e_revdate:'Enter the revision date.', f_revdate:'Revision date', rev_of:'of',
-      revdate_set:'Revision date', revdate_save:'Save the date', revdate_ok:'Revision date saved', revdate_missing:'Revision date not set', e_file:'Choose a PDF file.', e_pdf:'The file must be a PDF.',
+      revdate_set:'Revision date', revdate_save:'Save the date', revdate_ok:'Revision date saved', revdate_missing:'Revision date not set', e_file:'Choose a PDF or Word file.', e_pdf:'The file must be a PDF or a Word document (.docx).',
       e_size:'The file exceeds 50 MB.', e_mfa:'Publishing requires an SMS sign-in with second factor (open the SMS, sign in, then come back).',
       t_doc:'Document', t_readers:'Read by', t_progress:'Progress', t_detail:'Details', t_mand:'Mandatory', t_status:'Status',
       withdrawn:'Withdrawn', active:'Published', readers:'Have read', missing:'Have not read yet', nobody:'Nobody', everybody:'Everybody has read it.',
@@ -1495,6 +1495,12 @@ resolveRole();
       const w = m.querySelector('#viewer-wrap'); if(!w) return;
       /* Tablette et téléphone (10.11.2026) : Safari iOS n'affiche dans un cadre que la première page d'un PDF.
          Le bouton ouvre la visionneuse native, plein écran ; sur téléphone le cadre est masqué. */
+      if(/\.json$/i.test(x.storage_path)){
+        /* Version de lecture issue d'un document Word : lecteur responsive EN/FR, aussi sur téléphone. */
+        const lu = 'lecteur.html?doc=' + encodeURIComponent(u);
+        w.innerHTML = '<a class="btn primary" href="' + h(lu) + '" target="_blank" rel="noopener" style="margin-bottom:10px">📖 ' + d('open_full') + '</a>'
+          + '<iframe class="viewer" title="' + h(x.title) + '" src="' + h(lu) + '" style="height:min(75vh,900px)"></iframe>';
+      } else
       w.innerHTML = '<a class="btn primary viewer-open" href="' + h(u) + '" target="_blank" rel="noopener" style="margin-bottom:10px">📄 ' + d('open_full') + '</a>'
         + (window.safDevice && window.safDevice() === 'phone' ? '' : '<iframe class="viewer" title="' + h(x.title) + '" src="' + h(u) + '#view=FitH"></iframe>')
         + '<div class="dfoot viewer-tab" style="justify-content:flex-start;margin-top:8px"><a class="btn sm" href="' + h(u) + '" target="_blank" rel="noopener">↗ ' + d('open_tab') + '</a></div>';
@@ -1593,7 +1599,8 @@ resolveRole();
       + '<div class="full"><label for="f-desc">' + d('f_desc') + '</label><textarea id="f-desc"></textarea></div>'
       + (S.noFolders ? '' : '<div class="full"><label for="f-folder">' + d('f_folder') + '</label><select id="f-folder">' + treeOptions(S.folder, null) + '</select></div>')
       + '<div class="full"><label for="f-sup">' + d('f_supersedes') + '</label><select id="f-sup"><option value="">' + d('f_none') + '</option>' + opts + '</select></div>'
-      + '<div class="full"><label for="f-file">' + d('f_file') + ' *</label><input id="f-file" type="file" accept="application/pdf,.pdf" style="height:auto;padding:7px"></div>'
+      + '<div class="full"><label for="f-file">' + d('f_file') + ' *</label><input id="f-file" type="file" multiple accept="application/pdf,.pdf,.docx,.zip" style="height:auto;padding:7px"><p class="dmeta" id="f-word" hidden style="margin:6px 0 0"></p></div>'
+      + '<div class="full" id="f-start-row" hidden><label for="f-start">' + d('f_start') + '</label><input id="f-start" list="f-heads" placeholder="' + h(d('f_start_ph')) + '"><datalist id="f-heads"></datalist></div>'
       + '</div><p class="derr" id="f-err"></p>'
       + '<div class="dfoot"><button class="btn" type="button" data-close>' + d('close') + '</button><button class="btn primary" type="button" id="f-go">' + d('f_submit') + '</button></div>');
     const ty = m.querySelector('#f-type'), mand = m.querySelector('#f-mand');
@@ -1606,7 +1613,42 @@ resolveRole();
       if(!t.value) t.value = o.title; if(!r.value) r.value = o.reference || ''; if(!issue.value) issue.value = o.issue || ''; ty.value = o.doc_type; mand.checked = o.mandatory;
       const fo = m.querySelector('#f-folder'); if(fo) fo.value = docFolder(o) || '';
     };
+    m.querySelector('#f-file').onchange = () => wordPick(m);
     m.querySelector('#f-go').onclick = () => publish(m);
+  }
+  /* ── Documents Word → version de lecture HTML EN/FR — 16.11.2026 ──
+     Les .docx (ou le zip Web Manuals) sont convertis dans le navigateur par saf-word.js
+     en un seul fichier JSON (texte, tableaux, images intégrées, traductions FR), stocké
+     dans « portal-docs » à la place du PDF et affiché par lecteur.html.                 */
+  const isWordFile = f => /\.(docx|zip)$/i.test(f.name);
+  let wordLib = null;
+  function loadWord(){
+    if(wordLib) return wordLib;
+    const add = src => new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = src; sc.onload = ok; sc.onerror = () => ko(new Error(src)); document.head.appendChild(sc); });
+    wordLib = (window.JSZip ? Promise.resolve() : add('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'))
+      .then(() => window.SAFWord ? null : add('saf-word.js')).catch(e => { wordLib = null; throw e; });
+    return wordLib;
+  }
+  async function wordPick(m){
+    const files = Array.from(m.querySelector('#f-file').files || []), words = files.filter(isWordFile);
+    const info = m.querySelector('#f-word'), row = m.querySelector('#f-start-row');
+    m.WORD = null; info.hidden = row.hidden = true;
+    if(!words.length) return;
+    try{
+      await loadWord();
+      const list = await SAFWord.read(words); if(!list.length) return;
+      const hd = await SAFWord.headings(list);
+      m.WORD = list; info.hidden = row.hidden = false; info.textContent = d('f_word', { n:list.length });
+      m.querySelector('#f-heads').innerHTML = hd.heads.map(x => '<option value="' + h(x) + '">').join('');
+      const st = m.querySelector('#f-start');
+      if(!st.value && hd.webManuals) st.value = hd.heads.find(x => /^(Abbreviations|Abréviations)$/i.test(x)) || '';
+      const t = m.querySelector('#f-title'); if(!t.value) t.value = hd.title;
+      const is = m.querySelector('#f-issue'); if(!is.value && hd.issue) is.value = hd.issue.replace(/^(Issue|Edition)\s+/i, '');
+    }catch(e){ m.querySelector('#f-err').textContent = (e && e.message) || String(e); }
+  }
+  async function prevTranslations(supId){
+    const o = S.docs.find(x => x.id === supId); if(!o || !/\.json$/i.test(o.storage_path || '')) return {};
+    try{ const s = await C().storage.from(BUCKET).createSignedUrl(o.storage_path, 300); const r = await fetch(s.data.signedUrl); const j = await r.json(); return j.fr || {}; }catch(e){ return {}; }
   }
   async function sha256(buf){ const x = await crypto.subtle.digest('SHA-256', buf); return Array.from(new Uint8Array(x)).map(b => b.toString(16).padStart(2, '0')).join(''); }
   async function publish(m){
@@ -1620,20 +1662,36 @@ resolveRole();
     if(!v('#f-rev')){ err.textContent = d('e_rev'); return; }
     if(!v('#f-revdate')){ err.textContent = d('e_revdate'); return; }
     if(!file){ err.textContent = d('e_file'); return; }
-    if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)){ err.textContent = d('e_pdf'); return; }
-    if(file.size > MAX){ err.textContent = d('e_size'); return; }
-    go.disabled = true; go.textContent = d('f_uploading');
+    const all = Array.from(m.querySelector('#f-file').files), word = all.some(isWordFile);
+    if(word && all.some(f => !isWordFile(f))){ err.textContent = d('e_mix'); return; }
+    if(!word && file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)){ err.textContent = d('e_pdf'); return; }
+    if(!word && file.size > MAX){ err.textContent = d('e_size'); return; }
+    go.disabled = true; go.textContent = d(word ? 'f_converting' : 'f_uploading');
     try{
-      const buf = await file.arrayBuffer(), hash = await sha256(buf);
+      let buf, mime = 'application/pdf', ext = '.pdf', fname = file.name;
+      if(word){
+        await loadWord();
+        const list = m.WORD || await SAFWord.read(all);
+        const code = (v('#f-ref') || v('#f-title').split(/\s+/).map(w => w[0] || '').join('')).replace(/[^A-Za-z0-9-]/g, '').toUpperCase().slice(0, 12) || 'DOC';
+        const res = await SAFWord.convert(list, { code, start:v('#f-start'), fr:await prevTranslations(v('#f-sup')) });
+        if(!res.doc.segments.length) throw new Error(d('e_word'));
+        const doc = SAFWord.inline(res);
+        doc.title = v('#f-title'); doc.issue = [v('#f-issue') && d('issue') + ' ' + v('#f-issue'), v('#f-rev') && 'Rév. ' + v('#f-rev')].filter(Boolean).join(' · ');
+        buf = new TextEncoder().encode(JSON.stringify(doc)).buffer; mime = 'application/json'; ext = '.json';
+        fname = list.length === 1 ? list[0].base : list.length + ' fichiers Word (' + list[0].base + '…)';
+        if(buf.byteLength > MAX){ throw new Error(d('e_size')); }
+        go.textContent = d('f_uploading');
+      } else buf = await file.arrayBuffer();
+      const hash = await sha256(buf);
       const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
-      const path = new Date().getFullYear() + '/' + id + '.pdf';
-      const up = await C().storage.from(BUCKET).upload(path, new Blob([buf], { type:'application/pdf' }), { contentType:'application/pdf', upsert:false });
+      const path = new Date().getFullYear() + '/' + id + ext;
+      const up = await C().storage.from(BUCKET).upload(path, new Blob([buf], { type:mime }), { contentType:mime, upsert:false });
       if(up.error) throw up.error;
       go.textContent = d('f_saving');
       const sup = v('#f-sup') || null;
       const row = { title:v('#f-title'), doc_type:v('#f-type'), reference:v('#f-ref') || null, issue:v('#f-issue'), revision:v('#f-rev'), revision_date:v('#f-revdate'),
         description:v('#f-desc') || null, mandatory:m.querySelector('#f-mand').checked, due_date:v('#f-due') || null,
-        storage_path:path, file_name:file.name, file_size:file.size, sha256:hash, supersedes:sup };
+        storage_path:path, file_name:fname, file_size:buf.byteLength, sha256:hash, supersedes:sup };
       const fsel = m.querySelector('#f-folder'); if(fsel) row.folder_id = fsel.value || null;
       if(row.mandatory && !m.querySelector('#f-notify').checked) row.notify = false;
       const ins = await C().from('portal_docs').insert(row).select().single();
