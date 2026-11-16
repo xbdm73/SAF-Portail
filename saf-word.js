@@ -103,7 +103,7 @@ async function convert(docxFiles, code, start, prevFr) {
         if (st.startsWith("Heading")) {
           const lvl = +st.split(" ").pop();
           if (!started && t !== start) continue; started = true;
-          if (lvl === 1 && chap !== null) { counters.splice(0, 4, chap, 0, 0, 0); await add({ type: "h1", num: String(chap), en: t }); continue; }
+          if (lvl === 1 && chap !== null) { counters.splice(0, 4, chap, 0, 0, 0); await add({ type: "h1", num: String(chap), en: t }); cover = false; continue; }
           cover = false; await add({ type: "h" + lvl, num: hnum(lvl, chap, autoNum(D, el, t)), en: t }); continue;
         }
         if (!started || cover) continue;
