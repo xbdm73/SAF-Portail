@@ -992,7 +992,7 @@ resolveRole();
       ack_shared:'Ce compte n’est pas inscrit au personnel : l’accusé de lecture n’est pas possible.',
       ack_none:'Document en consultation : pas d’accusé de lecture demandé.', close:'Fermer',
       f_title:'Titre', f_type:'Type', f_ref:'Référence (ex. SA-005, MEMO-2026-12)', f_issue:'Édition / Issue', f_rev:'Révision', f_desc:'Résumé (facultatif)',
-      f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF, ou document Word (.docx, plusieurs chapitres ou zip Web Manuals) — 50 Mo maximum', f_start:'Premier titre à afficher (Word)', f_start_ph:'vide = depuis le début', f_word:'{n} fichier(s) Word : converti(s) en version de lecture EN/FR (ordinateur, tablette, téléphone).', f_converting:'Conversion du document Word…', e_word:'Aucun contenu trouvé : vérifier le « premier titre à afficher ».', e_mix:'Choisir soit un PDF, soit des fichiers Word, pas les deux.',
+      f_mand:'Lecture obligatoire (« lu et compris » demandé)', f_due:'À lire avant le (facultatif)', f_file:'Fichier PDF, ou document Word (.docx, plusieurs chapitres ou zip Web Manuals) — 50 Mo maximum', f_start:'Premier titre à afficher (Word)', f_start_ph:'vide = depuis le début', f_word:'{n} fichier(s) Word : converti(s) en version de lecture EN/FR (ordinateur, tablette, téléphone).', f_converting:'Conversion du document Word…', tr_btn:'⤓ Traductions FR', tr_h:'Importer un fichier de traductions françaises (.json) pour les documents Word', tr_ok:'{n} traductions importées', tr_bad:'Fichier de traductions illisible', tr_run:'Import des traductions…', e_word:'Aucun contenu trouvé : vérifier le « premier titre à afficher ».', e_mix:'Choisir soit un PDF, soit des fichiers Word, pas les deux.',
       f_supersedes:'Remplace (nouvelle révision d’un document publié)', f_none:'— aucun —', f_submit:'Publier',
       f_uploading:'Envoi du PDF…', f_saving:'Enregistrement…', f_ok:'Document publié',
       e_title:'Indiquer un titre.', e_issue:'Indiquer l’édition / Issue.', e_rev:'Indiquer la révision.', e_revdate:'Indiquer la date de la révision.', f_revdate:'Date de la révision', rev_of:'du',
@@ -1041,7 +1041,7 @@ resolveRole();
       ack_shared:'This account is not registered as staff: acknowledgement is not possible.',
       ack_none:'Reference document: no reading acknowledgement required.', close:'Close',
       f_title:'Title', f_type:'Type', f_ref:'Reference (e.g. SA-005, MEMO-2026-12)', f_issue:'Edition / Issue', f_rev:'Revision', f_desc:'Summary (optional)',
-      f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file, or Word document (.docx, several chapters or Web Manuals zip) — 50 MB maximum', f_start:'First heading to show (Word)', f_start_ph:'empty = from the start', f_word:'{n} Word file(s): converted into an EN/FR reading version (computer, tablet, phone).', f_converting:'Converting the Word document…', e_word:'No content found: check the “first heading to show”.', e_mix:'Choose either a PDF or Word files, not both.',
+      f_mand:'Mandatory reading (“read and understood” required)', f_due:'Read by (optional)', f_file:'PDF file, or Word document (.docx, several chapters or Web Manuals zip) — 50 MB maximum', f_start:'First heading to show (Word)', f_start_ph:'empty = from the start', f_word:'{n} Word file(s): converted into an EN/FR reading version (computer, tablet, phone).', f_converting:'Converting the Word document…', tr_btn:'⤓ FR translations', tr_h:'Import a French translations file (.json) for Word documents', tr_ok:'{n} translations imported', tr_bad:'Unreadable translations file', tr_run:'Importing translations…', e_word:'No content found: check the “first heading to show”.', e_mix:'Choose either a PDF or Word files, not both.',
       f_supersedes:'Replaces (new revision of a published document)', f_none:'— none —', f_submit:'Publish',
       f_uploading:'Uploading the PDF…', f_saving:'Saving…', f_ok:'Document published',
       e_title:'Enter a title.', e_issue:'Enter the edition / issue.', e_rev:'Enter the revision.', e_revdate:'Enter the revision date.', f_revdate:'Revision date', rev_of:'of',
@@ -1232,7 +1232,7 @@ resolveRole();
     updateBadge();
     if(!allowed) return;
     let html = '<div class="docs-head"><div><h2>' + d('h') + '</h2><p>' + d('sub') + '</p></div>'
-      + (isMgr() ? '<div class="docs-actions"><button class="btn" type="button" id="d-sync" title="' + h(d('sy_h')) + '">' + d('sy_btn') + '</button><button class="btn primary" type="button" id="d-publish">' + d('publish') + '</button></div>' : '') + '</div>';
+      + (isMgr() ? '<div class="docs-actions"><button class="btn" type="button" id="d-tr" title="' + h(d('tr_h')) + '">' + d('tr_btn') + '</button><button class="btn" type="button" id="d-sync" title="' + h(d('sy_h')) + '">' + d('sy_btn') + '</button><button class="btn primary" type="button" id="d-publish">' + d('publish') + '</button></div>' : '') + '</div>';
     if(S.state === 'loading' || S.state === 'idle'){ box.innerHTML = html + '<div class="dempty">' + d('loading') + '</div>'; bind(); return; }
     if(S.state === 'error'){ box.innerHTML = html + '<div class="dempty" style="color:var(--err)">' + d('err_load') + ' — ' + h(S.err) + '</div>'; bind(); return; }
     if(!canAck() && S.tab === 'todo') S.tab = 'all';
@@ -1389,6 +1389,7 @@ resolveRole();
     const ty = document.getElementById('d-type'); if(ty) ty.onchange = () => { S.ftype = ty.value; render(); };
     const pb = document.getElementById('d-publish'); if(pb) pb.onclick = openPublish;
     const sb = document.getElementById('d-sync'); if(sb) sb.onclick = openSync;
+    const tb = document.getElementById('d-tr'); if(tb) tb.onclick = importTranslations;
     const goFolder = id => { S.folder = id || null; render(); const t = document.querySelector('.dcrumb'); if(t && t.scrollIntoView) t.scrollIntoView({ block:'nearest' }); };
     box.querySelectorAll('.drow[data-folder]').forEach(r => {
       r.onclick = e => { if(e.target.closest('button')) return; goFolder(r.dataset.folder); };
@@ -1645,6 +1646,26 @@ resolveRole();
       const t = m.querySelector('#f-title'); if(!t.value) t.value = hd.title;
       const is = m.querySelector('#f-issue'); if(!is.value && hd.issue) is.value = hd.issue.replace(/^(Issue|Edition)\s+/i, '');
     }catch(e){ m.querySelector('#f-err').textContent = (e && e.message) || String(e); }
+  }
+  /* Mémoire de traduction partagée (portal_translations) : clé = empreinte du texte anglais,
+     valable pour tous les documents Word ; lue par lecteur.html à chaque ouverture. */
+  function importTranslations(){
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if(!f) return;
+      let map;
+      try{ const j = JSON.parse(await f.text()); map = j && j.fr && typeof j.fr === 'object' ? j.fr : j; if(!map || typeof map !== 'object') throw 0; }
+      catch(e){ toast(d('tr_bad'), true); return; }
+      const rows = Object.entries(map).filter(([k, v]) => /^t[0-9a-f]{12}$/.test(k) && typeof v === 'string' && v.trim()).map(([k, v]) => ({ k, fr:v, updated_at:new Date().toISOString() }));
+      if(!rows.length){ toast(d('tr_bad'), true); return; }
+      toast(d('tr_run'));
+      for(let i = 0; i < rows.length; i += 500){
+        const r = await C().from('portal_translations').upsert(rows.slice(i, i + 500), { onConflict:'k' });
+        if(r.error){ toast(d('tr_bad') + ' — ' + r.error.message, true); return; }
+      }
+      toast(d('tr_ok', { n:rows.length }));
+    };
+    inp.click();
   }
   async function prevTranslations(supId){
     const o = S.docs.find(x => x.id === supId); if(!o || !/\.json$/i.test(o.storage_path || '')) return {};
