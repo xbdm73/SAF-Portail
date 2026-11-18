@@ -121,12 +121,15 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <h2 style="font-size:21px">Nouveau module</h2>
         <div class="grid2">
           <div><label class="f" for="nCode">Formation du catalogue</label><select id="nCode"></select></div>
-          <div><label class="f" for="nTitle">Titre affiché</label><input type="text" id="nTitle"></div>
+          <div><label class="f" for="nTitle">Titre français</label><input type="text" id="nTitle"></div>
         </div>
-        <div class="grid4">
+        <div class="grid2">
+          <div></div>
+          <div><label class="f" for="nTitleEn">Titre anglais</label><input type="text" id="nTitleEn" placeholder="English title"></div>
+        </div>
+        <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
           <div><label class="f" for="nPart">Partie</label><select id="nPart"><option value="initial">Initiale</option><option value="recurrent">Recyclage</option></select></div>
           <div><label class="f" for="nVersion">Version</label><input type="text" id="nVersion" value="1.0"></div>
-          <div><label class="f" for="nLang">Langue</label><select id="nLang"><option value="fr">Français</option><option value="en">Anglais</option></select></div>
           <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="20"></div>
         </div>
         <div class="row" style="margin-top:18px"><button class="btn" id="bCreate">Créer le module</button><button class="btn ghost" id="bCancelNew">Annuler</button></div>
@@ -154,25 +157,35 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         </div>
 
         <section id="tSlides" role="tabpanel">
-          <p class="muted small">Exportez le PowerPoint en PDF (Fichier, Exporter, PDF), puis déposez-le ici. Chaque page devient une slide.</p>
-          <div class="row draftOnly"><input type="file" id="sPdf" accept="application/pdf"><button class="btn" id="bSaveSlides" disabled>Enregistrer les slides</button></div>
-          <div class="progress" id="sProg" hidden><i></i></div>
-          <div id="sMsg"></div>
-          <div class="thumbs" id="sThumbs"></div>
+          <p class="muted small">Chaque module existe en français et en anglais : le stagiaire choisit sa langue avec un bouton. Exportez chaque PowerPoint en PDF (Fichier, Exporter, PDF) et déposez-le dans sa langue. Les deux PDF doivent avoir le même nombre de slides, dans le même ordre.</p>
+          <div class="langblock" data-lang="fr">
+            <h3 style="font-size:18px;margin:14px 0 8px">Français</h3>
+            <div class="row draftOnly"><input type="file" class="sPdf" data-lang="fr" accept="application/pdf"><button class="btn bSaveSlides" data-lang="fr" disabled>Enregistrer les slides françaises</button></div>
+            <div class="progress" id="sProg-fr" hidden><i></i></div><div id="sMsg-fr"></div><div class="thumbs" id="sThumbs-fr"></div>
+          </div>
+          <div class="langblock" data-lang="en" style="margin-top:22px;border-top:1px solid var(--line);padding-top:6px">
+            <h3 style="font-size:18px;margin:14px 0 8px">English</h3>
+            <div class="row draftOnly"><input type="file" class="sPdf" data-lang="en" accept="application/pdf"><button class="btn bSaveSlides" data-lang="en" disabled>Enregistrer les slides anglaises</button></div>
+            <div class="progress" id="sProg-en" hidden><i></i></div><div id="sMsg-en"></div><div class="thumbs" id="sThumbs-en"></div>
+          </div>
         </section>
 
         <section id="tQuestions" role="tabpanel" hidden>
-          <p class="muted small">Banque CSV : colonnes question, answer1 à answer8, correctAnswer (plusieurs bonnes réponses séparées par un point-virgule, par exemple 1;3), et en option theme et ref. Séparateur virgule ou point-virgule.</p>
-          <div class="row draftOnly"><input type="file" id="qCsv" accept=".csv,text/csv"><button class="btn" id="bImport" disabled>Remplacer la banque par ce fichier</button></div>
+          <p class="muted small">Deux fichiers CSV, un par langue, au même format : colonnes question, answer1 à answer8, correctAnswer (plusieurs bonnes réponses séparées par un point-virgule, par exemple 1;3), et en option theme et ref. Importez d’abord la banque française, puis sa traduction anglaise : mêmes questions, dans le même ordre, mêmes réponses dans le même ordre et mêmes numéros de bonne réponse. Avec une colonne ref dans les deux fichiers, les questions sont appariées par leur référence.</p>
+          <div class="draftOnly">
+            <div class="row"><b style="min-width:80px">Français</b><input type="file" id="qCsv" accept=".csv,text/csv"><button class="btn" id="bImport" disabled>Remplacer la banque française</button></div>
+            <div class="row" style="margin-top:10px"><b style="min-width:80px">English</b><input type="file" id="qCsvEn" accept=".csv,text/csv"><button class="btn" id="bImportEn" disabled>Importer la traduction anglaise</button></div>
+          </div>
           <div id="qMsg"></div>
           <div id="qCheck"></div>
           <h3 style="font-size:18px;margin-top:20px">Banque actuelle <span class="muted small" id="qCount"></span></h3>
-          <div class="scroll"><table><thead><tr><th>Réf.</th><th>Thème</th><th>Question</th><th>Réponses (bonnes en vert)</th></tr></thead><tbody id="qBody"></tbody></table></div>
+          <div class="scroll"><table><thead><tr><th>Réf.</th><th>Thème</th><th>Question (FR / EN)</th><th>Réponses FR (bonnes en vert)</th><th>Answers EN</th></tr></thead><tbody id="qBody"></tbody></table></div>
         </section>
 
         <section id="tRules" role="tabpanel" hidden>
           <div class="grid2">
-            <div><label class="f" for="rTitle">Titre affiché</label><input type="text" id="rTitle"></div>
+            <div><label class="f" for="rTitle">Titre français</label><input type="text" id="rTitle"></div>
+            <div><label class="f" for="rTitleEn">Titre anglais</label><input type="text" id="rTitleEn"></div>
             <div><label class="f" for="rN">Questions tirées par test</label><input type="number" id="rN" min="1"></div>
           </div>
           <div class="grid4">
@@ -209,14 +222,18 @@ const ERR = {
   ELEARN_MODULE_FROZEN: "Cette version est publiée ou retirée : elle ne peut plus changer. Créez une nouvelle version.",
   ELEARN_PUBLISH_NO_SLIDES: "Impossible de publier : aucune slide n’est enregistrée.",
   ELEARN_PUBLISH_NOT_ENOUGH_QUESTIONS: "Impossible de publier : la banque contient moins de questions que le nombre tiré par test.",
-  elearn_module_one_published: "Une autre version de ce module est déjà publiée dans cette langue.",
-  elearn_module_code_part_version_lang_key: "Cette version existe déjà pour ce module, cette partie et cette langue.",
+  ELEARN_PUBLISH_SLIDES_EN: "Impossible de publier : les slides anglaises manquent ou n’ont pas le même nombre de pages que les françaises.",
+  ELEARN_PUBLISH_TITLE_EN: "Impossible de publier : le titre anglais manque (onglet Règles du test).",
+  ELEARN_PUBLISH_QUESTIONS_EN: "Impossible de publier : des questions n’ont pas encore leur traduction anglaise.",
+  elearn_module_one_published: "Une autre version de ce module est déjà publiée.",
+  elearn_module_code_part_version_key: "Cette version existe déjà pour ce module et cette partie.",
 };
 const errText = (e) => { const m = e?.message || String(e); const k = Object.keys(ERR).find((x) => m.includes(x)); return k ? ERR[k] : esc(m); };
 const PART = { initial: "Initiale", recurrent: "Recyclage" };
 const STATUS = { draft: "Brouillon", published: "Publié", withdrawn: "Retiré" };
 
-let catalog = [], modules = [], cur = null, pendingSlides = null, pendingBank = null;
+let catalog = [], modules = [], cur = null, pendingSlides = { fr: null, en: null }, pendingBank = null, pendingEn = null, qStats = { total: 0, en: 0 };
+const SL = (m, l) => (m && m.slides && Array.isArray(m.slides[l])) ? m.slides[l] : [];
 
 /* ---------- auth ---------- */
 // Portal single sign-on: when this page is served by the portal site, reuse the portal session (SMS's Project)
@@ -308,7 +325,7 @@ async function loadModules(selectId) {
   modules = data || [];
   $("modEmpty").hidden = modules.length > 0;
   $("modList").innerHTML = modules.map((m) => `<li><button data-id="${m.id}" aria-current="${cur && cur.id === m.id}">
-      <span><span class="code">${esc(m.code)}</span> ${esc(PART[m.part])} · v${esc(m.version)} · ${esc(m.lang.toUpperCase())}<br><span class="small muted">${esc(m.title)}</span></span>
+      <span><span class="code">${esc(m.code)}</span> ${esc(PART[m.part])} · v${esc(m.version)} · FR / EN<br><span class="small muted">${esc(m.title)}</span></span>
       <span class="st ${m.status}">${STATUS[m.status]}</span></button></li>`).join("");
   $("modList").querySelectorAll("button").forEach((b) => b.onclick = () => openModule(b.dataset.id));
   if (selectId) openModule(selectId);
@@ -319,8 +336,8 @@ async function loadModules(selectId) {
 $("bNew").onclick = () => { cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", ""); loadModules(); };
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
-  const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(), lang: $("nLang").value,
-                title: $("nTitle").value.trim(), n_questions: parseInt($("nN").value) || 20 };
+  const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
+                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 20 };
   if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
   const { data, error } = await sb.from("elearn_module").insert(row).select().single();
   if (error) return say("newMsg", "err", errText(error));
@@ -330,25 +347,31 @@ $("bCreate").onclick = async () => {
 /* ---------- module view ---------- */
 async function openModule(id) {
   cur = modules.find((m) => m.id === id); if (!cur) return;
-  pendingSlides = null; pendingBank = null;
+  pendingSlides = { fr: null, en: null }; pendingBank = null; pendingEn = null;
   $("noSel").hidden = true; $("newForm").hidden = true; $("modView").hidden = false;
   $("modList").querySelectorAll("button").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
   const cat = catalog.find((c) => c.code === cur.code);
   $("mTitle").textContent = `${cur.code} · ${cur.title}`;
-  $("mSub").textContent = `${PART[cur.part]}, version ${cur.version}, ${cur.lang === "fr" ? "français" : "anglais"}${cat?.validity_months ? `, validité ${cat.validity_months} mois` : ""}`;
+  $("mTitle").title = cur.title_en || "";
+  $("mSub").textContent = `${PART[cur.part]}, version ${cur.version}, français et anglais${cur.title_en ? ` (« ${cur.title_en} »)` : ""}${cat?.validity_months ? `, validité ${cat.validity_months} mois` : ""}`;
   $("mStatus").className = "st " + cur.status; $("mStatus").textContent = STATUS[cur.status];
   const draft = cur.status === "draft";
   document.querySelectorAll(".draftOnly").forEach((e) => e.hidden = !draft);
-  ["rTitle", "rN", "rPass", "rRetake", "rMax", "rNotes"].forEach((k) => $(k).disabled = !draft);
-  $("rTitle").value = cur.title; $("rN").value = cur.n_questions; $("rPass").value = cur.pass_pct; $("rRetake").value = cur.retake_pct; $("rMax").value = cur.max_retakes; $("rNotes").value = cur.notes || "";
-  say("mMsg", "", ""); say("sMsg", "", ""); say("qMsg", "", ""); say("rMsg", "", ""); $("qCheck").innerHTML = ""; $("sPdf").value = ""; $("qCsv").value = "";
-  $("bSaveSlides").disabled = true; $("bImport").disabled = true;
+  ["rTitle", "rTitleEn", "rN", "rPass", "rRetake", "rMax", "rNotes"].forEach((k) => $(k).disabled = !draft);
+  $("rTitle").value = cur.title; $("rTitleEn").value = cur.title_en || ""; $("rN").value = cur.n_questions; $("rPass").value = cur.pass_pct; $("rRetake").value = cur.retake_pct; $("rMax").value = cur.max_retakes; $("rNotes").value = cur.notes || "";
+  say("mMsg", "", ""); say("sMsg-fr", "", ""); say("sMsg-en", "", ""); say("qMsg", "", ""); say("rMsg", "", ""); $("qCheck").innerHTML = "";
+  document.querySelectorAll(".sPdf").forEach((x) => x.value = ""); $("qCsv").value = ""; $("qCsvEn").value = "";
+  document.querySelectorAll(".bSaveSlides").forEach((x) => x.disabled = true); $("bImport").disabled = true; $("bImportEn").disabled = true;
   const qn = await countQuestions();
-  $("mFacts").innerHTML = `<span><b>${cur.slides.length}</b> slides</span><span><b>${qn}</b> questions en banque</span><span><b>${cur.n_questions}</b> tirées par test</span><span>réussite à <b>${Number(cur.pass_pct)} %</b>, nouveau test dès <b>${Number(cur.retake_pct)} %</b>, <b>${cur.max_retakes}</b> nouveaux tests</span>`;
+  $("mFacts").innerHTML = `<span><b>${SL(cur, "fr").length}</b> slides FR, <b>${SL(cur, "en").length}</b> EN</span><span><b>${qn}</b> questions, <b>${qStats.en}</b> traduites</span><span><b>${cur.n_questions}</b> tirées par test</span><span>réussite à <b>${Number(cur.pass_pct)} %</b>, nouveau test dès <b>${Number(cur.retake_pct)} %</b>, <b>${cur.max_retakes}</b> nouveaux tests</span>`;
   renderBar(qn);
   showSlides(); showQuestions(); showStats();
 }
-async function countQuestions() { const { count } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", cur.id).eq("active", true); return count || 0; }
+async function countQuestions() {
+  const { data } = await sb.from("elearn_question").select("question_en").eq("module_id", cur.id).eq("active", true);
+  qStats = { total: (data || []).length, en: (data || []).filter((q) => q.question_en).length };
+  return qStats.total;
+}
 
 function renderBar(qn) {
   const b = $("mBar"); b.innerHTML = "";
@@ -357,9 +380,15 @@ function renderBar(qn) {
   const right = document.createElement("span"); right.className = "row"; b.appendChild(right);
   const addR = (label, cls, fn, dis) => { const x = document.createElement("button"); x.className = "btn " + (cls || ""); x.textContent = label; x.onclick = fn; x.disabled = !!dis; right.appendChild(x); };
   if (cur.status === "draft") {
-    const ready = cur.slides.length > 0 && qn >= cur.n_questions;
-    left.textContent = ready ? "Prêt à publier : les stagiaires verront cette version dès sa publication."
-      : `Avant de publier : ${cur.slides.length ? "" : "enregistrer les slides"}${!cur.slides.length && qn < cur.n_questions ? " et " : ""}${qn < cur.n_questions ? `avoir au moins ${cur.n_questions} questions` : ""}.`;
+    const fr = SL(cur, "fr").length, en = SL(cur, "en").length, todo = [];
+    if (!fr) todo.push("enregistrer les slides françaises");
+    if (fr && en !== fr) todo.push(en ? `aligner les slides anglaises (${en} pour ${fr} en français)` : "enregistrer les slides anglaises");
+    if (qn < cur.n_questions) todo.push(`avoir au moins ${cur.n_questions} questions`);
+    if (qn && qStats.en < qn) todo.push(`traduire ${qn - qStats.en} question${qn - qStats.en > 1 ? "s" : ""} en anglais`);
+    if (!cur.title_en) todo.push("indiquer le titre anglais");
+    const ready = !todo.length;
+    left.textContent = ready ? "Prêt à publier : les stagiaires verront cette version dès sa publication, en français et en anglais."
+      : `Avant de publier : ${todo.join(", ")}.`;
     addR("Supprimer le brouillon", "danger", deleteDraft);
     addR("Publier", "", publish, !ready);
   } else if (cur.status === "published") {
@@ -373,7 +402,7 @@ function renderBar(qn) {
 }
 
 async function publish() {
-  const other = modules.find((m) => m.id !== cur.id && m.status === "published" && m.code === cur.code && m.part === cur.part && m.lang === cur.lang);
+  const other = modules.find((m) => m.id !== cur.id && m.status === "published" && m.code === cur.code && m.part === cur.part);
   if (other && !confirm(`La version ${other.version} est publiée. Elle sera retirée et remplacée par la version ${cur.version}. Continuer ?`)) return;
   if (!other && !confirm(`Publier ${cur.code} version ${cur.version} ? Elle ne pourra plus être modifiée.`)) return;
   if (other) { const { error } = await sb.from("elearn_module").update({ status: "withdrawn" }).eq("id", other.id); if (error) return say("mMsg", "err", errText(error)); }
@@ -389,18 +418,18 @@ async function withdraw() {
 }
 async function newVersion() {
   const v = prompt("Numéro de la nouvelle version :", bump(cur.version)); if (!v) return;
-  const row = { code: cur.code, part: cur.part, version: v.trim(), lang: cur.lang, title: cur.title, slides: cur.slides,
+  const row = { code: cur.code, part: cur.part, version: v.trim(), title: cur.title, title_en: cur.title_en, slides: cur.slides,
                 n_questions: cur.n_questions, pass_pct: cur.pass_pct, retake_pct: cur.retake_pct, max_retakes: cur.max_retakes, notes: cur.notes };
   const { data, error } = await sb.from("elearn_module").insert(row).select().single();
   if (error) return say("mMsg", "err", errText(error));
-  const { data: qs } = await sb.from("elearn_question").select("ref, theme, question, answers, correct, active").eq("module_id", cur.id);
+  const { data: qs } = await sb.from("elearn_question").select("ref, theme, question_fr, answers_fr, question_en, answers_en, correct, active").eq("module_id", cur.id);
   if (qs?.length) { const { error: e2 } = await sb.from("elearn_question").insert(qs.map((q) => ({ ...q, module_id: data.id }))); if (e2) say("mMsg", "warn", "Version créée, mais la copie des questions a échoué : " + errText(e2)); }
   await loadModules(data.id); say("mMsg", "ok", `Version ${esc(v)} créée en brouillon, avec les slides et les questions de la version précédente.`);
 }
 const bump = (v) => { const m = String(v).match(/^(.*?)(\d+)$/); return m ? m[1] + (parseInt(m[2]) + 1) : v + ".1"; };
 async function deleteDraft() {
   if (!confirm("Supprimer définitivement ce brouillon, ses slides et ses questions ?")) return;
-  const own = cur.slides.filter((p) => p.startsWith(cur.id + "/"));
+  const own = [...SL(cur, "fr"), ...SL(cur, "en")].filter((p) => p.startsWith(cur.id + "/"));
   const { error } = await sb.from("elearn_module").delete().eq("id", cur.id);
   if (error) return say("mMsg", "err", errText(error));
   if (own.length) await sb.storage.from(BUCKET).remove(own);
@@ -413,56 +442,61 @@ document.querySelectorAll(".tabs button").forEach((t) => t.onclick = () => {
   ["tSlides", "tQuestions", "tRules", "tStats"].forEach((p) => $(p).hidden = p !== t.dataset.tab);
 });
 
-/* ---------- slides ---------- */
-async function showSlides() {
-  const box = $("sThumbs"); box.innerHTML = "";
-  if (!cur.slides.length) { box.innerHTML = `<p class="muted small">Aucune slide enregistrée.</p>`; return; }
-  const { data } = await sb.storage.from(BUCKET).createSignedUrls(cur.slides, 3600);
+/* ---------- slides (one deck per language) ---------- */
+async function showSlides() { for (const l of ["fr", "en"]) await showDeck(l); }
+async function showDeck(l) {
+  const box = $("sThumbs-" + l), list = SL(cur, l); box.innerHTML = "";
+  if (!list.length) { box.innerHTML = `<p class="muted small">Aucune slide enregistrée.</p>`; return; }
+  const { data } = await sb.storage.from(BUCKET).createSignedUrls(list, 3600);
   box.innerHTML = (data || []).map((d, i) => `<figure><img loading="lazy" alt="Slide ${i + 1}" src="${esc(d.signedUrl)}"><figcaption>Slide ${i + 1}</figcaption></figure>`).join("");
 }
-$("sPdf").onchange = async (e) => {
-  const f = e.target.files[0]; if (!f) return;
-  if (!window.pdfjsLib) return say("sMsg", "err", "Le lecteur PDF n’a pas pu se charger. Vérifiez la connexion internet.");
-  say("sMsg", "", ""); pendingSlides = []; $("bSaveSlides").disabled = true;
-  const prog = $("sProg"); prog.hidden = false;
+document.querySelectorAll(".sPdf").forEach((inp) => inp.onchange = async (e) => {
+  const l = inp.dataset.lang, f = e.target.files[0]; if (!f) return;
+  const msg = "sMsg-" + l, btn = document.querySelector(`.bSaveSlides[data-lang="${l}"]`);
+  if (!window.pdfjsLib) return say(msg, "err", "Le lecteur PDF n’a pas pu se charger. Vérifiez la connexion internet.");
+  say(msg, "", ""); pendingSlides[l] = []; btn.disabled = true;
+  const prog = $("sProg-" + l); prog.hidden = false;
   try {
     const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
-    const box = $("sThumbs"); box.innerHTML = "";
+    const box = $("sThumbs-" + l); box.innerHTML = "";
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const v1 = page.getViewport({ scale: 1 }); const scale = 1600 / v1.width; const vp = page.getViewport({ scale });
+      const v1 = page.getViewport({ scale: 1 }); const vp = page.getViewport({ scale: 1600 / v1.width });
       const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
       const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
       await page.render({ canvasContext: ctx, viewport: vp }).promise;
       const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.85));
-      pendingSlides.push(blob);
+      pendingSlides[l].push(blob);
       box.insertAdjacentHTML("beforeend", `<figure><img alt="Slide ${i}" src="${URL.createObjectURL(blob)}"><figcaption>Slide ${i} · nouvelle</figcaption></figure>`);
       prog.firstElementChild.style.width = (i / pdf.numPages * 100) + "%";
     }
-    say("sMsg", "warn", `${pdf.numPages} slides prêtes. Vérifiez-les, puis enregistrez : elles remplaceront les slides actuelles.`);
-    $("bSaveSlides").disabled = false;
-  } catch (err) { say("sMsg", "err", "Lecture du PDF impossible : " + esc(err.message)); }
+    const other = SL(cur, l === "fr" ? "en" : "fr").length;
+    say(msg, "warn", `${pdf.numPages} slides prêtes. Vérifiez-les, puis enregistrez : elles remplaceront les slides ${l === "fr" ? "françaises" : "anglaises"} actuelles.`
+      + (other && other !== pdf.numPages ? `<br>Attention : l’autre langue compte ${other} slides. Les deux PDF doivent avoir le même nombre de pages pour pouvoir publier.` : ""));
+    btn.disabled = false;
+  } catch (err) { say(msg, "err", "Lecture du PDF impossible : " + esc(err.message)); }
   prog.hidden = true; prog.firstElementChild.style.width = "0";
-};
-$("bSaveSlides").onclick = async () => {
-  if (!pendingSlides?.length) return;
-  $("bSaveSlides").disabled = true; const prog = $("sProg"); prog.hidden = false;
+});
+document.querySelectorAll(".bSaveSlides").forEach((btn) => btn.onclick = async () => {
+  const l = btn.dataset.lang, blobs = pendingSlides[l], msg = "sMsg-" + l; if (!blobs?.length) return;
+  btn.disabled = true; const prog = $("sProg-" + l); prog.hidden = false;
   const stamp = Date.now().toString(36); const paths = [];
   try {
-    for (let i = 0; i < pendingSlides.length; i++) {
-      const p = `${cur.id}/${stamp}-${String(i + 1).padStart(3, "0")}.jpg`;
-      const { error } = await sb.storage.from(BUCKET).upload(p, pendingSlides[i], { contentType: "image/jpeg", upsert: true });
+    for (let i = 0; i < blobs.length; i++) {
+      const p = `${cur.id}/${l}-${stamp}-${String(i + 1).padStart(3, "0")}.jpg`;
+      const { error } = await sb.storage.from(BUCKET).upload(p, blobs[i], { contentType: "image/jpeg", upsert: true });
       if (error) throw error;
-      paths.push(p); prog.firstElementChild.style.width = ((i + 1) / pendingSlides.length * 100) + "%";
+      paths.push(p); prog.firstElementChild.style.width = ((i + 1) / blobs.length * 100) + "%";
     }
-    const old = cur.slides.filter((p) => p.startsWith(cur.id + "/"));
-    const { error } = await sb.from("elearn_module").update({ slides: paths }).eq("id", cur.id);
+    const old = SL(cur, l).filter((p) => p.startsWith(cur.id + "/"));
+    const slides = { fr: SL(cur, "fr"), en: SL(cur, "en"), [l]: paths };
+    const { error } = await sb.from("elearn_module").update({ slides }).eq("id", cur.id);
     if (error) { await sb.storage.from(BUCKET).remove(paths); throw error; }
     if (old.length) await sb.storage.from(BUCKET).remove(old);
-    pendingSlides = null; await loadModules(cur.id); say("sMsg", "ok", `${paths.length} slides enregistrées.`);
-  } catch (err) { say("sMsg", "err", "Enregistrement interrompu : " + errText(err)); $("bSaveSlides").disabled = false; }
+    pendingSlides[l] = null; await loadModules(cur.id); say(msg, "ok", `${paths.length} slides ${l === "fr" ? "françaises" : "anglaises"} enregistrées.`);
+  } catch (err) { say(msg, "err", "Enregistrement interrompu : " + errText(err)); btn.disabled = false; }
   prog.hidden = true;
-};
+});
 
 /* ---------- questions ---------- */
 function parseCSV(t) {
@@ -509,42 +543,78 @@ function checkBank(text) {
 }
 $("qCsv").onchange = async (e) => {
   const f = e.target.files[0]; if (!f) return;
-  const r = checkBank(await f.text()); pendingBank = r.ok;
+  const r = checkBank(await f.text()); pendingBank = r.ok; reportBank(r, "Banque française");
+  $("bImport").disabled = !r.ok.length;
+};
+function reportBank(r, label) {
   const nb = r.issues.filter((x) => x.level === "bad").length, nw = r.issues.filter((x) => x.level === "warn").length;
   const posTxt = r.pos ? Object.keys(r.pos).sort().map((k) => `réponse ${k} : ${r.pos[k]}`).join(", ") : "";
   say("qMsg", nb ? "err" : nw ? "warn" : "ok",
-    `${r.ok.length} questions valides${r.multi ? `, dont ${r.multi} à plusieurs bonnes réponses` : ""}${r.themes ? `, ${r.themes} thèmes` : ", sans thème"}.
+    `${label} : ${r.ok.length} questions valides${r.multi ? `, dont ${r.multi} à plusieurs bonnes réponses` : ""}${r.themes ? `, ${r.themes} thèmes` : ", sans thème"}.
      ${nb ? `${nb} lignes ignorées. ` : ""}${nw ? `${nw} points à vérifier. ` : ""}
      ${posTxt ? `<br>Rang de la bonne réponse (questions à réponse unique) : ${posTxt}. L’ordre est de toute façon mélangé à chaque test.` : ""}
      ${r.ok.length < cur.n_questions ? `<br>Attention : moins de questions que les ${cur.n_questions} tirées par test.` : ""}`);
   $("qCheck").innerHTML = r.issues.length ? `<div class="scroll"><table><thead><tr><th>Ligne</th><th>Constat</th></tr></thead><tbody>${
     r.issues.map((x) => `<tr><td class="${x.level}">${x.line}</td><td>${x.text}</td></tr>`).join("")}</tbody></table></div>` : "";
-  $("bImport").disabled = !r.ok.length;
-};
+}
 $("bImport").onclick = async () => {
   if (!pendingBank?.length) return;
-  if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions ?`)) return;
+  if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
   $("bImport").disabled = true;
   const { error: e1 } = await sb.from("elearn_question").delete().eq("module_id", cur.id);
   if (e1) { $("bImport").disabled = false; return say("qMsg", "err", errText(e1)); }
   for (let i = 0; i < pendingBank.length; i += 200) {
-    const { error } = await sb.from("elearn_question").insert(pendingBank.slice(i, i + 200).map((q) => ({ ...q, module_id: cur.id })));
+    const { error } = await sb.from("elearn_question").insert(pendingBank.slice(i, i + 200).map((q) => ({ module_id: cur.id, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null })));
     if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
   }
   pendingBank = null; $("qCsv").value = ""; $("qCheck").innerHTML = "";
-  await loadModules(cur.id); say("qMsg", "ok", "Banque importée.");
+  await loadModules(cur.id); say("qMsg", "ok", "Banque française importée. Importez maintenant la traduction anglaise.");
+};
+
+/* English translation of the bank: same questions, same answers order, same right answers */
+$("qCsvEn").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  pendingEn = null; $("bImportEn").disabled = true;
+  const r = checkBank(await f.text()); reportBank(r, "Banque anglaise");
+  const { data: fr } = await sb.from("elearn_question").select("*").eq("module_id", cur.id).order("ref");
+  if (!fr?.length) return say("qMsg", "err", "Importez d’abord la banque française.");
+  const hasRef = r.ok.some((x) => !/^Q\d{3}$/.test(x.ref));
+  const byRef = new Map(r.ok.map((x) => [x.ref, x]));
+  const pairs = [], errs = [];
+  if (!hasRef && r.ok.length !== fr.length) errs.push(`la banque anglaise compte ${r.ok.length} questions valides, la française ${fr.length}`);
+  fr.forEach((q, i) => {
+    const en = hasRef ? byRef.get(q.ref) : r.ok[i];
+    if (!en) { errs.push(`pas de traduction pour la question ${esc(q.ref)} « ${esc(q.question_fr)} »`); return; }
+    if (en.answers.length !== q.answers_fr.length) errs.push(`${esc(q.ref)} : ${en.answers.length} réponses en anglais pour ${q.answers_fr.length} en français`);
+    else if (en.correct.join() !== q.correct.join()) errs.push(`${esc(q.ref)} : bonnes réponses différentes (FR ${q.correct.map((c) => c + 1).join(";")}, EN ${en.correct.map((c) => c + 1).join(";")})`);
+    else pairs.push({ ...q, question_en: en.question, answers_en: en.answers });
+  });
+  if (errs.length) return say("qMsg", "err", `La banque anglaise ne correspond pas à la française :<br>${errs.slice(0, 12).join("<br>")}${errs.length > 12 ? `<br>… et ${errs.length - 12} autres écarts.` : ""}`);
+  pendingEn = pairs; $("bImportEn").disabled = false;
+  say("qMsg", "ok", `Traduction anglaise prête : ${pairs.length} questions appariées${hasRef ? " par référence" : " dans l’ordre du fichier"}, réponses et bonnes réponses identiques. Vérifiez les points signalés éventuels, puis importez.`);
+};
+$("bImportEn").onclick = async () => {
+  if (!pendingEn?.length) return;
+  $("bImportEn").disabled = true;
+  for (let i = 0; i < pendingEn.length; i += 200) {
+    const { error } = await sb.from("elearn_question").upsert(pendingEn.slice(i, i + 200), { onConflict: "id" });
+    if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
+  }
+  pendingEn = null; $("qCsvEn").value = ""; $("qCheck").innerHTML = "";
+  await loadModules(cur.id); say("qMsg", "ok", "Traduction anglaise importée.");
 };
 async function showQuestions() {
-  const { data } = await sb.from("elearn_question").select("ref, theme, question, answers, correct, active").eq("module_id", cur.id).order("ref");
+  const { data } = await sb.from("elearn_question").select("ref, theme, question_fr, answers_fr, question_en, answers_en, correct, active").eq("module_id", cur.id).order("ref");
   const list = data || []; $("qCount").textContent = `(${list.length})`;
-  $("qBody").innerHTML = list.length ? list.map((q) => `<tr><td>${esc(q.ref)}</td><td>${esc(q.theme)}</td><td>${esc(q.question)}</td><td>${
-    q.answers.map((a, i) => `<span class="ans ${q.correct.includes(i) ? "right" : ""}">${i + 1}. ${esc(a)}</span>`).join("")}</td></tr>`).join("")
-    : `<tr><td colspan="4" class="muted">Aucune question.</td></tr>`;
+  $("qBody").innerHTML = list.length ? list.map((q) => `<tr><td>${esc(q.ref)}</td><td>${esc(q.theme)}</td><td>${esc(q.question_fr)}<br><span class="muted">${q.question_en ? esc(q.question_en) : "<em>traduction anglaise manquante</em>"}</span></td><td>${
+    q.answers_fr.map((a, i) => `<span class="ans ${q.correct.includes(i) ? "right" : ""}">${i + 1}. ${esc(a)}</span>`).join("")}</td><td>${
+    (q.answers_en || []).map((a, i) => `<span class="ans ${q.correct.includes(i) ? "right" : ""}">${i + 1}. ${esc(a)}</span>`).join("") || "<span class='muted'>—</span>"}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="muted">Aucune question.</td></tr>`;
 }
 
 /* ---------- rules ---------- */
 $("bSaveRules").onclick = async () => {
-  const upd = { title: $("rTitle").value.trim(), n_questions: parseInt($("rN").value), pass_pct: parseFloat($("rPass").value),
+  const upd = { title: $("rTitle").value.trim(), title_en: $("rTitleEn").value.trim() || null, n_questions: parseInt($("rN").value), pass_pct: parseFloat($("rPass").value),
                 retake_pct: parseFloat($("rRetake").value), max_retakes: parseInt($("rMax").value), notes: $("rNotes").value.trim() || null };
   if (!upd.title || !(upd.n_questions > 0) || !(upd.pass_pct > 0 && upd.pass_pct <= 100) || !(upd.retake_pct >= 0 && upd.retake_pct <= upd.pass_pct) || !(upd.max_retakes >= 0))
     return say("rMsg", "err", "Vérifiez les valeurs : le seuil de nouveau test doit être inférieur ou égal au seuil de réussite.");
