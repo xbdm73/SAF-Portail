@@ -389,7 +389,7 @@ function renderBar(qn) {
     const ready = !todo.length;
     left.textContent = ready ? "Prêt à publier : les stagiaires verront cette version dès sa publication, en français et en anglais."
       : `Avant de publier : ${todo.join(", ")}.`;
-    addR("Supprimer le brouillon", "danger", deleteDraft);
+    addR("Supprimer le brouillon", "danger", deleteModule);
     addR("Publier", "", publish, !ready);
   } else if (cur.status === "published") {
     left.textContent = `Publié le ${new Date(cur.published_at).toLocaleDateString("fr-FR")}. Cette version est figée : pour la modifier, créez une nouvelle version.`;
@@ -397,7 +397,17 @@ function renderBar(qn) {
     addR("Nouvelle version", "", newVersion);
   } else {
     left.textContent = "Version retirée : elle n’est plus proposée aux stagiaires.";
+    addR("Supprimer le module", "danger", deleteModule, true);
+    const delBtn = right.lastChild, id = cur.id;
     addR("Nouvelle version", "", newVersion);
+    sb.rpc("elearn_module_attempts", { p_module_id: id }).then(({ data, error }) => {
+      if (!cur || cur.id !== id) return;
+      if (error || data === null) { delBtn.title = "Impossible de vérifier les tentatives de ce module."; return; }
+      if (data > 0) {
+        delBtn.hidden = true;
+        left.textContent += ` Elle a ${data} tentative${data > 1 ? "s" : ""} enregistrée${data > 1 ? "s" : ""} : elle est conservée pour garder les résultats et les attestations.`;
+      } else delBtn.disabled = false;
+    });
   }
 }
 
@@ -427,13 +437,20 @@ async function newVersion() {
   await loadModules(data.id); say("mMsg", "ok", `Version ${esc(v)} créée en brouillon, avec les slides et les questions de la version précédente.`);
 }
 const bump = (v) => { const m = String(v).match(/^(.*?)(\d+)$/); return m ? m[1] + (parseInt(m[2]) + 1) : v + ".1"; };
-async function deleteDraft() {
-  if (!confirm("Supprimer définitivement ce brouillon, ses slides et ses questions ?")) return;
-  const own = [...SL(cur, "fr"), ...SL(cur, "en")].filter((p) => p.startsWith(cur.id + "/"));
-  const { error } = await sb.from("elearn_module").delete().eq("id", cur.id);
+async function deleteModule() {
+  const label = `${cur.code} ${PART[cur.part] || cur.part || ""} version ${cur.version}`.replace(/\s+/g, " ");
+  const draft = cur.status === "draft";
+  const typed = prompt(`Supprimer définitivement ${draft ? "le brouillon" : "le module retiré"} ${label}, ses slides et ses questions ?\n\nCette action est irréversible. Pour confirmer, tapez le code du module (${cur.code}) :`);
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== String(cur.code).toUpperCase()) return say("mMsg", "warn", "Code incorrect : le module n’a pas été supprimé.");
+  const mine = new Set([...SL(cur, "fr"), ...SL(cur, "en")].filter((p) => typeof p === "string" && p.startsWith(cur.id + "/")));
+  // ne pas effacer les fichiers repris par une autre version du module
+  for (const m of modules) if (m.id !== cur.id) for (const p of [...SL(m, "fr"), ...SL(m, "en")]) mine.delete(p);
+  const { error } = await sb.rpc("elearn_delete_module", { p_module_id: cur.id });
   if (error) return say("mMsg", "err", errText(error));
-  if (own.length) await sb.storage.from(BUCKET).remove(own);
-  cur = null; $("modView").hidden = true; $("noSel").hidden = false; loadModules();
+  if (mine.size) await sb.storage.from(BUCKET).remove([...mine]);
+  cur = null; $("modView").hidden = true; $("noSel").hidden = false;
+  await loadModules();
 }
 
 /* ---------- tabs ---------- */
