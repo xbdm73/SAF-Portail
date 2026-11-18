@@ -49,6 +49,30 @@ input[type=text],input[type=email],input[type=password],input[type=number],selec
 .layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
 @media (max-width:900px){.layout{grid-template-columns:1fr}}
 .mods{list-style:none;margin:0;padding:0}
+@media (min-width:901px){aside.panel.side{position:sticky;top:14px;max-height:calc(100vh - 28px);display:flex;flex-direction:column}aside.panel.side .mods{overflow-y:auto;flex:1;min-height:0;margin-right:-8px;padding-right:8px}}
+.mlegend{display:flex;gap:12px;font-size:12px;color:var(--ink-2);margin-bottom:4px;flex-wrap:wrap}
+.mlegend span{display:inline-flex;align-items:center;gap:4px}.mlegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.mfilter{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.mfilter button{background:none;border:1px solid var(--line);border-radius:14px;padding:3px 11px;font-size:13px;cursor:pointer;color:var(--ink-2)}
+.mfilter button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.msum{font-size:13px;color:var(--ink-2);margin:4px 0 6px}
+.grp{border-bottom:1px solid var(--line)}
+.grp>summary{list-style:none;cursor:pointer;display:flex;gap:8px;align-items:center;padding:9px 4px}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary::before{content:"›";color:var(--ink-2);display:inline-block;width:10px;transition:transform .15s}
+.grp[open]>summary::before{transform:rotate(90deg)}
+.grp>summary .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--ink-2)}
+.dots{display:flex;gap:4px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
+.dots i.published{background:var(--green)}.dots i.draft{background:var(--amber)}.dots i.withdrawn{background:var(--ink-2);opacity:.5}
+.parts{padding:0 0 8px 18px}
+.parts .prow{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:4px;padding:6px 8px;cursor:pointer;font-size:14px}
+.parts .prow:hover{background:var(--soft)}
+.parts .prow[aria-current="true"]{background:var(--soft);box-shadow:inset 3px 0 0 var(--accent)}
+.parts .prow.empty{color:var(--ink-2)}
+.parts .prow .pn{font-weight:600}
+.parts .hist{display:flex;flex-wrap:wrap;gap:4px 10px;padding:0 8px 4px 8px;font-size:12.5px}
+.parts .hist button{background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline;cursor:pointer;font-size:12.5px}
+.parts .hist button[aria-current="true"]{color:var(--ink);font-weight:600}
 .mods li button{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
 .mods li button[aria-current="true"]{background:var(--soft)}
 .mods .code{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700}
@@ -107,10 +131,16 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
 <!-- APP -->
 <section id="vApp" class="wrap" hidden>
   <div class="layout">
-    <aside class="panel">
+    <aside class="panel side">
       <div class="row" style="justify-content:space-between"><h2 style="font-size:19px">Modules</h2><button class="btn" id="bNew" style="padding:6px 12px">Nouveau</button></div>
-      <ul class="mods" id="modList" style="margin-top:10px"></ul>
-      <p class="muted small" id="modEmpty" hidden>Aucun module pour l’instant. Créez-en un pour commencer.</p>
+      <input type="text" id="modSearch" placeholder="Rechercher : TM08, SMS, HESLO…" aria-label="Rechercher un module" style="margin-top:10px">
+      <div class="mfilter" id="modFilter" role="group" aria-label="Filtrer les modules">
+        <button data-f="all" aria-pressed="true">Tous</button><button data-f="pub">Publiés</button><button data-f="draft">En préparation</button><button data-f="none">Sans module</button>
+      </div>
+      <div class="msum" id="modSum"></div>
+      <div class="mlegend" aria-hidden="true"><span>Pastilles : Initiale · Recyclage</span><span><i style="background:var(--green)"></i>publié</span><span><i style="background:var(--amber)"></i>brouillon</span><span><i style="background:var(--line)"></i>aucun</span></div>
+      <div class="mods" id="modList"></div>
+      <p class="muted small" id="modEmpty" hidden>Aucune formation ne correspond.</p>
     </aside>
 
     <main class="panel" id="detail">
@@ -319,21 +349,91 @@ async function loadCatalog() {
   $("nCode").onchange = () => { const c = catalog.find((x) => x.code === $("nCode").value); $("nTitle").value = c ? (c.short_label || c.label) : ""; };
   $("nCode").value = catalog.find((c) => c.code === "TM08") ? "TM08" : (catalog[0]?.code || ""); $("nCode").onchange();
 }
+let modFilter = "all", openGroups = new Set();
+const tmNum = (c) => { const m = String(c).match(/^TM(\d+)/i); return m ? parseInt(m[1]) : null; };
+const PARTS = ["initial", "recurrent"];
+// version à afficher pour une partie : la publiée, sinon le brouillon le plus récent, sinon la plus récente
+const pickMain = (list) => list.find((m) => m.status === "published") || list.find((m) => m.status === "draft") || list[0] || null;
+
+function buildGroups() {
+  const codes = new Map();
+  for (const c of catalog) if (tmNum(c.code) !== null) codes.set(c.code, c);
+  for (const m of modules) if (!codes.has(m.code)) codes.set(m.code, catalog.find((c) => c.code === m.code) || { code: m.code, short_label: m.title });
+  return [...codes.values()].map((c) => {
+    const parts = {};
+    for (const p of PARTS) {
+      const list = modules.filter((m) => m.code === c.code && m.part === p); // déjà triés du plus récent au plus ancien
+      parts[p] = { list, main: pickMain(list) };
+    }
+    return { code: c.code, label: c.short_label || c.label || "", parts };
+  }).sort((x, y) => (tmNum(x.code) ?? 999) - (tmNum(y.code) ?? 999) || x.code.localeCompare(y.code));
+}
+
+function groupMatches(g) {
+  const q = $("modSearch").value.trim().toLowerCase();
+  if (q && !(`${g.code} ${g.label} ${PARTS.flatMap((p) => g.parts[p].list.map((m) => m.title + " " + (m.title_en || ""))).join(" ")}`.toLowerCase().includes(q))) return false;
+  const all = PARTS.flatMap((p) => g.parts[p].list);
+  if (modFilter === "pub") return all.some((m) => m.status === "published");
+  if (modFilter === "draft") return all.some((m) => m.status === "draft");
+  if (modFilter === "none") return PARTS.some((p) => !g.parts[p].list.length);
+  return true;
+}
+
+function renderModList() {
+  const groups = buildGroups();
+  const nPub = groups.reduce((n, g) => n + PARTS.filter((p) => g.parts[p].main?.status === "published").length, 0);
+  const nDraft = modules.filter((m) => m.status === "draft").length;
+  $("modSum").textContent = `${groups.length} formations · ${nPub} partie${nPub > 1 ? "s" : ""} publiée${nPub > 1 ? "s" : ""}${nDraft ? ` · ${nDraft} brouillon${nDraft > 1 ? "s" : ""}` : ""}`;
+  const searching = !!$("modSearch").value.trim();
+  const shown = groups.filter(groupMatches);
+  $("modEmpty").hidden = shown.length > 0;
+  $("modList").innerHTML = shown.map((g) => {
+    const open = searching || openGroups.has(g.code) || (cur && cur.code === g.code);
+    const dots = PARTS.map((p) => `<i class="${g.parts[p].main?.status || ""}" title="${PART[p]} : ${g.parts[p].main ? STATUS[g.parts[p].main.status] : "aucun module"}"></i>`).join("");
+    const rows = PARTS.map((p) => {
+      const { list, main } = g.parts[p];
+      if (!main) return `<button class="prow empty" data-new="${esc(g.code)}" data-part="${p}"><span class="pn">${PART[p]}</span><span class="small">+ Créer</span></button>`;
+      const others = list.filter((m) => m !== main);
+      return `<button class="prow" data-id="${main.id}" aria-current="${!!cur && cur.id === main.id}"><span><span class="pn">${PART[p]}</span> · v${esc(main.version)}</span><span class="st ${main.status}">${STATUS[main.status]}</span></button>`
+        + (others.length ? `<div class="hist"><span class="muted">Autres versions :</span>${others.map((m) => `<button data-id="${m.id}" aria-current="${!!cur && cur.id === m.id}">v${esc(m.version)} ${STATUS[m.status].toLowerCase()}</button>`).join("")}</div>` : "");
+    }).join("");
+    return `<details class="grp" data-code="${esc(g.code)}"${open ? " open" : ""}><summary><span class="code">${esc(g.code)}</span><span class="lbl">${esc(g.label)}</span><span class="dots">${dots}</span></summary><div class="parts">${rows}</div></details>`;
+  }).join("");
+  $("modList").querySelectorAll("details").forEach((d) => d.ontoggle = () => { if (d.open) openGroups.add(d.dataset.code); else openGroups.delete(d.dataset.code); });
+  $("modList").querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => openModule(b.dataset.id));
+  $("modList").querySelectorAll("button[data-new]").forEach((b) => b.onclick = () => startNew(b.dataset.new, b.dataset.part));
+}
+
 async function loadModules(selectId) {
   const { data, error } = await sb.from("elearn_module").select("*").order("code").order("part").order("created_at", { ascending: false });
   if (error) return say("mMsg", "err", errText(error));
   modules = data || [];
-  $("modEmpty").hidden = modules.length > 0;
-  $("modList").innerHTML = modules.map((m) => `<li><button data-id="${m.id}" aria-current="${cur && cur.id === m.id}">
-      <span><span class="code">${esc(m.code)}</span> ${esc(PART[m.part])} · v${esc(m.version)} · FR / EN<br><span class="small muted">${esc(m.title)}</span></span>
-      <span class="st ${m.status}">${STATUS[m.status]}</span></button></li>`).join("");
-  $("modList").querySelectorAll("button").forEach((b) => b.onclick = () => openModule(b.dataset.id));
+  if (selectId) { const m = modules.find((x) => x.id === selectId); if (m) openGroups.add(m.code); }
+  renderModList();
   if (selectId) openModule(selectId);
   else if (cur) { const again = modules.find((m) => m.id === cur.id); if (again) openModule(again.id); }
 }
+$("modSearch").oninput = () => renderModList();
+$("modFilter").querySelectorAll("button").forEach((b) => b.onclick = () => {
+  modFilter = b.dataset.f; $("modFilter").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); renderModList();
+});
+
+function startNew(code, part) {
+  cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", "");
+  if (code) {
+    if (![...$("nCode").options].some((o) => o.value === code)) $("nCode").insertAdjacentHTML("beforeend", `<option value="${esc(code)}">${esc(code)}</option>`);
+    $("nCode").value = code; $("nCode").onchange();
+    const sib = modules.find((m) => m.code === code);   // reprend les titres de l'autre partie si elle existe
+    if (sib) { $("nTitle").value = sib.title; $("nTitleEn").value = sib.title_en || ""; $("nN").value = sib.n_questions; }
+    openGroups.add(code);
+  }
+  if (part) $("nPart").value = part;
+  $("nVersion").value = "1.0";
+  renderModList();
+}
 
 /* ---------- new module ---------- */
-$("bNew").onclick = () => { cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", ""); loadModules(); };
+$("bNew").onclick = () => startNew();
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
   const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
@@ -349,7 +449,7 @@ async function openModule(id) {
   cur = modules.find((m) => m.id === id); if (!cur) return;
   pendingSlides = { fr: null, en: null }; pendingBank = null; pendingEn = null;
   $("noSel").hidden = true; $("newForm").hidden = true; $("modView").hidden = false;
-  $("modList").querySelectorAll("button").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
+  openGroups.add(cur.code); renderModList();
   const cat = catalog.find((c) => c.code === cur.code);
   $("mTitle").textContent = `${cur.code} · ${cur.title}`;
   $("mTitle").title = cur.title_en || "";
