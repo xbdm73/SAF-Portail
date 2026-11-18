@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atelier e-learning · Crew Training SAF International</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#13294B; --ink-2:#55657D; --line:#D7DDE6; --soft:#EEF2F7;
+  --accent:#1F5FA0; --accent-ink:#FFFFFF; --green:#2E7D4F; --amber:#A86F05; --red:#B3261E;
+  --green-bg:#E6F2EA; --amber-bg:#FBF1DC; --red-bg:#F8E3E1;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A2B; --surface:#152439; --ink:#E6ECF4; --ink-2:#A3B2C7; --line:#2A3D57; --soft:#1B2D45;
+    --accent:#6FA8E0; --accent-ink:#0E1A2B; --green:#5DBB84; --amber:#E2AE45; --red:#EF7A70;
+    --green-bg:#173326; --amber-bg:#3A2E12; --red-bg:#3D1C1A; color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3{font-family:"Barlow Semi Condensed",Barlow,"Arial Narrow",sans-serif;font-weight:600;line-height:1.15;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px;border-bottom:2px solid var(--ink);background:var(--surface)}
+header.top h1{font-size:24px}
+header.top .who{font-size:14px;color:var(--ink-2);text-align:right}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px}
+.muted{color:var(--ink-2)} .small{font-size:14px}
+label.f{display:block;font-weight:500;margin:12px 0 5px;font-size:15px}
+input[type=text],input[type=email],input[type=password],input[type=number],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--bg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer;font-size:15px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.danger{background:transparent;color:var(--red);border-color:var(--red)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 16px}
+@media (max-width:760px){.grid2,.grid4{grid-template-columns:1fr}}
+.layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.mods{list-style:none;margin:0;padding:0}
+.mods li button{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+.mods li button[aria-current="true"]{background:var(--soft)}
+.mods .code{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700}
+.st{font-size:13px;padding:1px 8px;border-radius:10px;white-space:nowrap;align-self:center}
+.st.draft{background:var(--amber-bg);color:var(--amber)} .st.published{background:var(--green-bg);color:var(--green)} .st.withdrawn{background:var(--soft);color:var(--ink-2)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:16px 0 18px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 12px;cursor:pointer;color:var(--ink-2);font-weight:600;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.msg{padding:10px 14px;border-radius:4px;margin:12px 0;font-size:15px;border-left:4px solid}
+.msg.ok{background:var(--green-bg);border-color:var(--green)} .msg.warn{background:var(--amber-bg);border-color:var(--amber)} .msg.err{background:var(--red-bg);border-color:var(--red)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
+.thumbs figure{margin:0;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--soft)}
+.thumbs img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:#fff}
+.thumbs figcaption{font-size:12px;padding:3px 6px;color:var(--ink-2)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--ink-2);background:var(--soft)}
+td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
+.ans{display:block}.ans.right{font-weight:600;color:var(--green)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--soft);border-radius:5px;padding:12px 14px;margin-top:6px}
+.login{max-width:420px;margin:60px auto}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;background:var(--accent);width:0}
+.facts{display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;font-size:15px}
+.facts b{font-family:"Barlow Semi Condensed",sans-serif;font-size:20px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="row" style="gap:18px">
+    <a class="btn ghost" href="https://saf-international-portail.netlify.app/" style="padding:5px 12px;font-size:14px;text-decoration:none">← Portail</a>
+    <div><div class="small muted">SAF International · Crew Training</div><h1>Atelier e-learning</h1></div>
+  </div>
+  <div class="who"><span id="whoName"></span><br><button class="btn ghost" id="bLogout" hidden style="padding:3px 10px;font-size:13px">Se déconnecter</button></div>
+</header>
+
+<!-- LOGIN -->
+<section id="vLogin" class="wrap" hidden>
+  <div class="panel login">
+    <h2 style="font-size:22px">Connexion</h2>
+    <p class="muted small">Ouvert depuis le portail, l’atelier vous connecte automatiquement. Sinon, utilisez votre compte Crew Training.</p>
+    <div id="loginStep1">
+      <label class="f" for="lEmail">E-mail</label><input type="email" id="lEmail" autocomplete="username">
+      <label class="f" for="lPwd">Mot de passe</label><input type="password" id="lPwd" autocomplete="current-password">
+      <div class="row" style="margin-top:16px"><button class="btn" id="bLogin">Se connecter</button></div>
+    </div>
+    <div id="loginStep2" hidden>
+      <label class="f" for="lTotp">Code de l’application d’authentification</label><input type="text" id="lTotp" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+      <div class="row" style="margin-top:16px"><button class="btn" id="bTotp">Valider le code</button></div>
+    </div>
+    <div id="loginMsg"></div>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="vApp" class="wrap" hidden>
+  <div class="layout">
+    <aside class="panel">
+      <div class="row" style="justify-content:space-between"><h2 style="font-size:19px">Modules</h2><button class="btn" id="bNew" style="padding:6px 12px">Nouveau</button></div>
+      <ul class="mods" id="modList" style="margin-top:10px"></ul>
+      <p class="muted small" id="modEmpty" hidden>Aucun module pour l’instant. Créez-en un pour commencer.</p>
+    </aside>
+
+    <main class="panel" id="detail">
+      <p class="muted" id="noSel">Choisissez un module à gauche ou créez-en un.</p>
+
+      <!-- new module form -->
+      <div id="newForm" hidden>
+        <h2 style="font-size:21px">Nouveau module</h2>
+        <div class="grid2">
+          <div><label class="f" for="nCode">Formation du catalogue</label><select id="nCode"></select></div>
+          <div><label class="f" for="nTitle">Titre affiché</label><input type="text" id="nTitle"></div>
+        </div>
+        <div class="grid4">
+          <div><label class="f" for="nPart">Partie</label><select id="nPart"><option value="initial">Initiale</option><option value="recurrent">Recyclage</option></select></div>
+          <div><label class="f" for="nVersion">Version</label><input type="text" id="nVersion" value="1.0"></div>
+          <div><label class="f" for="nLang">Langue</label><select id="nLang"><option value="fr">Français</option><option value="en">Anglais</option></select></div>
+          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="20"></div>
+        </div>
+        <div class="row" style="margin-top:18px"><button class="btn" id="bCreate">Créer le module</button><button class="btn ghost" id="bCancelNew">Annuler</button></div>
+        <div id="newMsg"></div>
+      </div>
+
+      <!-- module detail -->
+      <div id="modView" hidden>
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <h2 id="mTitle" style="font-size:23px"></h2>
+            <div class="muted small" id="mSub"></div>
+          </div>
+          <span class="st" id="mStatus"></span>
+        </div>
+        <div class="facts" id="mFacts"></div>
+        <div class="bar" id="mBar"></div>
+        <div id="mMsg"></div>
+
+        <div class="tabs" role="tablist">
+          <button role="tab" data-tab="tSlides" aria-selected="true">Slides</button>
+          <button role="tab" data-tab="tQuestions" aria-selected="false">Questions</button>
+          <button role="tab" data-tab="tRules" aria-selected="false">Règles du test</button>
+          <button role="tab" data-tab="tStats" aria-selected="false">Statistiques</button>
+        </div>
+
+        <section id="tSlides" role="tabpanel">
+          <p class="muted small">Exportez le PowerPoint en PDF (Fichier, Exporter, PDF), puis déposez-le ici. Chaque page devient une slide.</p>
+          <div class="row draftOnly"><input type="file" id="sPdf" accept="application/pdf"><button class="btn" id="bSaveSlides" disabled>Enregistrer les slides</button></div>
+          <div class="progress" id="sProg" hidden><i></i></div>
+          <div id="sMsg"></div>
+          <div class="thumbs" id="sThumbs"></div>
+        </section>
+
+        <section id="tQuestions" role="tabpanel" hidden>
+          <p class="muted small">Banque CSV : colonnes question, answer1 à answer8, correctAnswer (plusieurs bonnes réponses séparées par un point-virgule, par exemple 1;3), et en option theme et ref. Séparateur virgule ou point-virgule.</p>
+          <div class="row draftOnly"><input type="file" id="qCsv" accept=".csv,text/csv"><button class="btn" id="bImport" disabled>Remplacer la banque par ce fichier</button></div>
+          <div id="qMsg"></div>
+          <div id="qCheck"></div>
+          <h3 style="font-size:18px;margin-top:20px">Banque actuelle <span class="muted small" id="qCount"></span></h3>
+          <div class="scroll"><table><thead><tr><th>Réf.</th><th>Thème</th><th>Question</th><th>Réponses (bonnes en vert)</th></tr></thead><tbody id="qBody"></tbody></table></div>
+        </section>
+
+        <section id="tRules" role="tabpanel" hidden>
+          <div class="grid2">
+            <div><label class="f" for="rTitle">Titre affiché</label><input type="text" id="rTitle"></div>
+            <div><label class="f" for="rN">Questions tirées par test</label><input type="number" id="rN" min="1"></div>
+          </div>
+          <div class="grid4">
+            <div><label class="f" for="rPass">Seuil de réussite (%)</label><input type="number" id="rPass" min="1" max="100" step="0.5"></div>
+            <div><label class="f" for="rRetake">Seuil de nouveau test (%)</label><input type="number" id="rRetake" min="0" max="100" step="0.5"></div>
+            <div><label class="f" for="rMax">Nouveaux tests autorisés</label><input type="number" id="rMax" min="0"></div>
+          </div>
+          <label class="f" for="rNotes">Notes internes</label><textarea id="rNotes" rows="3"></textarea>
+          <p class="muted small">À partir du seuil de réussite : attestation et mise à jour de la formation. Entre les deux seuils : nouveau test, dans la limite autorisée. En dessous du seuil de nouveau test, ou limite atteinte : formation à revoir.</p>
+          <div class="row draftOnly"><button class="btn" id="bSaveRules">Enregistrer</button></div>
+          <div id="rMsg"></div>
+        </section>
+
+        <section id="tStats" role="tabpanel" hidden>
+          <p class="muted small">Taux de réussite par question sur les tests passés. Une question souvent ratée signale une question mal posée ou un point du cours mal compris.</p>
+          <div class="scroll"><table><thead><tr><th>Réf.</th><th>Question</th><th>Posée</th><th>Réussie</th><th>Taux</th></tr></thead><tbody id="stBody"></tbody></table></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</section>
+
+<script>
+const SB_URL = "https://qbbrdwvclaqdpaxmcayh.supabase.co";
+const SB_KEY = "sb_publishable_Ky-Z9P5LJJi5eryVOv8UYw_G4UGqIMt";
+const BUCKET = "elearning";
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const say = (el, kind, html) => { $(el).innerHTML = html ? `<div class="msg ${kind}">${html}</div>` : ""; };
+const ERR = {
+  ELEARN_MODULE_FROZEN: "Cette version est publiée ou retirée : elle ne peut plus changer. Créez une nouvelle version.",
+  ELEARN_PUBLISH_NO_SLIDES: "Impossible de publier : aucune slide n’est enregistrée.",
+  ELEARN_PUBLISH_NOT_ENOUGH_QUESTIONS: "Impossible de publier : la banque contient moins de questions que le nombre tiré par test.",
+  elearn_module_one_published: "Une autre version de ce module est déjà publiée dans cette langue.",
+  elearn_module_code_part_version_lang_key: "Cette version existe déjà pour ce module, cette partie et cette langue.",
+};
+const errText = (e) => { const m = e?.message || String(e); const k = Object.keys(ERR).find((x) => m.includes(x)); return k ? ERR[k] : esc(m); };
+const PART = { initial: "Initiale", recurrent: "Recyclage" };
+const STATUS = { draft: "Brouillon", published: "Publié", withdrawn: "Retiré" };
+
+let catalog = [], modules = [], cur = null, pendingSlides = null, pendingBank = null;
+
+/* ---------- auth ---------- */
+// Portal single sign-on: when this page is served by the portal site, reuse the portal session (SMS's Project)
+// to open the Crew Training session through the portal-sso function. Otherwise: Crew Training e-mail and password.
+const PORTAL_REF = "qaqehmxoehcvzcojcqkm";
+const PORTAL_URL = "https://qaqehmxoehcvzcojcqkm.supabase.co";
+const PORTAL_KEY = "sb_publishable_iiqlYqnEnFRUP__sqhMrSg_1Z4vB15i";
+function portalStorageKey() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k.includes(SB_URL.split("//")[1].split(".")[0])) continue;  // our own Crew Training session
+      const v = localStorage.getItem(k); if (!v || !v.includes("refresh_token")) continue;
+      const o = JSON.parse(v); const t = o?.access_token || o?.currentSession?.access_token; if (!t) continue;
+      const iss = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).iss || "";
+      if (k.includes(PORTAL_REF) || iss.includes(PORTAL_REF)) return k;
+    }
+  } catch (_) { /* storage unavailable */ }
+  return null;
+}
+async function portalSSO() {
+  const key = portalStorageKey(); if (!key) return "none";
+  say("loginMsg", "ok", "Connexion via le portail…");
+  try {
+    const portal = window.supabase.createClient(PORTAL_URL, PORTAL_KEY, { auth: { storageKey: key, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false } });
+    const { data: ps } = await portal.auth.getSession();
+    if (!ps?.session) return "none";
+    const r = await fetch(SB_URL + "/functions/v1/portal-sso", { method: "POST", headers: { "Content-Type": "application/json", apikey: SB_KEY },
+                                                                   body: JSON.stringify({ portal_token: ps.session.access_token }) });
+    const j = await r.json();
+    if (!r.ok) return j.error === "no_crew_training_account" ? "noaccount" : "fail";
+    const { error } = await sb.auth.verifyOtp({ token_hash: j.token_hash, type: "magiclink" });
+    return error ? "fail" : "ok";
+  } catch (_) { return "fail"; }
+}
+async function boot(trySSO = true) {
+  let { data } = await sb.auth.getSession();
+  if (!data.session && trySSO) {
+    const r = await portalSSO();
+    if (r === "ok") ({ data } = await sb.auth.getSession());
+    else if (r === "noaccount") { showLogin(); return say("loginMsg", "warn", "Votre compte du portail n’a pas d’équivalent dans le Crew Training. Connectez-vous avec un compte Crew Training."); }
+    else if (r === "fail") { showLogin(); return say("loginMsg", "warn", "La connexion automatique via le portail a échoué. Connectez-vous avec votre compte Crew Training."); }
+  }
+  if (!data.session) return showLogin();
+  const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") { showLogin(); $("loginStep1").hidden = true; $("loginStep2").hidden = false; return; }
+  const { data: staff, error } = await sb.rpc("elearn_is_staff");
+  if (error || !staff) { showLogin(); say("loginMsg", "err", "Ce compte n’a pas les droits de formation (enregistrer des formations) nécessaires à l’atelier."); await sb.auth.signOut(); return; }
+  $("whoName").textContent = data.session.user.email; $("bLogout").hidden = false;
+  $("vLogin").hidden = true; $("vApp").hidden = false;
+  await loadCatalog(); await loadModules();
+}
+function showLogin() { $("vLogin").hidden = false; $("vApp").hidden = true; $("loginStep1").hidden = false; $("loginStep2").hidden = true; }
+$("bLogin").onclick = async () => {
+  say("loginMsg", "", "");
+  let error;
+  try { ({ error } = await sb.auth.signInWithPassword({ email: $("lEmail").value.trim(), password: $("lPwd").value })); }
+  catch (e) { error = e; }
+  if (error) {
+    const bad = /invalid login credentials/i.test(error.message || "");
+    return say("loginMsg", "err", bad ? "E-mail ou mot de passe incorrect."
+      : `Le serveur du Crew Training est injoignable depuis cette page (${esc(error.message || error)}). Ouvrez le fichier téléchargé directement dans Chrome ou Edge, pas dans l’aperçu de Claude.`);
+  }
+  boot(false);
+};
+$("lPwd").addEventListener("keydown", (e) => { if (e.key === "Enter") $("bLogin").click(); });
+$("bTotp").onclick = async () => {
+  const { data: f } = await sb.auth.mfa.listFactors();
+  const totp = f?.totp?.[0];
+  if (!totp) return say("loginMsg", "err", "Aucun facteur d’authentification trouvé pour ce compte.");
+  const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: totp.id, code: $("lTotp").value.trim() });
+  if (error) return say("loginMsg", "err", "Code incorrect ou expiré.");
+  boot(false);
+};
+$("lTotp").addEventListener("keydown", (e) => { if (e.key === "Enter") $("bTotp").click(); });
+$("bLogout").onclick = async () => { await sb.auth.signOut({ scope: "local" }); location.href = "https://saf-international-portail.netlify.app/"; };
+
+/* ---------- data ---------- */
+async function loadCatalog() {
+  const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method").eq("active", true).order("sort_order");
+  catalog = data || [];
+  $("nCode").innerHTML = catalog.map((c) => `<option value="${esc(c.code)}">${esc(c.code)} · ${esc(c.short_label || c.label)}</option>`).join("");
+  $("nCode").onchange = () => { const c = catalog.find((x) => x.code === $("nCode").value); $("nTitle").value = c ? (c.short_label || c.label) : ""; };
+  $("nCode").value = catalog.find((c) => c.code === "TM08") ? "TM08" : (catalog[0]?.code || ""); $("nCode").onchange();
+}
+async function loadModules(selectId) {
+  const { data, error } = await sb.from("elearn_module").select("*").order("code").order("part").order("created_at", { ascending: false });
+  if (error) return say("mMsg", "err", errText(error));
+  modules = data || [];
+  $("modEmpty").hidden = modules.length > 0;
+  $("modList").innerHTML = modules.map((m) => `<li><button data-id="${m.id}" aria-current="${cur && cur.id === m.id}">
+      <span><span class="code">${esc(m.code)}</span> ${esc(PART[m.part])} · v${esc(m.version)} · ${esc(m.lang.toUpperCase())}<br><span class="small muted">${esc(m.title)}</span></span>
+      <span class="st ${m.status}">${STATUS[m.status]}</span></button></li>`).join("");
+  $("modList").querySelectorAll("button").forEach((b) => b.onclick = () => openModule(b.dataset.id));
+  if (selectId) openModule(selectId);
+  else if (cur) { const again = modules.find((m) => m.id === cur.id); if (again) openModule(again.id); }
+}
+
+/* ---------- new module ---------- */
+$("bNew").onclick = () => { cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", ""); loadModules(); };
+$("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
+$("bCreate").onclick = async () => {
+  const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(), lang: $("nLang").value,
+                title: $("nTitle").value.trim(), n_questions: parseInt($("nN").value) || 20 };
+  if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
+  const { data, error } = await sb.from("elearn_module").insert(row).select().single();
+  if (error) return say("newMsg", "err", errText(error));
+  $("newForm").hidden = true; await loadModules(data.id);
+};
+
+/* ---------- module view ---------- */
+async function openModule(id) {
+  cur = modules.find((m) => m.id === id); if (!cur) return;
+  pendingSlides = null; pendingBank = null;
+  $("noSel").hidden = true; $("newForm").hidden = true; $("modView").hidden = false;
+  $("modList").querySelectorAll("button").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
+  const cat = catalog.find((c) => c.code === cur.code);
+  $("mTitle").textContent = `${cur.code} · ${cur.title}`;
+  $("mSub").textContent = `${PART[cur.part]}, version ${cur.version}, ${cur.lang === "fr" ? "français" : "anglais"}${cat?.validity_months ? `, validité ${cat.validity_months} mois` : ""}`;
+  $("mStatus").className = "st " + cur.status; $("mStatus").textContent = STATUS[cur.status];
+  const draft = cur.status === "draft";
+  document.querySelectorAll(".draftOnly").forEach((e) => e.hidden = !draft);
+  ["rTitle", "rN", "rPass", "rRetake", "rMax", "rNotes"].forEach((k) => $(k).disabled = !draft);
+  $("rTitle").value = cur.title; $("rN").value = cur.n_questions; $("rPass").value = cur.pass_pct; $("rRetake").value = cur.retake_pct; $("rMax").value = cur.max_retakes; $("rNotes").value = cur.notes || "";
+  say("mMsg", "", ""); say("sMsg", "", ""); say("qMsg", "", ""); say("rMsg", "", ""); $("qCheck").innerHTML = ""; $("sPdf").value = ""; $("qCsv").value = "";
+  $("bSaveSlides").disabled = true; $("bImport").disabled = true;
+  const qn = await countQuestions();
+  $("mFacts").innerHTML = `<span><b>${cur.slides.length}</b> slides</span><span><b>${qn}</b> questions en banque</span><span><b>${cur.n_questions}</b> tirées par test</span><span>réussite à <b>${Number(cur.pass_pct)} %</b>, nouveau test dès <b>${Number(cur.retake_pct)} %</b>, <b>${cur.max_retakes}</b> nouveaux tests</span>`;
+  renderBar(qn);
+  showSlides(); showQuestions(); showStats();
+}
+async function countQuestions() { const { count } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", cur.id).eq("active", true); return count || 0; }
+
+function renderBar(qn) {
+  const b = $("mBar"); b.innerHTML = "";
+  const add = (label, cls, fn) => { const x = document.createElement("button"); x.className = "btn " + (cls || ""); x.textContent = label; x.onclick = fn; b.appendChild(x); };
+  const left = document.createElement("span"); left.className = "small muted"; b.appendChild(left);
+  const right = document.createElement("span"); right.className = "row"; b.appendChild(right);
+  const addR = (label, cls, fn, dis) => { const x = document.createElement("button"); x.className = "btn " + (cls || ""); x.textContent = label; x.onclick = fn; x.disabled = !!dis; right.appendChild(x); };
+  if (cur.status === "draft") {
+    const ready = cur.slides.length > 0 && qn >= cur.n_questions;
+    left.textContent = ready ? "Prêt à publier : les stagiaires verront cette version dès sa publication."
+      : `Avant de publier : ${cur.slides.length ? "" : "enregistrer les slides"}${!cur.slides.length && qn < cur.n_questions ? " et " : ""}${qn < cur.n_questions ? `avoir au moins ${cur.n_questions} questions` : ""}.`;
+    addR("Supprimer le brouillon", "danger", deleteDraft);
+    addR("Publier", "", publish, !ready);
+  } else if (cur.status === "published") {
+    left.textContent = `Publié le ${new Date(cur.published_at).toLocaleDateString("fr-FR")}. Cette version est figée : pour la modifier, créez une nouvelle version.`;
+    addR("Retirer", "danger", withdraw);
+    addR("Nouvelle version", "", newVersion);
+  } else {
+    left.textContent = "Version retirée : elle n’est plus proposée aux stagiaires.";
+    addR("Nouvelle version", "", newVersion);
+  }
+}
+
+async function publish() {
+  const other = modules.find((m) => m.id !== cur.id && m.status === "published" && m.code === cur.code && m.part === cur.part && m.lang === cur.lang);
+  if (other && !confirm(`La version ${other.version} est publiée. Elle sera retirée et remplacée par la version ${cur.version}. Continuer ?`)) return;
+  if (!other && !confirm(`Publier ${cur.code} version ${cur.version} ? Elle ne pourra plus être modifiée.`)) return;
+  if (other) { const { error } = await sb.from("elearn_module").update({ status: "withdrawn" }).eq("id", other.id); if (error) return say("mMsg", "err", errText(error)); }
+  const { error } = await sb.from("elearn_module").update({ status: "published" }).eq("id", cur.id);
+  if (error) return say("mMsg", "err", errText(error));
+  await loadModules(cur.id); say("mMsg", "ok", "Module publié.");
+}
+async function withdraw() {
+  if (!confirm("Retirer cette version ? Les stagiaires ne pourront plus la suivre. Les attestations déjà émises restent valables.")) return;
+  const { error } = await sb.from("elearn_module").update({ status: "withdrawn" }).eq("id", cur.id);
+  if (error) return say("mMsg", "err", errText(error));
+  await loadModules(cur.id);
+}
+async function newVersion() {
+  const v = prompt("Numéro de la nouvelle version :", bump(cur.version)); if (!v) return;
+  const row = { code: cur.code, part: cur.part, version: v.trim(), lang: cur.lang, title: cur.title, slides: cur.slides,
+                n_questions: cur.n_questions, pass_pct: cur.pass_pct, retake_pct: cur.retake_pct, max_retakes: cur.max_retakes, notes: cur.notes };
+  const { data, error } = await sb.from("elearn_module").insert(row).select().single();
+  if (error) return say("mMsg", "err", errText(error));
+  const { data: qs } = await sb.from("elearn_question").select("ref, theme, question, answers, correct, active").eq("module_id", cur.id);
+  if (qs?.length) { const { error: e2 } = await sb.from("elearn_question").insert(qs.map((q) => ({ ...q, module_id: data.id }))); if (e2) say("mMsg", "warn", "Version créée, mais la copie des questions a échoué : " + errText(e2)); }
+  await loadModules(data.id); say("mMsg", "ok", `Version ${esc(v)} créée en brouillon, avec les slides et les questions de la version précédente.`);
+}
+const bump = (v) => { const m = String(v).match(/^(.*?)(\d+)$/); return m ? m[1] + (parseInt(m[2]) + 1) : v + ".1"; };
+async function deleteDraft() {
+  if (!confirm("Supprimer définitivement ce brouillon, ses slides et ses questions ?")) return;
+  const own = cur.slides.filter((p) => p.startsWith(cur.id + "/"));
+  const { error } = await sb.from("elearn_module").delete().eq("id", cur.id);
+  if (error) return say("mMsg", "err", errText(error));
+  if (own.length) await sb.storage.from(BUCKET).remove(own);
+  cur = null; $("modView").hidden = true; $("noSel").hidden = false; loadModules();
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tabs button").forEach((t) => t.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === t));
+  ["tSlides", "tQuestions", "tRules", "tStats"].forEach((p) => $(p).hidden = p !== t.dataset.tab);
+});
+
+/* ---------- slides ---------- */
+async function showSlides() {
+  const box = $("sThumbs"); box.innerHTML = "";
+  if (!cur.slides.length) { box.innerHTML = `<p class="muted small">Aucune slide enregistrée.</p>`; return; }
+  const { data } = await sb.storage.from(BUCKET).createSignedUrls(cur.slides, 3600);
+  box.innerHTML = (data || []).map((d, i) => `<figure><img loading="lazy" alt="Slide ${i + 1}" src="${esc(d.signedUrl)}"><figcaption>Slide ${i + 1}</figcaption></figure>`).join("");
+}
+$("sPdf").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  if (!window.pdfjsLib) return say("sMsg", "err", "Le lecteur PDF n’a pas pu se charger. Vérifiez la connexion internet.");
+  say("sMsg", "", ""); pendingSlides = []; $("bSaveSlides").disabled = true;
+  const prog = $("sProg"); prog.hidden = false;
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    const box = $("sThumbs"); box.innerHTML = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const v1 = page.getViewport({ scale: 1 }); const scale = 1600 / v1.width; const vp = page.getViewport({ scale });
+      const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+      const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.85));
+      pendingSlides.push(blob);
+      box.insertAdjacentHTML("beforeend", `<figure><img alt="Slide ${i}" src="${URL.createObjectURL(blob)}"><figcaption>Slide ${i} · nouvelle</figcaption></figure>`);
+      prog.firstElementChild.style.width = (i / pdf.numPages * 100) + "%";
+    }
+    say("sMsg", "warn", `${pdf.numPages} slides prêtes. Vérifiez-les, puis enregistrez : elles remplaceront les slides actuelles.`);
+    $("bSaveSlides").disabled = false;
+  } catch (err) { say("sMsg", "err", "Lecture du PDF impossible : " + esc(err.message)); }
+  prog.hidden = true; prog.firstElementChild.style.width = "0";
+};
+$("bSaveSlides").onclick = async () => {
+  if (!pendingSlides?.length) return;
+  $("bSaveSlides").disabled = true; const prog = $("sProg"); prog.hidden = false;
+  const stamp = Date.now().toString(36); const paths = [];
+  try {
+    for (let i = 0; i < pendingSlides.length; i++) {
+      const p = `${cur.id}/${stamp}-${String(i + 1).padStart(3, "0")}.jpg`;
+      const { error } = await sb.storage.from(BUCKET).upload(p, pendingSlides[i], { contentType: "image/jpeg", upsert: true });
+      if (error) throw error;
+      paths.push(p); prog.firstElementChild.style.width = ((i + 1) / pendingSlides.length * 100) + "%";
+    }
+    const old = cur.slides.filter((p) => p.startsWith(cur.id + "/"));
+    const { error } = await sb.from("elearn_module").update({ slides: paths }).eq("id", cur.id);
+    if (error) { await sb.storage.from(BUCKET).remove(paths); throw error; }
+    if (old.length) await sb.storage.from(BUCKET).remove(old);
+    pendingSlides = null; await loadModules(cur.id); say("sMsg", "ok", `${paths.length} slides enregistrées.`);
+  } catch (err) { say("sMsg", "err", "Enregistrement interrompu : " + errText(err)); $("bSaveSlides").disabled = false; }
+  prog.hidden = true;
+};
+
+/* ---------- questions ---------- */
+function parseCSV(t) {
+  t = t.replace(/^\uFEFF/, ""); const h1 = t.split(/\r?\n/)[0];
+  const sep = h1.split(";").length > h1.split(",").length ? ";" : ",";
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < t.length; i++) { const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true; else if (c === sep) { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && t[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c; }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows.filter((r) => r.some((x) => x.trim()));
+}
+const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+function checkBank(text) {
+  const rows = parseCSV(text); if (!rows.length) return { ok: [], issues: [{ line: 1, level: "bad", text: "Fichier vide." }] };
+  const head = rows.shift().map((x) => x.trim().toLowerCase()); const ix = (k) => head.indexOf(k.toLowerCase());
+  const issues = [], ok = [];
+  if (ix("question") < 0 || ix("correctanswer") < 0) return { ok, issues: [{ line: 1, level: "bad", text: "Colonnes « question » et « correctAnswer » introuvables dans l’en-tête." }] };
+  const seen = new Map();
+  rows.forEach((r, i) => {
+    const line = i + 2, q = (r[ix("question")] || "").trim();
+    const answers = []; for (let k = 1; k <= 8; k++) { const j = ix("answer" + k); if (j >= 0 && (r[j] || "").trim()) answers.push(r[j].trim()); }
+    const corr = [...new Set(String(r[ix("correctAnswer")] || "").split(/[;|,\s]+/).filter(Boolean).map((x) => parseInt(x) - 1))].sort((a, b) => a - b);
+    const bad = [];
+    if (!q) bad.push("question vide");
+    if (answers.length < 2) bad.push("moins de deux réponses");
+    if (!corr.length || corr.some((c) => isNaN(c) || c < 0 || c >= answers.length)) bad.push("numéro de bonne réponse absent ou hors des réponses");
+    if (bad.length) { issues.push({ line, level: "bad", text: `« ${esc((q || "(sans texte)").replace(/\s*[:?]\s*$/, ""))} » : ${bad.join(", ")}. Ligne ignorée.` }); return; }
+    const warn = [];
+    const k = norm(q); if (seen.has(k)) warn.push(`même énoncé que la ligne ${seen.get(k)} (une seule des deux sera tirée par test)`); else seen.set(k, line);
+    if (/^(elle|il|ils|elles|celle|celui|ceux|cela|ce|cette|ces|she|he|it|they|this|these)\b/i.test(q)) warn.push("commence par un pronom : elle dépend peut-être de la question précédente");
+    if (q.replace(/[:?.!\s]+$/, "").trim().split(/\s+/).length <= 2) warn.push("énoncé de deux mots : vérifiez qu’il se comprend sans le cours");
+    if (new Set(answers.map(norm)).size < answers.length) warn.push("deux réponses identiques");
+    if (corr.length === answers.length) warn.push("toutes les réponses sont bonnes");
+    warn.forEach((w) => issues.push({ line, level: "warn", text: `« ${esc(q.replace(/\s*[:?]\s*$/, ""))} » : ${w}.` }));
+    ok.push({ ref: (ix("ref") >= 0 && (r[ix("ref")] || "").trim()) || `Q${String(ok.length + 1).padStart(3, "0")}`,
+              theme: ix("theme") >= 0 ? (r[ix("theme")] || "").trim() : "", question: q, answers, correct: corr });
+  });
+  // position of the right answer
+  const pos = {}; ok.filter((x) => x.correct.length === 1).forEach((x) => { pos[x.correct[0] + 1] = (pos[x.correct[0] + 1] || 0) + 1; });
+  return { ok, issues, pos, multi: ok.filter((x) => x.correct.length > 1).length, themes: new Set(ok.map((x) => x.theme).filter(Boolean)).size };
+}
+$("qCsv").onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = checkBank(await f.text()); pendingBank = r.ok;
+  const nb = r.issues.filter((x) => x.level === "bad").length, nw = r.issues.filter((x) => x.level === "warn").length;
+  const posTxt = r.pos ? Object.keys(r.pos).sort().map((k) => `réponse ${k} : ${r.pos[k]}`).join(", ") : "";
+  say("qMsg", nb ? "err" : nw ? "warn" : "ok",
+    `${r.ok.length} questions valides${r.multi ? `, dont ${r.multi} à plusieurs bonnes réponses` : ""}${r.themes ? `, ${r.themes} thèmes` : ", sans thème"}.
+     ${nb ? `${nb} lignes ignorées. ` : ""}${nw ? `${nw} points à vérifier. ` : ""}
+     ${posTxt ? `<br>Rang de la bonne réponse (questions à réponse unique) : ${posTxt}. L’ordre est de toute façon mélangé à chaque test.` : ""}
+     ${r.ok.length < cur.n_questions ? `<br>Attention : moins de questions que les ${cur.n_questions} tirées par test.` : ""}`);
+  $("qCheck").innerHTML = r.issues.length ? `<div class="scroll"><table><thead><tr><th>Ligne</th><th>Constat</th></tr></thead><tbody>${
+    r.issues.map((x) => `<tr><td class="${x.level}">${x.line}</td><td>${x.text}</td></tr>`).join("")}</tbody></table></div>` : "";
+  $("bImport").disabled = !r.ok.length;
+};
+$("bImport").onclick = async () => {
+  if (!pendingBank?.length) return;
+  if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions ?`)) return;
+  $("bImport").disabled = true;
+  const { error: e1 } = await sb.from("elearn_question").delete().eq("module_id", cur.id);
+  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", errText(e1)); }
+  for (let i = 0; i < pendingBank.length; i += 200) {
+    const { error } = await sb.from("elearn_question").insert(pendingBank.slice(i, i + 200).map((q) => ({ ...q, module_id: cur.id })));
+    if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
+  }
+  pendingBank = null; $("qCsv").value = ""; $("qCheck").innerHTML = "";
+  await loadModules(cur.id); say("qMsg", "ok", "Banque importée.");
+};
+async function showQuestions() {
+  const { data } = await sb.from("elearn_question").select("ref, theme, question, answers, correct, active").eq("module_id", cur.id).order("ref");
+  const list = data || []; $("qCount").textContent = `(${list.length})`;
+  $("qBody").innerHTML = list.length ? list.map((q) => `<tr><td>${esc(q.ref)}</td><td>${esc(q.theme)}</td><td>${esc(q.question)}</td><td>${
+    q.answers.map((a, i) => `<span class="ans ${q.correct.includes(i) ? "right" : ""}">${i + 1}. ${esc(a)}</span>`).join("")}</td></tr>`).join("")
+    : `<tr><td colspan="4" class="muted">Aucune question.</td></tr>`;
+}
+
+/* ---------- rules ---------- */
+$("bSaveRules").onclick = async () => {
+  const upd = { title: $("rTitle").value.trim(), n_questions: parseInt($("rN").value), pass_pct: parseFloat($("rPass").value),
+                retake_pct: parseFloat($("rRetake").value), max_retakes: parseInt($("rMax").value), notes: $("rNotes").value.trim() || null };
+  if (!upd.title || !(upd.n_questions > 0) || !(upd.pass_pct > 0 && upd.pass_pct <= 100) || !(upd.retake_pct >= 0 && upd.retake_pct <= upd.pass_pct) || !(upd.max_retakes >= 0))
+    return say("rMsg", "err", "Vérifiez les valeurs : le seuil de nouveau test doit être inférieur ou égal au seuil de réussite.");
+  const { error } = await sb.from("elearn_module").update(upd).eq("id", cur.id);
+  if (error) return say("rMsg", "err", errText(error));
+  await loadModules(cur.id); say("rMsg", "ok", "Règles enregistrées.");
+};
+
+/* ---------- stats ---------- */
+async function showStats() {
+  const { data, error } = await sb.rpc("elearn_question_stats", { p_module: cur.id });
+  if (error) { $("stBody").innerHTML = `<tr><td colspan="5">${errText(error)}</td></tr>`; return; }
+  const rows = (data || []).filter((r) => r.asked > 0);
+  $("stBody").innerHTML = rows.length ? rows.map((r) => `<tr><td>${esc(r.ref)}</td><td>${esc(r.question)}</td><td>${r.asked}</td><td>${r.right_answers}</td><td class="${r.success_pct < 50 ? "bad" : r.success_pct < 75 ? "warn" : "ok"}">${Number(r.success_pct).toLocaleString("fr-FR")} %</td></tr>`).join("")
+    : `<tr><td colspan="5" class="muted">Aucun test passé sur cette version.</td></tr>`;
+}
+
+boot();
+</script>
+</body>
+</html>
