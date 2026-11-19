@@ -49,30 +49,6 @@ input[type=text],input[type=email],input[type=password],input[type=number],selec
 .layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
 @media (max-width:900px){.layout{grid-template-columns:1fr}}
 .mods{list-style:none;margin:0;padding:0}
-@media (min-width:901px){aside.panel.side{position:sticky;top:14px;max-height:calc(100vh - 28px);display:flex;flex-direction:column}aside.panel.side .mods{overflow-y:auto;flex:1;min-height:0;margin-right:-8px;padding-right:8px}}
-.mlegend{display:flex;gap:12px;font-size:12px;color:var(--ink-2);margin-bottom:4px;flex-wrap:wrap}
-.mlegend span{display:inline-flex;align-items:center;gap:4px}.mlegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
-.mfilter{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
-.mfilter button{background:none;border:1px solid var(--line);border-radius:14px;padding:3px 11px;font-size:13px;cursor:pointer;color:var(--ink-2)}
-.mfilter button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.msum{font-size:13px;color:var(--ink-2);margin:4px 0 6px}
-.grp{border-bottom:1px solid var(--line)}
-.grp>summary{list-style:none;cursor:pointer;display:flex;gap:8px;align-items:center;padding:9px 4px}
-.grp>summary::-webkit-details-marker{display:none}
-.grp>summary::before{content:"›";color:var(--ink-2);display:inline-block;width:10px;transition:transform .15s}
-.grp[open]>summary::before{transform:rotate(90deg)}
-.grp>summary .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--ink-2)}
-.dots{display:flex;gap:4px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
-.dots i.published{background:var(--green)}.dots i.draft{background:var(--amber)}.dots i.withdrawn{background:var(--ink-2);opacity:.5}
-.parts{padding:0 0 8px 18px}
-.parts .prow{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:0;border-radius:4px;padding:6px 8px;cursor:pointer;font-size:14px}
-.parts .prow:hover{background:var(--soft)}
-.parts .prow[aria-current="true"]{background:var(--soft);box-shadow:inset 3px 0 0 var(--accent)}
-.parts .prow.empty{color:var(--ink-2)}
-.parts .prow .pn{font-weight:600}
-.parts .hist{display:flex;flex-wrap:wrap;gap:4px 10px;padding:0 8px 4px 8px;font-size:12.5px}
-.parts .hist button{background:none;border:0;padding:0;color:var(--ink-2);text-decoration:underline;cursor:pointer;font-size:12.5px}
-.parts .hist button[aria-current="true"]{color:var(--ink);font-weight:600}
 .mods li button{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
 .mods li button[aria-current="true"]{background:var(--soft)}
 .mods .code{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700}
@@ -131,16 +107,10 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
 <!-- APP -->
 <section id="vApp" class="wrap" hidden>
   <div class="layout">
-    <aside class="panel side">
+    <aside class="panel">
       <div class="row" style="justify-content:space-between"><h2 style="font-size:19px">Modules</h2><button class="btn" id="bNew" style="padding:6px 12px">Nouveau</button></div>
-      <input type="text" id="modSearch" placeholder="Rechercher : TM08, SMS, HESLO…" aria-label="Rechercher un module" style="margin-top:10px">
-      <div class="mfilter" id="modFilter" role="group" aria-label="Filtrer les modules">
-        <button data-f="all" aria-pressed="true">Tous</button><button data-f="pub">Publiés</button><button data-f="draft">En préparation</button><button data-f="none">Sans module</button>
-      </div>
-      <div class="msum" id="modSum"></div>
-      <div class="mlegend" aria-hidden="true"><span>Pastilles : Initiale · Recyclage</span><span><i style="background:var(--green)"></i>publié</span><span><i style="background:var(--amber)"></i>brouillon</span><span><i style="background:var(--line)"></i>aucun</span></div>
-      <div class="mods" id="modList"></div>
-      <p class="muted small" id="modEmpty" hidden>Aucune formation ne correspond.</p>
+      <ul class="mods" id="modList" style="margin-top:10px"></ul>
+      <p class="muted small" id="modEmpty" hidden>Aucun module pour l’instant. Créez-en un pour commencer.</p>
     </aside>
 
     <main class="panel" id="detail">
@@ -160,7 +130,7 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
           <div><label class="f" for="nPart">Partie</label><select id="nPart"><option value="initial">Initiale</option><option value="recurrent">Recyclage</option></select></div>
           <div><label class="f" for="nVersion">Version</label><input type="text" id="nVersion" value="1.0"></div>
-          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="20"></div>
+          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="15"></div>
         </div>
         <div class="row" style="margin-top:18px"><button class="btn" id="bCreate">Créer le module</button><button class="btn ghost" id="bCancelNew">Annuler</button></div>
         <div id="newMsg"></div>
@@ -341,6 +311,20 @@ $("bTotp").onclick = async () => {
 $("lTotp").addEventListener("keydown", (e) => { if (e.key === "Enter") $("bTotp").click(); });
 $("bLogout").onclick = async () => { await sb.auth.signOut({ scope: "local" }); location.href = "https://saf-international-portail.netlify.app/"; };
 
+/* Refresh the session before a write: after a long pause the token may have expired and the first write
+   would otherwise fail (the second attempt then works). */
+async function fresh() {
+  const { data } = await sb.auth.getSession();
+  const exp = data?.session?.expires_at || 0;
+  if (exp * 1000 < Date.now() + 120000) await sb.auth.refreshSession();
+}
+async function retry(fn) {
+  await fresh();
+  let r = await fn();
+  if (r && r.error) { await sb.auth.refreshSession(); r = await fn(); }
+  return r;
+}
+
 /* ---------- data ---------- */
 async function loadCatalog() {
   const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method").eq("active", true).order("sort_order");
@@ -349,95 +333,25 @@ async function loadCatalog() {
   $("nCode").onchange = () => { const c = catalog.find((x) => x.code === $("nCode").value); $("nTitle").value = c ? (c.short_label || c.label) : ""; };
   $("nCode").value = catalog.find((c) => c.code === "TM08") ? "TM08" : (catalog[0]?.code || ""); $("nCode").onchange();
 }
-let modFilter = "all", openGroups = new Set();
-const tmNum = (c) => { const m = String(c).match(/^TM(\d+)/i); return m ? parseInt(m[1]) : null; };
-const PARTS = ["initial", "recurrent"];
-// version à afficher pour une partie : la publiée, sinon le brouillon le plus récent, sinon la plus récente
-const pickMain = (list) => list.find((m) => m.status === "published") || list.find((m) => m.status === "draft") || list[0] || null;
-
-function buildGroups() {
-  const codes = new Map();
-  for (const c of catalog) if (tmNum(c.code) !== null) codes.set(c.code, c);
-  for (const m of modules) if (!codes.has(m.code)) codes.set(m.code, catalog.find((c) => c.code === m.code) || { code: m.code, short_label: m.title });
-  return [...codes.values()].map((c) => {
-    const parts = {};
-    for (const p of PARTS) {
-      const list = modules.filter((m) => m.code === c.code && m.part === p); // déjà triés du plus récent au plus ancien
-      parts[p] = { list, main: pickMain(list) };
-    }
-    return { code: c.code, label: c.short_label || c.label || "", parts };
-  }).sort((x, y) => (tmNum(x.code) ?? 999) - (tmNum(y.code) ?? 999) || x.code.localeCompare(y.code));
-}
-
-function groupMatches(g) {
-  const q = $("modSearch").value.trim().toLowerCase();
-  if (q && !(`${g.code} ${g.label} ${PARTS.flatMap((p) => g.parts[p].list.map((m) => m.title + " " + (m.title_en || ""))).join(" ")}`.toLowerCase().includes(q))) return false;
-  const all = PARTS.flatMap((p) => g.parts[p].list);
-  if (modFilter === "pub") return all.some((m) => m.status === "published");
-  if (modFilter === "draft") return all.some((m) => m.status === "draft");
-  if (modFilter === "none") return PARTS.some((p) => !g.parts[p].list.length);
-  return true;
-}
-
-function renderModList() {
-  const groups = buildGroups();
-  const nPub = groups.reduce((n, g) => n + PARTS.filter((p) => g.parts[p].main?.status === "published").length, 0);
-  const nDraft = modules.filter((m) => m.status === "draft").length;
-  $("modSum").textContent = `${groups.length} formations · ${nPub} partie${nPub > 1 ? "s" : ""} publiée${nPub > 1 ? "s" : ""}${nDraft ? ` · ${nDraft} brouillon${nDraft > 1 ? "s" : ""}` : ""}`;
-  const searching = !!$("modSearch").value.trim();
-  const shown = groups.filter(groupMatches);
-  $("modEmpty").hidden = shown.length > 0;
-  $("modList").innerHTML = shown.map((g) => {
-    const open = searching || openGroups.has(g.code) || (cur && cur.code === g.code);
-    const dots = PARTS.map((p) => `<i class="${g.parts[p].main?.status || ""}" title="${PART[p]} : ${g.parts[p].main ? STATUS[g.parts[p].main.status] : "aucun module"}"></i>`).join("");
-    const rows = PARTS.map((p) => {
-      const { list, main } = g.parts[p];
-      if (!main) return `<button class="prow empty" data-new="${esc(g.code)}" data-part="${p}"><span class="pn">${PART[p]}</span><span class="small">+ Créer</span></button>`;
-      const others = list.filter((m) => m !== main);
-      return `<button class="prow" data-id="${main.id}" aria-current="${!!cur && cur.id === main.id}"><span><span class="pn">${PART[p]}</span> · v${esc(main.version)}</span><span class="st ${main.status}">${STATUS[main.status]}</span></button>`
-        + (others.length ? `<div class="hist"><span class="muted">Autres versions :</span>${others.map((m) => `<button data-id="${m.id}" aria-current="${!!cur && cur.id === m.id}">v${esc(m.version)} ${STATUS[m.status].toLowerCase()}</button>`).join("")}</div>` : "");
-    }).join("");
-    return `<details class="grp" data-code="${esc(g.code)}"${open ? " open" : ""}><summary><span class="code">${esc(g.code)}</span><span class="lbl">${esc(g.label)}</span><span class="dots">${dots}</span></summary><div class="parts">${rows}</div></details>`;
-  }).join("");
-  $("modList").querySelectorAll("details").forEach((d) => d.ontoggle = () => { if (d.open) openGroups.add(d.dataset.code); else openGroups.delete(d.dataset.code); });
-  $("modList").querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => openModule(b.dataset.id));
-  $("modList").querySelectorAll("button[data-new]").forEach((b) => b.onclick = () => startNew(b.dataset.new, b.dataset.part));
-}
-
 async function loadModules(selectId) {
   const { data, error } = await sb.from("elearn_module").select("*").order("code").order("part").order("created_at", { ascending: false });
   if (error) return say("mMsg", "err", errText(error));
   modules = data || [];
-  if (selectId) { const m = modules.find((x) => x.id === selectId); if (m) openGroups.add(m.code); }
-  renderModList();
+  $("modEmpty").hidden = modules.length > 0;
+  $("modList").innerHTML = modules.map((m) => `<li><button data-id="${m.id}" aria-current="${cur && cur.id === m.id}">
+      <span><span class="code">${esc(m.code)}</span> ${esc(PART[m.part])} · v${esc(m.version)} · FR / EN<br><span class="small muted">${esc(m.title)}</span></span>
+      <span class="st ${m.status}">${STATUS[m.status]}</span></button></li>`).join("");
+  $("modList").querySelectorAll("button").forEach((b) => b.onclick = () => openModule(b.dataset.id));
   if (selectId) openModule(selectId);
   else if (cur) { const again = modules.find((m) => m.id === cur.id); if (again) openModule(again.id); }
 }
-$("modSearch").oninput = () => renderModList();
-$("modFilter").querySelectorAll("button").forEach((b) => b.onclick = () => {
-  modFilter = b.dataset.f; $("modFilter").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); renderModList();
-});
-
-function startNew(code, part) {
-  cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", "");
-  if (code) {
-    if (![...$("nCode").options].some((o) => o.value === code)) $("nCode").insertAdjacentHTML("beforeend", `<option value="${esc(code)}">${esc(code)}</option>`);
-    $("nCode").value = code; $("nCode").onchange();
-    const sib = modules.find((m) => m.code === code);   // reprend les titres de l'autre partie si elle existe
-    if (sib) { $("nTitle").value = sib.title; $("nTitleEn").value = sib.title_en || ""; $("nN").value = sib.n_questions; }
-    openGroups.add(code);
-  }
-  if (part) $("nPart").value = part;
-  $("nVersion").value = "1.0";
-  renderModList();
-}
 
 /* ---------- new module ---------- */
-$("bNew").onclick = () => startNew();
+$("bNew").onclick = () => { cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", ""); loadModules(); };
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
   const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
-                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 20 };
+                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 15 };
   if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
   const { data, error } = await sb.from("elearn_module").insert(row).select().single();
   if (error) return say("newMsg", "err", errText(error));
@@ -449,7 +363,7 @@ async function openModule(id) {
   cur = modules.find((m) => m.id === id); if (!cur) return;
   pendingSlides = { fr: null, en: null }; pendingBank = null; pendingEn = null;
   $("noSel").hidden = true; $("newForm").hidden = true; $("modView").hidden = false;
-  openGroups.add(cur.code); renderModList();
+  $("modList").querySelectorAll("button").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
   const cat = catalog.find((c) => c.code === cur.code);
   $("mTitle").textContent = `${cur.code} · ${cur.title}`;
   $("mTitle").title = cur.title_en || "";
@@ -489,7 +403,7 @@ function renderBar(qn) {
     const ready = !todo.length;
     left.textContent = ready ? "Prêt à publier : les stagiaires verront cette version dès sa publication, en français et en anglais."
       : `Avant de publier : ${todo.join(", ")}.`;
-    addR("Supprimer le brouillon", "danger", deleteModule);
+    addR("Supprimer le brouillon", "danger", deleteDraft);
     addR("Publier", "", publish, !ready);
   } else if (cur.status === "published") {
     left.textContent = `Publié le ${new Date(cur.published_at).toLocaleDateString("fr-FR")}. Cette version est figée : pour la modifier, créez une nouvelle version.`;
@@ -497,17 +411,7 @@ function renderBar(qn) {
     addR("Nouvelle version", "", newVersion);
   } else {
     left.textContent = "Version retirée : elle n’est plus proposée aux stagiaires.";
-    addR("Supprimer le module", "danger", deleteModule, true);
-    const delBtn = right.lastChild, id = cur.id;
     addR("Nouvelle version", "", newVersion);
-    sb.rpc("elearn_module_attempts", { p_module_id: id }).then(({ data, error }) => {
-      if (!cur || cur.id !== id) return;
-      if (error || data === null) { delBtn.title = "Impossible de vérifier les tentatives de ce module."; return; }
-      if (data > 0) {
-        delBtn.hidden = true;
-        left.textContent += ` Elle a ${data} tentative${data > 1 ? "s" : ""} enregistrée${data > 1 ? "s" : ""} : elle est conservée pour garder les résultats et les attestations.`;
-      } else delBtn.disabled = false;
-    });
   }
 }
 
@@ -537,20 +441,13 @@ async function newVersion() {
   await loadModules(data.id); say("mMsg", "ok", `Version ${esc(v)} créée en brouillon, avec les slides et les questions de la version précédente.`);
 }
 const bump = (v) => { const m = String(v).match(/^(.*?)(\d+)$/); return m ? m[1] + (parseInt(m[2]) + 1) : v + ".1"; };
-async function deleteModule() {
-  const label = `${cur.code} ${PART[cur.part] || cur.part || ""} version ${cur.version}`.replace(/\s+/g, " ");
-  const draft = cur.status === "draft";
-  const typed = prompt(`Supprimer définitivement ${draft ? "le brouillon" : "le module retiré"} ${label}, ses slides et ses questions ?\n\nCette action est irréversible. Pour confirmer, tapez le code du module (${cur.code}) :`);
-  if (typed === null) return;
-  if (typed.trim().toUpperCase() !== String(cur.code).toUpperCase()) return say("mMsg", "warn", "Code incorrect : le module n’a pas été supprimé.");
-  const mine = new Set([...SL(cur, "fr"), ...SL(cur, "en")].filter((p) => typeof p === "string" && p.startsWith(cur.id + "/")));
-  // ne pas effacer les fichiers repris par une autre version du module
-  for (const m of modules) if (m.id !== cur.id) for (const p of [...SL(m, "fr"), ...SL(m, "en")]) mine.delete(p);
-  const { error } = await sb.rpc("elearn_delete_module", { p_module_id: cur.id });
+async function deleteDraft() {
+  if (!confirm("Supprimer définitivement ce brouillon, ses slides et ses questions ?")) return;
+  const own = [...SL(cur, "fr"), ...SL(cur, "en")].filter((p) => p.startsWith(cur.id + "/"));
+  const { error } = await sb.from("elearn_module").delete().eq("id", cur.id);
   if (error) return say("mMsg", "err", errText(error));
-  if (mine.size) await sb.storage.from(BUCKET).remove([...mine]);
-  cur = null; $("modView").hidden = true; $("noSel").hidden = false;
-  await loadModules();
+  if (own.length) await sb.storage.from(BUCKET).remove(own);
+  cur = null; $("modView").hidden = true; $("noSel").hidden = false; loadModules();
 }
 
 /* ---------- tabs ---------- */
@@ -677,15 +574,21 @@ function reportBank(r, label) {
 $("bImport").onclick = async () => {
   if (!pendingBank?.length) return;
   if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
-  $("bImport").disabled = true;
-  const { error: e1 } = await sb.from("elearn_question").delete().eq("module_id", cur.id);
-  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", errText(e1)); }
-  for (let i = 0; i < pendingBank.length; i += 200) {
-    const { error } = await sb.from("elearn_question").insert(pendingBank.slice(i, i + 200).map((q) => ({ module_id: cur.id, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null })));
-    if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
+  $("bImport").disabled = true; say("qMsg", "warn", "Import en cours…");
+  const bank = pendingBank, mod = cur.id;
+  const { error: e1 } = await retry(() => sb.from("elearn_question").delete().eq("module_id", mod));
+  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", "Import impossible : " + errText(e1)); }
+  for (let i = 0; i < bank.length; i += 200) {
+    const rows = bank.slice(i, i + 200).map((q) => ({ module_id: mod, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null }));
+    const { error } = await retry(() => sb.from("elearn_question").insert(rows));
+    if (error) { $("bImport").disabled = false; return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import."); }
   }
   pendingBank = null; $("qCsv").value = ""; $("qCheck").innerHTML = "";
-  await loadModules(cur.id); say("qMsg", "ok", "Banque française importée. Importez maintenant la traduction anglaise.");
+  await loadModules(mod);
+  const { count } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", mod);
+  say("qMsg", count === bank.length ? "ok" : "err", count === bank.length
+    ? `Banque française importée : ${count} questions. Importez maintenant la traduction anglaise.`
+    : `Import incomplet : ${count ?? 0} questions enregistrées sur ${bank.length}. Relancez l’import.`);
 };
 
 /* English translation of the bank: same questions, same answers order, same right answers */
@@ -714,7 +617,8 @@ $("bImportEn").onclick = async () => {
   if (!pendingEn?.length) return;
   $("bImportEn").disabled = true;
   for (let i = 0; i < pendingEn.length; i += 200) {
-    const { error } = await sb.from("elearn_question").upsert(pendingEn.slice(i, i + 200), { onConflict: "id" });
+    const part = pendingEn.slice(i, i + 200);
+    const { error } = await retry(() => sb.from("elearn_question").upsert(part, { onConflict: "id" }));
     if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
   }
   pendingEn = null; $("qCsvEn").value = ""; $("qCheck").innerHTML = "";
