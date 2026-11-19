@@ -147,7 +147,7 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <h2 style="font-size:21px">Nouveau module</h2>
         <div class="grid2">
           <div><label class="f" for="nCode">Formation du catalogue</label><select id="nCode"></select></div>
-          <div><label class="f" for="nTitle">Titre français</label><input type="text" id="nTitle"></div>
+          <div><label class="f" for="nTitle">Titre français</label><input type="text" id="nTitle" placeholder="À renseigner en français"></div>
         </div>
         <div class="grid2">
           <div></div>
@@ -353,10 +353,15 @@ async function retry(fn) {
 
 /* ---------- data ---------- */
 async function loadCatalog() {
-  const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method").eq("active", true).order("sort_order");
+  const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method, elearn_recurrent_enabled").eq("active", true).order("sort_order");
   catalog = data || [];
   $("nCode").innerHTML = catalog.map((c) => `<option value="${esc(c.code)}">${esc(c.code)} · ${esc(c.short_label || c.label)}</option>`).join("");
-  $("nCode").onchange = () => { const c = catalog.find((x) => x.code === $("nCode").value); $("nTitle").value = c ? (c.short_label || c.label) : ""; };
+  $("nCode").onchange = () => {
+    const c = catalog.find((x) => x.code === $("nCode").value);
+    $("nTitleEn").value = c ? (c.short_label || c.label || "") : "";
+    $("nTitle").value = "";
+    syncPartAvailability();
+  };
   $("nCode").value = catalog.find((c) => c.code === "TM08") ? "TM08" : (catalog[0]?.code || ""); $("nCode").onchange();
 }
 let modFilter = "all";
@@ -367,6 +372,23 @@ function tmList() {
   return tms.sort((x, y) => parseInt(x.code.slice(2)) - parseInt(y.code.slice(2)) || x.code.localeCompare(y.code));
 }
 const mainOf = (list) => list.find((m) => m.status === "published") || list.find((m) => m.status === "draft") || list[0] || null;
+function recurrentEnabled(code) {
+  const c = catalog.find((x) => x.code === code);
+  return !c || c.elearn_recurrent_enabled !== false;
+}
+function syncPartAvailability() {
+  const enabled = recurrentEnabled($("nCode").value);
+  $("nPart").querySelector('option[value="recurrent"]').disabled = !enabled;
+  if (!enabled && $("nPart").value === "recurrent") $("nPart").value = "initial";
+}
+async function toggleRecurrent(code, enabled) {
+  const { data, error } = await sb.from("qual_catalog").update({ elearn_recurrent_enabled: enabled }).eq("code", code).select("code");
+  if (error || !data?.length) { alert("Impossible de modifier le recyclage : " + (error ? errText(error) : "droits insuffisants")); renderModList(); return; }
+  const c = catalog.find((x) => x.code === code);
+  if (c) c.elearn_recurrent_enabled = enabled;
+  syncPartAvailability();
+  renderModList();
+}
 function renderModList() {
   const q = $("modSearch").value.trim().toLowerCase();
   const tms = tmList().map((t) => ({ ...t, mods: modules.filter((m) => m.code === t.code) }));
@@ -378,12 +400,13 @@ function renderModList() {
   const rowBtn = (m, old) => `<button class="mrow${old ? " old" : ""}" data-id="${m.id}" aria-current="${!!(cur && cur.id === m.id)}">
       <span>${old ? "" : `${esc(PART[m.part])} · `}v${esc(m.version)}</span><span class="st ${m.status}">${STATUS[m.status]}</span></button>`;
   $("modList").innerHTML = shown.map((t) => `<li class="tm${t.mods.length ? "" : " none"}">
-    <div class="tmh"><span class="code">${esc(t.code)}</span><span class="lbl">${esc(t.label)}</span>${t.mods.length ? "" : `<span class="nomod">Aucun module</span>`}</div>
+    <div class="tmh"><span class="code">${esc(t.code)}</span><span class="lbl">${esc(t.label)}</span><label class="small" style="display:flex;align-items:center;gap:5px;white-space:nowrap" title="Autoriser le recyclage pour ce TM"><input type="checkbox" data-recurrent="${esc(t.code)}" ${recurrentEnabled(t.code) ? "checked" : ""} style="width:auto">Recyclage</label>${t.mods.length ? "" : `<span class="nomod">Aucun module</span>`}</div>
     ${["initial", "recurrent"].map((p) => {
       const list = t.mods.filter((m) => m.part === p), main = mainOf(list);
-      if (!main) return `<button class="mrow todo" data-new="${esc(t.code)}|${p}"><span>${PART[p]}</span><span class="st todo">À créer</span></button>`;
+      if (!main) return p === "recurrent" && !recurrentEnabled(t.code) ? "" : `<button class="mrow todo" data-new="${esc(t.code)}|${p}"><span>${PART[p]}</span><span class="st todo">À créer</span></button>`;
       return rowBtn(main, false) + list.filter((m) => m !== main).map((m) => rowBtn(m, true)).join("");
     }).join("")}</li>`).join("");
+  $("modList").querySelectorAll("input[data-recurrent]").forEach((e) => e.onchange = () => toggleRecurrent(e.dataset.recurrent, e.checked));
   $("modList").querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => openModule(b.dataset.id));
   $("modList").querySelectorAll("button[data-new]").forEach((b) => b.onclick = () => { const [c, p] = b.dataset.new.split("|"); startNew(c, p); });
 }
@@ -405,6 +428,8 @@ function startNew(code, part) {
   cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", "");
   if (code && catalog.some((c) => c.code === code)) { $("nCode").value = code; $("nCode").onchange(); }
   if (part) $("nPart").value = part;
+  syncPartAvailability();
+  $("nN").value = "15";
   $("nVersion").value = "1.0";
   renderModList();
   if (code) $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -412,6 +437,7 @@ function startNew(code, part) {
 $("bNew").onclick = () => startNew();
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
+  if ($("nPart").value === "recurrent" && !recurrentEnabled($("nCode").value)) return say("newMsg", "err", "Le recyclage est désactivé pour ce TM.");
   const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
                 title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 15 };
   if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
