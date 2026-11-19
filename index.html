@@ -2160,10 +2160,10 @@ resolveRole();
     const T2 = k => (typeof t === 'function' ? t(k) : k);
     send.onclick = async () => {
       err.textContent = ''; const e = em.value.trim().toLowerCase();
-      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ err.textContent = T2('otp_bad_email'); return; }
+      if(!/^[^@\s]+@saf-helico\.com$/i.test(e)){ err.textContent = 'Adresse SAF requise / SAF e-mail required (@saf-helico.com).'; return; }
       send.disabled = true;
       try{
-        const r = await C().auth.signInWithOtp({ email:e, options:{ shouldCreateUser:false } });
+        const r = await C().auth.signInWithOtp({ email:e, options:{ shouldCreateUser:true } });
         if(r.error) throw r.error;
         s1.hidden = true; s2.hidden = false; code.value = ''; code.focus();
         document.getElementById('otp-sent').textContent = T2('otp_sent').replace('{e}', e);
