@@ -762,7 +762,12 @@ function applyGate(){
 
 /* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
    le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
-const visible = s => (userRole!=='staff' || s.id==='docs') && (userRole!=='authority' || s.id==='sms') && (!s.roles || (userRole && s.roles.includes(userRole)));
+const visible = s => {
+   const session = readSession();
+   const paulReadOnly = userRole==='reader' && session && String(session.email).toLowerCase()==='paul.ruiz@saf-helico.com';
+   const paulApp = paulReadOnly && (s.id==='ops' || s.id==='ops-main');
+   return (userRole!=='staff' || s.id==='docs') && (userRole!=='authority' || s.id==='sms') && (paulApp || !s.roles || (userRole && s.roles.includes(userRole)));
+ };
 
 /* ---------- état de chaque système ---------- */
 async function check(sys){
