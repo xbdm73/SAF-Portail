@@ -46,7 +46,13 @@ input[type=text],input[type=email],input[type=password],input[type=number],selec
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 16px}
 @media (max-width:760px){.grid2,.grid4{grid-template-columns:1fr}}
-.layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+/* Atelier: utilise toute la surface disponible, sans modifier la largeur du formulaire de connexion. */
+#vApp.wrap{width:100%;max-width:none;margin:0;padding:16px clamp(10px,1.3vw,24px) 24px;min-height:calc(100dvh - 86px)}
+.layout{display:grid;grid-template-columns:clamp(250px,21vw,340px) minmax(0,1fr);gap:16px;align-items:stretch;min-height:calc(100dvh - 126px)}
+.layout > aside,.layout > main{min-width:0}
+.layout > main{width:100%}
+@media (max-width:900px){#vApp.wrap{padding:12px 10px 24px;min-height:0}.layout{min-height:0;gap:12px}}
+
 @media (max-width:900px){.layout{grid-template-columns:1fr}}
 .mods{list-style:none;margin:0;padding:0}
 .mods li button{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
@@ -130,7 +136,7 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
           <div><label class="f" for="nPart">Partie</label><select id="nPart"><option value="initial">Initiale</option><option value="recurrent">Recyclage</option></select></div>
           <div><label class="f" for="nVersion">Version</label><input type="text" id="nVersion" value="1.0"></div>
-          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="15"></div>
+          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="20"></div>
         </div>
         <div class="row" style="margin-top:18px"><button class="btn" id="bCreate">Créer le module</button><button class="btn ghost" id="bCancelNew">Annuler</button></div>
         <div id="newMsg"></div>
@@ -311,20 +317,6 @@ $("bTotp").onclick = async () => {
 $("lTotp").addEventListener("keydown", (e) => { if (e.key === "Enter") $("bTotp").click(); });
 $("bLogout").onclick = async () => { await sb.auth.signOut({ scope: "local" }); location.href = "https://saf-international-portail.netlify.app/"; };
 
-/* Refresh the session before a write: after a long pause the token may have expired and the first write
-   would otherwise fail (the second attempt then works). */
-async function fresh() {
-  const { data } = await sb.auth.getSession();
-  const exp = data?.session?.expires_at || 0;
-  if (exp * 1000 < Date.now() + 120000) await sb.auth.refreshSession();
-}
-async function retry(fn) {
-  await fresh();
-  let r = await fn();
-  if (r && r.error) { await sb.auth.refreshSession(); r = await fn(); }
-  return r;
-}
-
 /* ---------- data ---------- */
 async function loadCatalog() {
   const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method").eq("active", true).order("sort_order");
@@ -351,7 +343,7 @@ $("bNew").onclick = () => { cur = null; $("noSel").hidden = true; $("modView").h
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
   const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
-                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 15 };
+                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 20 };
   if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
   const { data, error } = await sb.from("elearn_module").insert(row).select().single();
   if (error) return say("newMsg", "err", errText(error));
@@ -574,21 +566,15 @@ function reportBank(r, label) {
 $("bImport").onclick = async () => {
   if (!pendingBank?.length) return;
   if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
-  $("bImport").disabled = true; say("qMsg", "warn", "Import en cours…");
-  const bank = pendingBank, mod = cur.id;
-  const { error: e1 } = await retry(() => sb.from("elearn_question").delete().eq("module_id", mod));
-  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", "Import impossible : " + errText(e1)); }
-  for (let i = 0; i < bank.length; i += 200) {
-    const rows = bank.slice(i, i + 200).map((q) => ({ module_id: mod, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null }));
-    const { error } = await retry(() => sb.from("elearn_question").insert(rows));
-    if (error) { $("bImport").disabled = false; return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import."); }
+  $("bImport").disabled = true;
+  const { error: e1 } = await sb.from("elearn_question").delete().eq("module_id", cur.id);
+  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", errText(e1)); }
+  for (let i = 0; i < pendingBank.length; i += 200) {
+    const { error } = await sb.from("elearn_question").insert(pendingBank.slice(i, i + 200).map((q) => ({ module_id: cur.id, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null })));
+    if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
   }
   pendingBank = null; $("qCsv").value = ""; $("qCheck").innerHTML = "";
-  await loadModules(mod);
-  const { count } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", mod);
-  say("qMsg", count === bank.length ? "ok" : "err", count === bank.length
-    ? `Banque française importée : ${count} questions. Importez maintenant la traduction anglaise.`
-    : `Import incomplet : ${count ?? 0} questions enregistrées sur ${bank.length}. Relancez l’import.`);
+  await loadModules(cur.id); say("qMsg", "ok", "Banque française importée. Importez maintenant la traduction anglaise.");
 };
 
 /* English translation of the bank: same questions, same answers order, same right answers */
@@ -617,8 +603,7 @@ $("bImportEn").onclick = async () => {
   if (!pendingEn?.length) return;
   $("bImportEn").disabled = true;
   for (let i = 0; i < pendingEn.length; i += 200) {
-    const part = pendingEn.slice(i, i + 200);
-    const { error } = await retry(() => sb.from("elearn_question").upsert(part, { onConflict: "id" }));
+    const { error } = await sb.from("elearn_question").upsert(pendingEn.slice(i, i + 200), { onConflict: "id" });
     if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
   }
   pendingEn = null; $("qCsvEn").value = ""; $("qCheck").innerHTML = "";
