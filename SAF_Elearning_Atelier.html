@@ -48,11 +48,26 @@ input[type=text],input[type=email],input[type=password],input[type=number],selec
 @media (max-width:760px){.grid2,.grid4{grid-template-columns:1fr}}
 /* Atelier: utilise toute la surface disponible, sans modifier la largeur du formulaire de connexion. */
 #vApp.wrap{width:100%;max-width:none;margin:0;padding:16px clamp(10px,1.3vw,24px) 24px;min-height:calc(100dvh - 86px)}
-.layout{display:grid;grid-template-columns:clamp(250px,21vw,340px) minmax(0,1fr);gap:16px;align-items:stretch;min-height:calc(100dvh - 126px)}
+.layout{display:grid;grid-template-columns:clamp(270px,23vw,360px) minmax(0,1fr);gap:16px;align-items:stretch;min-height:calc(100dvh - 126px)}
 .layout > aside,.layout > main{min-width:0}
 .layout > main{width:100%}
 @media (max-width:900px){#vApp.wrap{padding:12px 10px 24px;min-height:0}.layout{min-height:0;gap:12px}}
-
+/* liste de tous les TM du catalogue, avec ou sans module */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
+.chips button{border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:3px 11px;font-size:14px;cursor:pointer;color:var(--ink-2)}
+.chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.tm{border:1px solid var(--line);border-radius:5px;margin-bottom:8px;overflow:hidden}
+.tm .tmh{display:flex;gap:8px;align-items:baseline;padding:7px 10px;background:var(--soft)}
+.tm .tmh .lbl{flex:1;font-size:14px;line-height:1.3}
+.tm.none{border:2px dashed var(--amber)}
+.tm.none .tmh{background:var(--amber-bg)}
+.tm .nomod{font-size:12px;font-weight:600;color:var(--amber);white-space:nowrap}
+.mods .tm button.mrow{width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:8px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px}
+.mods .tm button.mrow:hover{background:var(--soft)}
+.mods .tm button.mrow[aria-current="true"]{background:var(--soft);box-shadow:inset 3px 0 0 var(--accent)}
+.mods .tm button.mrow.todo{color:var(--ink-2)}
+.mods .tm button.mrow.old{min-height:30px;padding:4px 10px 4px 22px;font-size:13px;color:var(--ink-2)}
+.st.todo{background:transparent;border:1px solid var(--amber);color:var(--amber)}
 @media (max-width:900px){.layout{grid-template-columns:1fr}}
 .mods{list-style:none;margin:0;padding:0}
 .mods li button{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
@@ -115,8 +130,13 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
   <div class="layout">
     <aside class="panel">
       <div class="row" style="justify-content:space-between"><h2 style="font-size:19px">Modules</h2><button class="btn" id="bNew" style="padding:6px 12px">Nouveau</button></div>
+      <p class="small muted" id="modCount" style="margin:6px 0 0"></p>
+      <div class="chips" role="group" aria-label="Filtrer les TM">
+        <button data-f="all" aria-pressed="true">Tous</button><button data-f="with" aria-pressed="false">Avec module</button><button data-f="none" aria-pressed="false">Sans module</button>
+      </div>
+      <input type="text" id="modSearch" placeholder="Rechercher un TM" aria-label="Rechercher un TM">
       <ul class="mods" id="modList" style="margin-top:10px"></ul>
-      <p class="muted small" id="modEmpty" hidden>Aucun module pour l’instant. Créez-en un pour commencer.</p>
+      <p class="muted small" id="modEmpty" hidden>Aucun TM ne correspond.</p>
     </aside>
 
     <main class="panel" id="detail">
@@ -136,7 +156,7 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
           <div><label class="f" for="nPart">Partie</label><select id="nPart"><option value="initial">Initiale</option><option value="recurrent">Recyclage</option></select></div>
           <div><label class="f" for="nVersion">Version</label><input type="text" id="nVersion" value="1.0"></div>
-          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="20"></div>
+          <div><label class="f" for="nN">Questions par test</label><input type="number" id="nN" min="1" value="15"></div>
         </div>
         <div class="row" style="margin-top:18px"><button class="btn" id="bCreate">Créer le module</button><button class="btn ghost" id="bCancelNew">Annuler</button></div>
         <div id="newMsg"></div>
@@ -317,6 +337,20 @@ $("bTotp").onclick = async () => {
 $("lTotp").addEventListener("keydown", (e) => { if (e.key === "Enter") $("bTotp").click(); });
 $("bLogout").onclick = async () => { await sb.auth.signOut({ scope: "local" }); location.href = "https://saf-international-portail.netlify.app/"; };
 
+/* Refresh the session before a write: after a long pause the token may have expired and the first write
+   would otherwise fail (the second attempt then works). */
+async function fresh() {
+  const { data } = await sb.auth.getSession();
+  const exp = data?.session?.expires_at || 0;
+  if (exp * 1000 < Date.now() + 120000) await sb.auth.refreshSession();
+}
+async function retry(fn) {
+  await fresh();
+  let r = await fn();
+  if (r && r.error) { await sb.auth.refreshSession(); r = await fn(); }
+  return r;
+}
+
 /* ---------- data ---------- */
 async function loadCatalog() {
   const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method").eq("active", true).order("sort_order");
@@ -325,25 +359,61 @@ async function loadCatalog() {
   $("nCode").onchange = () => { const c = catalog.find((x) => x.code === $("nCode").value); $("nTitle").value = c ? (c.short_label || c.label) : ""; };
   $("nCode").value = catalog.find((c) => c.code === "TM08") ? "TM08" : (catalog[0]?.code || ""); $("nCode").onchange();
 }
+let modFilter = "all";
+// Tous les TM actifs du catalogue Crew Training (TM01, TM02…), dans l'ordre des numéros
+function tmList() {
+  const tms = catalog.filter((c) => /^TM\d+$/.test(c.code)).map((c) => ({ code: c.code, label: c.short_label || c.label }));
+  for (const m of modules) if (!tms.some((t) => t.code === m.code)) tms.push({ code: m.code, label: m.title });
+  return tms.sort((x, y) => parseInt(x.code.slice(2)) - parseInt(y.code.slice(2)) || x.code.localeCompare(y.code));
+}
+const mainOf = (list) => list.find((m) => m.status === "published") || list.find((m) => m.status === "draft") || list[0] || null;
+function renderModList() {
+  const q = $("modSearch").value.trim().toLowerCase();
+  const tms = tmList().map((t) => ({ ...t, mods: modules.filter((m) => m.code === t.code) }));
+  const withN = tms.filter((t) => t.mods.length).length;
+  $("modCount").textContent = `${tms.length} TM : ${withN} avec module, ${tms.length - withN} sans module`;
+  const shown = tms.filter((t) => (modFilter === "all" || (modFilter === "with") === (t.mods.length > 0))
+    && (!q || `${t.code} ${t.label}`.toLowerCase().includes(q)));
+  $("modEmpty").hidden = shown.length > 0;
+  const rowBtn = (m, old) => `<button class="mrow${old ? " old" : ""}" data-id="${m.id}" aria-current="${!!(cur && cur.id === m.id)}">
+      <span>${old ? "" : `${esc(PART[m.part])} · `}v${esc(m.version)}</span><span class="st ${m.status}">${STATUS[m.status]}</span></button>`;
+  $("modList").innerHTML = shown.map((t) => `<li class="tm${t.mods.length ? "" : " none"}">
+    <div class="tmh"><span class="code">${esc(t.code)}</span><span class="lbl">${esc(t.label)}</span>${t.mods.length ? "" : `<span class="nomod">Aucun module</span>`}</div>
+    ${["initial", "recurrent"].map((p) => {
+      const list = t.mods.filter((m) => m.part === p), main = mainOf(list);
+      if (!main) return `<button class="mrow todo" data-new="${esc(t.code)}|${p}"><span>${PART[p]}</span><span class="st todo">À créer</span></button>`;
+      return rowBtn(main, false) + list.filter((m) => m !== main).map((m) => rowBtn(m, true)).join("");
+    }).join("")}</li>`).join("");
+  $("modList").querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => openModule(b.dataset.id));
+  $("modList").querySelectorAll("button[data-new]").forEach((b) => b.onclick = () => { const [c, p] = b.dataset.new.split("|"); startNew(c, p); });
+}
+document.querySelectorAll(".chips button").forEach((b) => b.onclick = () => {
+  modFilter = b.dataset.f; document.querySelectorAll(".chips button").forEach((x) => x.setAttribute("aria-pressed", x === b)); renderModList();
+});
+$("modSearch").oninput = renderModList;
 async function loadModules(selectId) {
   const { data, error } = await sb.from("elearn_module").select("*").order("code").order("part").order("created_at", { ascending: false });
   if (error) return say("mMsg", "err", errText(error));
   modules = data || [];
-  $("modEmpty").hidden = modules.length > 0;
-  $("modList").innerHTML = modules.map((m) => `<li><button data-id="${m.id}" aria-current="${cur && cur.id === m.id}">
-      <span><span class="code">${esc(m.code)}</span> ${esc(PART[m.part])} · v${esc(m.version)} · FR / EN<br><span class="small muted">${esc(m.title)}</span></span>
-      <span class="st ${m.status}">${STATUS[m.status]}</span></button></li>`).join("");
-  $("modList").querySelectorAll("button").forEach((b) => b.onclick = () => openModule(b.dataset.id));
+  renderModList();
   if (selectId) openModule(selectId);
   else if (cur) { const again = modules.find((m) => m.id === cur.id); if (again) openModule(again.id); }
 }
 
 /* ---------- new module ---------- */
-$("bNew").onclick = () => { cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", ""); loadModules(); };
+function startNew(code, part) {
+  cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", "");
+  if (code && catalog.some((c) => c.code === code)) { $("nCode").value = code; $("nCode").onchange(); }
+  if (part) $("nPart").value = part;
+  $("nVersion").value = "1.0";
+  renderModList();
+  if (code) $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("bNew").onclick = () => startNew();
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
   const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
-                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 20 };
+                title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 15 };
   if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
   const { data, error } = await sb.from("elearn_module").insert(row).select().single();
   if (error) return say("newMsg", "err", errText(error));
@@ -355,7 +425,7 @@ async function openModule(id) {
   cur = modules.find((m) => m.id === id); if (!cur) return;
   pendingSlides = { fr: null, en: null }; pendingBank = null; pendingEn = null;
   $("noSel").hidden = true; $("newForm").hidden = true; $("modView").hidden = false;
-  $("modList").querySelectorAll("button").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
+  $("modList").querySelectorAll("button[data-id]").forEach((b) => b.setAttribute("aria-current", b.dataset.id === id));
   const cat = catalog.find((c) => c.code === cur.code);
   $("mTitle").textContent = `${cur.code} · ${cur.title}`;
   $("mTitle").title = cur.title_en || "";
@@ -566,15 +636,21 @@ function reportBank(r, label) {
 $("bImport").onclick = async () => {
   if (!pendingBank?.length) return;
   if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
-  $("bImport").disabled = true;
-  const { error: e1 } = await sb.from("elearn_question").delete().eq("module_id", cur.id);
-  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", errText(e1)); }
-  for (let i = 0; i < pendingBank.length; i += 200) {
-    const { error } = await sb.from("elearn_question").insert(pendingBank.slice(i, i + 200).map((q) => ({ module_id: cur.id, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null })));
-    if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
+  $("bImport").disabled = true; say("qMsg", "warn", "Import en cours…");
+  const bank = pendingBank, mod = cur.id;
+  const { error: e1 } = await retry(() => sb.from("elearn_question").delete().eq("module_id", mod));
+  if (e1) { $("bImport").disabled = false; return say("qMsg", "err", "Import impossible : " + errText(e1)); }
+  for (let i = 0; i < bank.length; i += 200) {
+    const rows = bank.slice(i, i + 200).map((q) => ({ module_id: mod, ref: q.ref, theme: q.theme, question_fr: q.question, answers_fr: q.answers, correct: q.correct, question_en: null, answers_en: null }));
+    const { error } = await retry(() => sb.from("elearn_question").insert(rows));
+    if (error) { $("bImport").disabled = false; return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import."); }
   }
   pendingBank = null; $("qCsv").value = ""; $("qCheck").innerHTML = "";
-  await loadModules(cur.id); say("qMsg", "ok", "Banque française importée. Importez maintenant la traduction anglaise.");
+  await loadModules(mod);
+  const { count } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", mod);
+  say("qMsg", count === bank.length ? "ok" : "err", count === bank.length
+    ? `Banque française importée : ${count} questions. Importez maintenant la traduction anglaise.`
+    : `Import incomplet : ${count ?? 0} questions enregistrées sur ${bank.length}. Relancez l’import.`);
 };
 
 /* English translation of the bank: same questions, same answers order, same right answers */
@@ -603,7 +679,8 @@ $("bImportEn").onclick = async () => {
   if (!pendingEn?.length) return;
   $("bImportEn").disabled = true;
   for (let i = 0; i < pendingEn.length; i += 200) {
-    const { error } = await sb.from("elearn_question").upsert(pendingEn.slice(i, i + 200), { onConflict: "id" });
+    const part = pendingEn.slice(i, i + 200);
+    const { error } = await retry(() => sb.from("elearn_question").upsert(part, { onConflict: "id" }));
     if (error) return say("qMsg", "err", "Import interrompu : " + errText(error) + " Relancez l’import.");
   }
   pendingEn = null; $("qCsvEn").value = ""; $("qCheck").innerHTML = "";
