@@ -644,9 +644,18 @@ function checkBank(text) {
   return { ok, issues, pos, multi: ok.filter((x) => x.correct.length > 1).length, themes: new Set(ok.map((x) => x.theme).filter(Boolean)).size };
 }
 $("qCsv").onchange = async (e) => {
-  const f = e.target.files[0]; if (!f) return;
-  const r = checkBank(await f.text()); pendingBank = r.ok; reportBank(r, "Banque française");
+  const file = e.target.files[0]; if (!file || !cur) return;
+  const moduleId = cur.id;
+  const r = checkBank(await file.text());
+  if (!cur || cur.id !== moduleId) return;
+  pendingBank = r.ok; reportBank(r, "Banque française");
   $("bImport").disabled = !r.ok.length;
+  if (!r.ok.length) return;
+  const { count, error } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", moduleId);
+  if (!cur || cur.id !== moduleId) return;
+  if (error) return say("qMsg", "err", "Vérification de la banque impossible : " + errText(error));
+  if (count === 0) await importFrenchBank(false);
+  else say("qMsg", "warn", r.ok.length + " questions validées. Cliquez sur « Remplacer la banque française » pour confirmer le remplacement de la banque existante.");
 };
 function reportBank(r, label) {
   const nb = r.issues.filter((x) => x.level === "bad").length, nw = r.issues.filter((x) => x.level === "warn").length;
@@ -659,9 +668,10 @@ function reportBank(r, label) {
   $("qCheck").innerHTML = r.issues.length ? `<div class="scroll"><table><thead><tr><th>Ligne</th><th>Constat</th></tr></thead><tbody>${
     r.issues.map((x) => `<tr><td class="${x.level}">${x.line}</td><td>${x.text}</td></tr>`).join("")}</tbody></table></div>` : "";
 }
-$("bImport").onclick = async () => {
+$("bImport").onclick = () => importFrenchBank(true);
+async function importFrenchBank(confirmReplacement = true) {
   if (!pendingBank?.length) return;
-  if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
+  if (confirmReplacement && !confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
   $("bImport").disabled = true; say("qMsg", "warn", "Import en cours…");
   const bank = pendingBank, mod = cur.id;
   const { error: e1 } = await retry(() => sb.from("elearn_question").delete().eq("module_id", mod));
