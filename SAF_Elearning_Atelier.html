@@ -382,8 +382,8 @@ function syncPartAvailability() {
   if (!enabled && $("nPart").value === "recurrent") $("nPart").value = "initial";
 }
 async function toggleRecurrent(code, enabled) {
-  const { data, error } = await sb.from("qual_catalog").update({ elearn_recurrent_enabled: enabled }).eq("code", code).select("code");
-  if (error || !data?.length) { alert("Impossible de modifier le recyclage : " + (error ? errText(error) : "droits insuffisants")); renderModList(); return; }
+  const { data, error } = await sb.rpc("elearn_set_recurrent_enabled", { p_code: code, p_enabled: enabled });
+  if (error || data !== true) { alert("Impossible de modifier le recyclage : " + (error ? errText(error) : "TM introuvable")); renderModList(); return; }
   const c = catalog.find((x) => x.code === code);
   if (c) c.elearn_recurrent_enabled = enabled;
   syncPartAvailability();
