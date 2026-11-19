@@ -355,7 +355,7 @@ async function retry(fn) {
 async function loadCatalog() {
   const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method, elearn_recurrent_enabled").eq("active", true).order("sort_order");
   catalog = data || [];
-  $("nCode").innerHTML = catalog.map((c) => `<option value="${esc(c.code)}">${esc(c.code)} · ${esc(c.short_label || c.label)}</option>`).join("");
+  $("nCode").innerHTML = [...catalog].sort((a, b) => (a.short_label || a.label || "").localeCompare(b.short_label || b.label || "", "fr", { sensitivity: "base" }) || a.code.localeCompare(b.code)).map((c) => `<option value="${esc(c.code)}">${esc(c.code)} · ${esc(c.short_label || c.label)}</option>`).join("");
   $("nCode").onchange = () => {
     const c = catalog.find((x) => x.code === $("nCode").value);
     $("nTitleEn").value = c ? (c.short_label || c.label || "") : "";
