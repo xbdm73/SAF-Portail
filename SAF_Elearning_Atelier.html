@@ -96,6 +96,29 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
 .progress i{display:block;height:100%;background:var(--accent);width:0}
 .facts{display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;font-size:15px}
 .facts b{font-family:"Barlow Semi Condensed",sans-serif;font-size:20px}
+/* fiche du module */
+.fiche h3{font-size:18px;margin:22px 0 8px}
+.fiche h3:first-of-type{margin-top:6px}
+.fiche .lead{max-width:76ch}
+.fparts{list-style:none;margin:0;padding:0;counter-reset:fp}
+.fparts li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:6px 10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.fparts li::before{counter-increment:fp;content:counter(fp);font:700 20px/1.2 "Barlow Semi Condensed",sans-serif;color:var(--accent);padding-top:6px;text-align:right}
+.fparts .pbody{display:grid;gap:6px}
+.fparts .ptools{display:flex;gap:4px}
+.fparts .ptools button{border:1px solid var(--line);background:var(--bg);border-radius:4px;width:34px;height:34px;cursor:pointer;color:var(--ink-2)}
+.fparts .ptools button:disabled{opacity:.35;cursor:default}
+@media (max-width:640px){.fparts li{grid-template-columns:26px minmax(0,1fr)}.fparts .ptools{grid-column:2}}
+.fref{font-size:14px;color:var(--ink-2);margin:6px 0 0}
+#printSheet{display:none}
+@media print{
+  body.printing > *:not(#printSheet){display:none!important}
+  body.printing #printSheet{display:block;color:#000;background:#fff;font-size:11pt;line-height:1.45}
+  #printSheet h1{font-size:18pt;margin:0 0 2pt} #printSheet h2{font-size:12.5pt;margin:14pt 0 4pt}
+  #printSheet table{font-size:10pt} #printSheet th{background:#eee;color:#000}
+  #printSheet ol{margin:0;padding-left:18pt} #printSheet li{margin:0 0 4pt}
+  #printSheet .meta{color:#444;font-size:10pt}
+  @page{margin:16mm}
+}
 </style>
 </head>
 <body>
@@ -147,7 +170,7 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <h2 style="font-size:21px">Nouveau module</h2>
         <div class="grid2">
           <div><label class="f" for="nCode">Formation du catalogue</label><select id="nCode"></select></div>
-          <div><label class="f" for="nTitle">Titre français</label><input type="text" id="nTitle"></div>
+          <div><label class="f" for="nTitle">Titre français</label><input type="text" id="nTitle" placeholder="À renseigner en français"></div>
         </div>
         <div class="grid2">
           <div></div>
@@ -176,13 +199,34 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
         <div id="mMsg"></div>
 
         <div class="tabs" role="tablist">
-          <button role="tab" data-tab="tSlides" aria-selected="true">Slides</button>
+          <button role="tab" data-tab="tFiche" aria-selected="true">Fiche</button>
+          <button role="tab" data-tab="tSlides" aria-selected="false">Slides</button>
           <button role="tab" data-tab="tQuestions" aria-selected="false">Questions</button>
           <button role="tab" data-tab="tRules" aria-selected="false">Règles du test</button>
           <button role="tab" data-tab="tStats" aria-selected="false">Statistiques</button>
         </div>
 
-        <section id="tSlides" role="tabpanel">
+        <section id="tFiche" role="tabpanel" class="fiche">
+          <p class="muted small lead">La fiche décrit le module pour le NPCT, les stagiaires et l’autorité. Le personnel et les durées viennent des programmes de l’OM-D dans le Crew Training ; les objectifs, le syllabus et les références se saisissent ici et restent modifiables même après la publication.</p>
+          <h3>Personnel concerné et durées</h3>
+          <div class="scroll"><table><thead><tr><th>Programme OM-D</th><th>Personnel</th><th>Durée</th><th>Exigence</th><th>Réf. OM-D</th></tr></thead><tbody id="fProg"></tbody></table></div>
+          <p class="fref" id="fValid"></p>
+          <h3><label for="fObj">Objectifs</label></h3>
+          <textarea id="fObj" rows="3" placeholder="Ce que le stagiaire saura faire à la fin du module"></textarea>
+          <h3>Syllabus</h3>
+          <ol class="fparts" id="fParts"></ol>
+          <div class="row" style="margin-top:8px"><button class="btn ghost fEdit" id="bAddPart">Ajouter une partie</button></div>
+          <h3><label for="fRefs">Documents de référence</label></h3>
+          <textarea id="fRefs" rows="4" placeholder="Un document par ligne, avec l’édition et les paragraphes"></textarea>
+          <p class="fref" id="fReg"></p>
+          <h3>Évaluation</h3>
+          <p id="fEval" style="margin:0"></p>
+          <div class="bar" style="margin-top:20px"><span class="small muted" id="fUpd"></span>
+            <span class="row"><button class="btn ghost" id="bPrintFiche">Imprimer la fiche</button><button class="btn fEdit" id="bSaveFiche">Enregistrer la fiche</button></span></div>
+          <div id="fMsg"></div>
+        </section>
+
+        <section id="tSlides" role="tabpanel" hidden>
           <p class="muted small">Chaque module existe en français et en anglais : le stagiaire choisit sa langue avec un bouton. Exportez chaque PowerPoint en PDF (Fichier, Exporter, PDF) et déposez-le dans sa langue. Les deux PDF doivent avoir le même nombre de slides, dans le même ordre.</p>
           <div class="langblock" data-lang="fr">
             <h3 style="font-size:18px;margin:14px 0 8px">Français</h3>
@@ -233,6 +277,7 @@ td.ok{color:var(--green)} td.bad{color:var(--red)} td.warn{color:var(--amber)}
     </main>
   </div>
 </section>
+<div id="printSheet" aria-hidden="true"></div>
 
 <script>
 const SB_URL = "https://qbbrdwvclaqdpaxmcayh.supabase.co";
@@ -353,10 +398,15 @@ async function retry(fn) {
 
 /* ---------- data ---------- */
 async function loadCatalog() {
-  const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method").eq("active", true).order("sort_order");
+  const { data } = await sb.from("qual_catalog").select("code, short_label, label, validity_months, default_method, elearn_recurrent_enabled").eq("active", true).order("sort_order");
   catalog = data || [];
-  $("nCode").innerHTML = catalog.map((c) => `<option value="${esc(c.code)}">${esc(c.code)} · ${esc(c.short_label || c.label)}</option>`).join("");
-  $("nCode").onchange = () => { const c = catalog.find((x) => x.code === $("nCode").value); $("nTitle").value = c ? (c.short_label || c.label) : ""; };
+  $("nCode").innerHTML = [...catalog].sort((a, b) => (a.short_label || a.label || "").localeCompare(b.short_label || b.label || "", "fr", { sensitivity: "base" }) || a.code.localeCompare(b.code)).map((c) => `<option value="${esc(c.code)}">${esc(c.code)} · ${esc(c.short_label || c.label)}</option>`).join("");
+  $("nCode").onchange = () => {
+    const c = catalog.find((x) => x.code === $("nCode").value);
+    $("nTitleEn").value = c ? (c.short_label || c.label || "") : "";
+    $("nTitle").value = "";
+    syncPartAvailability();
+  };
   $("nCode").value = catalog.find((c) => c.code === "TM08") ? "TM08" : (catalog[0]?.code || ""); $("nCode").onchange();
 }
 let modFilter = "all";
@@ -367,6 +417,23 @@ function tmList() {
   return tms.sort((x, y) => parseInt(x.code.slice(2)) - parseInt(y.code.slice(2)) || x.code.localeCompare(y.code));
 }
 const mainOf = (list) => list.find((m) => m.status === "published") || list.find((m) => m.status === "draft") || list[0] || null;
+function recurrentEnabled(code) {
+  const c = catalog.find((x) => x.code === code);
+  return !c || c.elearn_recurrent_enabled !== false;
+}
+function syncPartAvailability() {
+  const enabled = recurrentEnabled($("nCode").value);
+  $("nPart").querySelector('option[value="recurrent"]').disabled = !enabled;
+  if (!enabled && $("nPart").value === "recurrent") $("nPart").value = "initial";
+}
+async function toggleRecurrent(code, enabled) {
+  const { data, error } = await sb.rpc("elearn_set_recurrent_enabled", { p_code: code, p_enabled: enabled });
+  if (error || data !== true) { alert("Impossible de modifier le recyclage : " + (error ? errText(error) : "TM introuvable")); renderModList(); return; }
+  const c = catalog.find((x) => x.code === code);
+  if (c) c.elearn_recurrent_enabled = enabled;
+  syncPartAvailability();
+  renderModList();
+}
 function renderModList() {
   const q = $("modSearch").value.trim().toLowerCase();
   const tms = tmList().map((t) => ({ ...t, mods: modules.filter((m) => m.code === t.code) }));
@@ -378,12 +445,13 @@ function renderModList() {
   const rowBtn = (m, old) => `<button class="mrow${old ? " old" : ""}" data-id="${m.id}" aria-current="${!!(cur && cur.id === m.id)}">
       <span>${old ? "" : `${esc(PART[m.part])} · `}v${esc(m.version)}</span><span class="st ${m.status}">${STATUS[m.status]}</span></button>`;
   $("modList").innerHTML = shown.map((t) => `<li class="tm${t.mods.length ? "" : " none"}">
-    <div class="tmh"><span class="code">${esc(t.code)}</span><span class="lbl">${esc(t.label)}</span>${t.mods.length ? "" : `<span class="nomod">Aucun module</span>`}</div>
+    <div class="tmh"><span class="code">${esc(t.code)}</span><span class="lbl">${esc(t.label)}</span><label class="small" style="display:flex;align-items:center;gap:5px;white-space:nowrap" title="Autoriser le recyclage pour ce TM"><input type="checkbox" data-recurrent="${esc(t.code)}" ${recurrentEnabled(t.code) ? "checked" : ""} style="width:auto">Recyclage</label>${t.mods.length ? "" : `<span class="nomod">Aucun module</span>`}</div>
     ${["initial", "recurrent"].map((p) => {
       const list = t.mods.filter((m) => m.part === p), main = mainOf(list);
-      if (!main) return `<button class="mrow todo" data-new="${esc(t.code)}|${p}"><span>${PART[p]}</span><span class="st todo">À créer</span></button>`;
+      if (!main) return p === "recurrent" && !recurrentEnabled(t.code) ? "" : `<button class="mrow todo" data-new="${esc(t.code)}|${p}"><span>${PART[p]}</span><span class="st todo">À créer</span></button>`;
       return rowBtn(main, false) + list.filter((m) => m !== main).map((m) => rowBtn(m, true)).join("");
     }).join("")}</li>`).join("");
+  $("modList").querySelectorAll("input[data-recurrent]").forEach((e) => e.onchange = () => toggleRecurrent(e.dataset.recurrent, e.checked));
   $("modList").querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => openModule(b.dataset.id));
   $("modList").querySelectorAll("button[data-new]").forEach((b) => b.onclick = () => { const [c, p] = b.dataset.new.split("|"); startNew(c, p); });
 }
@@ -405,6 +473,8 @@ function startNew(code, part) {
   cur = null; $("noSel").hidden = true; $("modView").hidden = true; $("newForm").hidden = false; say("newMsg", "", "");
   if (code && catalog.some((c) => c.code === code)) { $("nCode").value = code; $("nCode").onchange(); }
   if (part) $("nPart").value = part;
+  syncPartAvailability();
+  $("nN").value = "15";
   $("nVersion").value = "1.0";
   renderModList();
   if (code) $("detail").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -412,6 +482,7 @@ function startNew(code, part) {
 $("bNew").onclick = () => startNew();
 $("bCancelNew").onclick = () => { $("newForm").hidden = true; $("noSel").hidden = false; };
 $("bCreate").onclick = async () => {
+  if ($("nPart").value === "recurrent" && !recurrentEnabled($("nCode").value)) return say("newMsg", "err", "Le recyclage est désactivé pour ce TM.");
   const row = { code: $("nCode").value, part: $("nPart").value, version: $("nVersion").value.trim(),
                 title: $("nTitle").value.trim(), title_en: $("nTitleEn").value.trim() || null, n_questions: parseInt($("nN").value) || 15 };
   if (!row.version || !row.title) return say("newMsg", "err", "Indiquez une version et un titre.");
@@ -441,7 +512,7 @@ async function openModule(id) {
   const qn = await countQuestions();
   $("mFacts").innerHTML = `<span><b>${SL(cur, "fr").length}</b> slides FR, <b>${SL(cur, "en").length}</b> EN</span><span><b>${qn}</b> questions, <b>${qStats.en}</b> traduites</span><span><b>${cur.n_questions}</b> tirées par test</span><span>réussite à <b>${Number(cur.pass_pct)} %</b>, nouveau test dès <b>${Number(cur.retake_pct)} %</b>, <b>${cur.max_retakes}</b> nouveaux tests</span>`;
   renderBar(qn);
-  showSlides(); showQuestions(); showStats();
+  showFiche(); showSlides(); showQuestions(); showStats();
 }
 async function countQuestions() {
   const { data } = await sb.from("elearn_question").select("question_en").eq("module_id", cur.id).eq("active", true);
@@ -495,7 +566,7 @@ async function withdraw() {
 async function newVersion() {
   const v = prompt("Numéro de la nouvelle version :", bump(cur.version)); if (!v) return;
   const row = { code: cur.code, part: cur.part, version: v.trim(), title: cur.title, title_en: cur.title_en, slides: cur.slides,
-                n_questions: cur.n_questions, pass_pct: cur.pass_pct, retake_pct: cur.retake_pct, max_retakes: cur.max_retakes, notes: cur.notes };
+                n_questions: cur.n_questions, pass_pct: cur.pass_pct, retake_pct: cur.retake_pct, max_retakes: cur.max_retakes, notes: cur.notes, fiche: cur.fiche || {} };
   const { data, error } = await sb.from("elearn_module").insert(row).select().single();
   if (error) return say("mMsg", "err", errText(error));
   const { data: qs } = await sb.from("elearn_question").select("ref, theme, question_fr, answers_fr, question_en, answers_en, correct, active").eq("module_id", cur.id);
@@ -515,7 +586,7 @@ async function deleteDraft() {
 /* ---------- tabs ---------- */
 document.querySelectorAll(".tabs button").forEach((t) => t.onclick = () => {
   document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === t));
-  ["tSlides", "tQuestions", "tRules", "tStats"].forEach((p) => $(p).hidden = p !== t.dataset.tab);
+  ["tFiche", "tSlides", "tQuestions", "tRules", "tStats"].forEach((p) => $(p).hidden = p !== t.dataset.tab);
 });
 
 /* ---------- slides (one deck per language) ---------- */
@@ -618,9 +689,18 @@ function checkBank(text) {
   return { ok, issues, pos, multi: ok.filter((x) => x.correct.length > 1).length, themes: new Set(ok.map((x) => x.theme).filter(Boolean)).size };
 }
 $("qCsv").onchange = async (e) => {
-  const f = e.target.files[0]; if (!f) return;
-  const r = checkBank(await f.text()); pendingBank = r.ok; reportBank(r, "Banque française");
+  const file = e.target.files[0]; if (!file || !cur) return;
+  const moduleId = cur.id;
+  const r = checkBank(await file.text());
+  if (!cur || cur.id !== moduleId) return;
+  pendingBank = r.ok; reportBank(r, "Banque française");
   $("bImport").disabled = !r.ok.length;
+  if (!r.ok.length) return;
+  const { count, error } = await sb.from("elearn_question").select("id", { count: "exact", head: true }).eq("module_id", moduleId);
+  if (!cur || cur.id !== moduleId) return;
+  if (error) return say("qMsg", "err", "Vérification de la banque impossible : " + errText(error));
+  if (count === 0) await importFrenchBank(false);
+  else say("qMsg", "warn", r.ok.length + " questions validées. Cliquez sur « Remplacer la banque française » pour confirmer le remplacement de la banque existante.");
 };
 function reportBank(r, label) {
   const nb = r.issues.filter((x) => x.level === "bad").length, nw = r.issues.filter((x) => x.level === "warn").length;
@@ -633,9 +713,10 @@ function reportBank(r, label) {
   $("qCheck").innerHTML = r.issues.length ? `<div class="scroll"><table><thead><tr><th>Ligne</th><th>Constat</th></tr></thead><tbody>${
     r.issues.map((x) => `<tr><td class="${x.level}">${x.line}</td><td>${x.text}</td></tr>`).join("")}</tbody></table></div>` : "";
 }
-$("bImport").onclick = async () => {
+$("bImport").onclick = () => importFrenchBank(true);
+async function importFrenchBank(confirmReplacement = true) {
   if (!pendingBank?.length) return;
-  if (!confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
+  if (confirmReplacement && !confirm(`Remplacer la banque actuelle par ${pendingBank.length} questions françaises ? Les traductions anglaises déjà importées seront effacées : il faudra réimporter la banque anglaise.`)) return;
   $("bImport").disabled = true; say("qMsg", "warn", "Import en cours…");
   const bank = pendingBank, mod = cur.id;
   const { error: e1 } = await retry(() => sb.from("elearn_question").delete().eq("module_id", mod));
@@ -714,6 +795,91 @@ async function showStats() {
   $("stBody").innerHTML = rows.length ? rows.map((r) => `<tr><td>${esc(r.ref)}</td><td>${esc(r.question)}</td><td>${r.asked}</td><td>${r.right_answers}</td><td class="${r.success_pct < 50 ? "bad" : r.success_pct < 75 ? "warn" : "ok"}">${Number(r.success_pct).toLocaleString("fr-FR")} %</td></tr>`).join("")
     : `<tr><td colspan="5" class="muted">Aucun test passé sur cette version.</td></tr>`;
 }
+
+/* ---------- fiche du module ---------- */
+let fParts = [];
+const fEditable = () => cur && cur.status !== "withdrawn";
+const durTxt = (d) => { const m = String(d || "").match(/^(\d+)\s*H\s*(\d{2})$/i); return m ? `${parseInt(m[1])} h ${m[2]}` : (d || "—"); };
+async function ficheData() {
+  const phases = cur.part === "recurrent" ? ["recurrent"] : ["initial", "qualification"];
+  const [{ data: pm }, { data: refs }, { data: qs }] = await Promise.all([
+    sb.from("programme_modules").select("programme_id, duration, requirement, note").eq("code", cur.code),
+    sb.from("qual_doc_refs").select("doc_code, clause").eq("code", cur.code),
+    sb.from("elearn_question").select("theme").eq("module_id", cur.id).eq("active", true)]);
+  const ids = [...new Set((pm || []).map((r) => r.programme_id))];
+  const { data: pr } = ids.length ? await sb.from("programmes").select("id, label, population, phase, omd_ref, sort_order").in("id", ids) : { data: [] };
+  const codes = [...new Set((refs || []).map((r) => r.doc_code))];
+  const { data: docs } = codes.length ? await sb.from("doc_refs").select("code, title, issue, note").in("code", codes) : { data: [] };
+  const progs = (pm || []).map((r) => ({ ...r, p: (pr || []).find((x) => x.id === r.programme_id) }))
+    .filter((r) => r.p && phases.includes(r.p.phase)).sort((a, b) => a.p.sort_order - b.p.sort_order);
+  const themes = {}; (qs || []).forEach((q) => { const t = (q.theme || "").trim(); if (t) themes[t] = (themes[t] || 0) + 1; });
+  return { progs, docs: docs || [], themes, total: (qs || []).length };
+}
+function evalTxt(d) {
+  const th = Object.entries(d.themes);
+  return `${cur.n_questions} questions tirées au hasard parmi ${d.total}, réussite à ${cur.pass_pct} %, nouveau test entre ${cur.retake_pct} % et ${cur.pass_pct} %.`
+    + (th.length ? ` Thèmes : ${th.map(([t, n]) => `${t} (${n})`).join(", ")}.` : "");
+}
+let fData = null;
+async function showFiche() {
+  const f = cur.fiche || {}, ed = fEditable();
+  $("fObj").value = f.objectives || "";
+  $("fRefs").value = (f.refs || []).join("\n");
+  fParts = (f.syllabus || []).map((p) => ({ title: p.title || "", content: p.content || "" }));
+  renderParts();
+  ["fObj", "fRefs"].forEach((k) => $(k).disabled = !ed);
+  document.querySelectorAll(".fEdit").forEach((b) => b.hidden = !ed);
+  $("fUpd").textContent = f.updated_at ? `Fiche mise à jour le ${new Date(f.updated_at).toLocaleDateString("fr-FR")}${f.updated_by ? ` par ${f.updated_by}` : ""}.` : (ed ? "Fiche pas encore renseignée." : "Version retirée : la fiche n’est plus modifiable.");
+  say("fMsg", "", "");
+  $("fProg").innerHTML = `<tr><td colspan="5" class="muted">Chargement…</td></tr>`;
+  const id = cur.id; fData = await ficheData(); if (!cur || cur.id !== id) return;
+  const cat = catalog.find((c) => c.code === cur.code);
+  $("fProg").innerHTML = fData.progs.length ? fData.progs.map((r) => `<tr><td>${esc(r.p.label)}</td><td>${esc(r.p.population)}</td><td>${esc(durTxt(r.duration))}</td><td>${esc(r.requirement || "")}${r.note ? `<br><span class="muted small">${esc(r.note)}</span>` : ""}</td><td>${esc(r.p.omd_ref || "")}</td></tr>`).join("")
+    : `<tr><td colspan="5" class="muted">Aucun programme de l’OM-D ne prévoit ce TM ${cur.part === "recurrent" ? "en recyclage" : "en formation initiale"}.</td></tr>`;
+  $("fValid").textContent = cat?.validity_months ? `Validité : ${cat.validity_months} mois (catalogue du Crew Training).` : "Sans validité dans le catalogue : formation suivie une seule fois.";
+  $("fReg").innerHTML = fData.docs.length ? "Registre documentaire du Crew Training : " + fData.docs.map((d) => `${esc(d.code)} « ${esc(d.title)} », édition ${esc(d.issue || "—")}${d.note ? ` (${esc(d.note)})` : ""}`).join(" ; ") : "";
+  $("fEval").textContent = evalTxt(fData);
+}
+function renderParts() {
+  const ed = fEditable(), n = fParts.length;
+  $("fParts").innerHTML = n ? fParts.map((p, i) => `<li>
+      <div class="pbody"><input type="text" data-i="${i}" data-k="title" value="${esc(p.title)}" placeholder="Titre de la partie" aria-label="Titre de la partie ${i + 1}"${ed ? "" : " disabled"}>
+      <textarea rows="2" data-i="${i}" data-k="content" placeholder="Contenu" aria-label="Contenu de la partie ${i + 1}"${ed ? "" : " disabled"}>${esc(p.content)}</textarea></div>
+      ${ed ? `<div class="ptools"><button data-mv="${i}|-1" title="Monter" aria-label="Monter la partie ${i + 1}"${i ? "" : " disabled"}>↑</button><button data-mv="${i}|1" title="Descendre" aria-label="Descendre la partie ${i + 1}"${i < n - 1 ? "" : " disabled"}>↓</button><button data-del="${i}" title="Supprimer" aria-label="Supprimer la partie ${i + 1}">✕</button></div>` : ""}</li>`).join("")
+    : `<li style="display:block" class="muted small">Aucune partie. ${ed ? "Ajoutez la première partie du déroulé." : ""}</li>`;
+  $("fParts").querySelectorAll("[data-k]").forEach((e) => e.oninput = () => { fParts[+e.dataset.i][e.dataset.k] = e.value; });
+  $("fParts").querySelectorAll("[data-mv]").forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split("|").map(Number); [fParts[i], fParts[i + d]] = [fParts[i + d], fParts[i]]; renderParts(); });
+  $("fParts").querySelectorAll("[data-del]").forEach((b) => b.onclick = () => { const i = +b.dataset.del; if ((fParts[i].title || fParts[i].content) && !confirm("Supprimer cette partie du syllabus ?")) return; fParts.splice(i, 1); renderParts(); });
+}
+$("bAddPart").onclick = () => { fParts.push({ title: "", content: "" }); renderParts(); const t = $("fParts").querySelectorAll('input[data-k="title"]'); t[t.length - 1]?.focus(); };
+$("bSaveFiche").onclick = async () => {
+  if (!fEditable()) return;
+  const { data: u } = await sb.auth.getUser();
+  const fiche = { objectives: $("fObj").value.trim(), syllabus: fParts.map((p) => ({ title: p.title.trim(), content: p.content.trim() })).filter((p) => p.title || p.content),
+                  refs: $("fRefs").value.split("\n").map((x) => x.trim()).filter(Boolean), updated_at: new Date().toISOString(), updated_by: u?.user?.email || null };
+  const { error } = await retry(() => sb.from("elearn_module").update({ fiche }).eq("id", cur.id));
+  if (error) return say("fMsg", "err", errText(error));
+  cur.fiche = fiche; const m = modules.find((x) => x.id === cur.id); if (m) m.fiche = fiche;
+  await showFiche(); say("fMsg", "ok", "Fiche enregistrée.");
+};
+$("bPrintFiche").onclick = () => {
+  const f = { objectives: $("fObj").value.trim(), refs: $("fRefs").value.split("\n").map((x) => x.trim()).filter(Boolean), syllabus: fParts.filter((p) => p.title || p.content) };
+  const cat = catalog.find((c) => c.code === cur.code), d = fData || { progs: [], themes: {}, total: 0 };
+  $("printSheet").innerHTML = `<p class="meta">SAF International · Crew Training · fiche du module e-learning</p>
+    <h1>${esc(cur.code)} · ${esc(cur.title)}</h1>
+    <p class="meta">${esc(PART[cur.part])}, version ${esc(cur.version)}, ${esc(STATUS[cur.status].toLowerCase())}, français et anglais. ${cat?.validity_months ? `Validité ${cat.validity_months} mois.` : "Sans validité."}</p>
+    <h2>Personnel concerné et durées</h2>
+    ${d.progs.length ? `<table><thead><tr><th>Programme OM-D</th><th>Personnel</th><th>Durée</th><th>Réf. OM-D</th></tr></thead><tbody>${d.progs.map((r) => `<tr><td>${esc(r.p.label)}</td><td>${esc(r.p.population)}</td><td>${esc(durTxt(r.duration))}</td><td>${esc(r.p.omd_ref || "")}</td></tr>`).join("")}</tbody></table>` : "<p>Aucun programme de l’OM-D.</p>"}
+    ${f.objectives ? `<h2>Objectifs</h2><p>${esc(f.objectives)}</p>` : ""}
+    <h2>Syllabus</h2>${f.syllabus.length ? `<ol>${f.syllabus.map((p) => `<li><b>${esc(p.title)}</b>${p.content ? ` : ${esc(p.content)}` : ""}</li>`).join("")}</ol>` : "<p>Non renseigné.</p>"}
+    <h2>Documents de référence</h2>${f.refs.length ? `<ol>${f.refs.map((r) => `<li>${esc(r)}</li>`).join("")}</ol>` : "<p>Non renseignés.</p>"}
+    <h2>Évaluation</h2><p>${esc(evalTxt(d))}</p>
+    <p class="meta" style="margin-top:16pt">Imprimé le ${new Date().toLocaleDateString("fr-FR")}.</p>`;
+  document.body.classList.add("printing");
+  const done = () => { document.body.classList.remove("printing"); window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  window.print();
+};
 
 boot();
 </script>
