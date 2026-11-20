@@ -1,0 +1,772 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b2a4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SAF Mobile">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SAF Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#e6f0f9; --paper:#ffffff; --ink:#0a2238; --ink2:#34506b; --line:#bfd2e4; --band:#0b2a4a;
+  --gold:#c99a1f; --report:#c42b1c; --docs:#1d5096; --tst:#1d7a4c; --warn:#8a5a00; --err:#b42318;
+  --sans:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --cond:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--docs)}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hide{display:none!important}
+
+/* ── Bandeau ── */
+#band{position:sticky;top:0;z-index:20;background:var(--band);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;display:flex;align-items:center;gap:12px}
+#band img{height:30px;width:auto;display:block}
+#band .where{font-family:var(--cond);font-weight:600;font-size:20px;letter-spacing:.02em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#back{background:none;border:0;color:#fff;font-size:26px;line-height:1;padding:4px 8px 4px 0;cursor:pointer;min-height:40px}
+.langs{display:flex;border:1px solid rgba(255,255,255,.35);border-radius:8px;overflow:hidden;flex-shrink:0}
+.langs button{background:none;border:0;color:#cfe0f2;font-size:13px;font-weight:600;padding:7px 8px;cursor:pointer;min-width:34px}
+.langs button.on{background:#fff;color:var(--band)}
+
+main{max-width:680px;margin:0 auto;padding:18px 16px calc(env(safe-area-inset-bottom,0px) + 40px)}
+h1{font-family:var(--cond);font-weight:700;font-size:34px;line-height:1.05;margin:6px 0 4px}
+h2{font-family:var(--cond);font-weight:700;font-size:23px;margin:26px 0 10px}
+p.lead{color:var(--ink2);margin:0 0 18px}
+
+/* ── Accueil : liste groupée des modules ── */
+.modules{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.mod{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:20px 16px 20px 0;cursor:pointer;min-height:104px;position:relative}
+.mod:first-child{border-top:0}
+.mod::before{content:"";align-self:stretch;width:7px;background:var(--c);border-radius:0 4px 4px 0}
+.mod .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);flex-shrink:0}
+.mod .ic svg{width:26px;height:26px}
+.mod .tx{flex:1;min-width:0}
+.mod strong{display:block;font-family:var(--cond);font-weight:700;font-size:26px;line-height:1.05}
+.mod small{display:block;color:var(--ink2);font-size:15px;margin-top:4px}
+.mod .chev{color:var(--ink2);font-size:28px;padding-right:2px}
+.mod:active{background:#f1f6fb}
+.badge{display:inline-block;font-size:12.5px;font-weight:600;border-radius:999px;padding:2px 9px;margin-top:7px}
+.badge.q{background:#fff2d6;color:var(--warn);border:1px solid #f0d08a}
+.badge.ok{background:#dff3e8;color:var(--tst);border:1px solid #9fd4b6}
+.foot{color:var(--ink2);font-size:13px;margin-top:22px}
+
+/* ── Éléments de formulaire ── */
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.f{margin:0 0 14px}
+.f:last-child{margin-bottom:0}
+.f label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.f .opt{font-weight:400;color:var(--ink2)}
+input[type=text],input[type=email],input[type=search],input[inputmode=numeric]{width:100%;min-height:50px;border:1.5px solid #8fa9c2;border-radius:10px;background:#fff;padding:11px 13px;font-size:17px}
+input:focus{border-color:var(--docs)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.row2{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border-radius:11px;border:1.5px solid #8fa9c2;background:#fff;padding:10px 16px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink)}
+.btn.main{background:var(--c,var(--docs));border-color:var(--c,var(--docs));color:#fff;width:100%;font-size:18px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.link{border:0;background:none;color:var(--docs);min-height:40px;padding:6px 0;text-decoration:underline}
+.msg{font-size:15px;margin:10px 0 0}
+.msg.err{color:var(--err)} .msg.ok{color:var(--tst)}
+.note{font-size:14.5px;color:var(--ink2);margin:8px 0 0}
+.sw{display:flex;align-items:center;gap:12px;min-height:54px;cursor:pointer}
+.sw input{width:24px;height:24px;accent-color:var(--tst);flex-shrink:0}
+
+/* ── Safety Report ── */
+#v-report{max-width:none;padding:0}
+#report-frame{display:block;width:100%;border:0;height:calc(100dvh - 58px - env(safe-area-inset-top,0px));background:#0D1B2A}
+.report-alt{padding:10px 16px;font-size:14px;background:var(--paper);border-top:1px solid var(--line)}
+
+/* ── Documentation ── */
+.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:15px;margin:4px 0 10px}
+.crumbs button{background:none;border:0;color:var(--docs);padding:6px 2px;cursor:pointer;text-decoration:underline;font-weight:500}
+.crumbs span{color:var(--ink2)}
+.list{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:10px 0}
+.li{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:14px 14px;min-height:62px;cursor:pointer}
+.li:first-child{border-top:0}
+.li:active{background:#f1f6fb}
+.li .k{width:42px;height:34px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;font-size:12px;font-weight:700}
+.li .k.fd{background:#e4ecf6;color:var(--docs)}
+.li .k.pdf{background:#fde8e6;color:var(--report)}
+.li .k.htm{background:#e1f2e9;color:var(--tst)}
+.li .t{flex:1;min-width:0}
+.li .t b{display:block;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
+.li .t small{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px}
+.li .n{color:var(--ink2);font-size:14px}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.tag.must{background:#fff2d6;color:var(--warn)}
+.tag.read{background:#dff3e8;color:var(--tst)}
+.empty{padding:18px;color:var(--ink2);text-align:center}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(10,34,56,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{background:var(--paper);width:100%;max-width:680px;border-radius:18px 18px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom,0px) + 20px);max-height:88dvh;overflow:auto}
+.sheet h3{font-family:var(--cond);font-size:25px;margin:0 0 4px;line-height:1.1}
+.meta{color:var(--ink2);font-size:14.5px;margin:0 0 14px}
+.stack{display:grid;gap:10px}
+
+/* ── Briefing TST ── */
+#v-tst{--c:var(--tst)}
+.who{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.who b{font-size:18px}
+.prog{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.prog span{color:var(--ink2);font-size:15px}
+.bar{height:8px;background:#d5e2ee;border-radius:9px;overflow:hidden;margin:8px 0 4px}
+.bar i{display:block;height:100%;width:0;background:var(--tst);transition:width .15s}
+.ck{display:flex;gap:12px;align-items:flex-start;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:13px 13px;margin:8px 0;cursor:pointer;min-height:58px}
+.ck input{width:26px;height:26px;margin:0;flex-shrink:0;accent-color:var(--tst)}
+.ck:has(input:checked){border-color:var(--tst);background:#eef8f2}
+.ck .no{font-variant-numeric:tabular-nums;color:var(--ink2);font-weight:600;min-width:1.6em}
+.sig{position:relative}
+.sig canvas{display:block;width:100%;height:170px;background:#fff;border:1.5px dashed #7f99b2;border-radius:12px;touch-action:none}
+.sig .clear{position:absolute;right:8px;top:8px;min-height:36px;padding:4px 10px;font-size:14px}
+.sig .hint{position:absolute;left:14px;bottom:10px;color:#93a8bc;font-size:14px;pointer-events:none}
+.done{border-left:6px solid var(--tst)}
+.done.q{border-left-color:var(--gold)}
+.qrow{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:15px}
+.qrow:first-child{border-top:0}
+.qrow em{font-style:normal;color:var(--ink2)}
+.qrow .e{color:var(--err)}
+
+/* ── Attestation imprimable ── */
+#print{display:none}
+@media print{
+  body{background:#fff}
+  #band,main,.sheet{display:none!important}
+  #print{display:block;font-family:var(--sans);color:#000;font-size:11pt;padding:0}
+  #print h1{font-size:20pt;margin:0 0 4pt}
+  #print table{width:100%;border-collapse:collapse;margin:8pt 0}
+  #print td,#print th{border:1px solid #888;padding:3pt 5pt;text-align:left;vertical-align:top}
+  #print .sigs{display:grid;grid-template-columns:1fr 1fr;gap:12pt;margin-top:10pt}
+  #print .sigs img{width:100%;height:90pt;object-fit:contain;border:1px solid #888}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header id="band">
+  <button id="back" class="hide" type="button" aria-label="Accueil">‹</button>
+  <img src="data:image/png;base64,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" alt="SAF International">
+  <div class="where" id="where"></div>
+  <div class="langs" id="langs" role="group" aria-label="Langue">
+    <button type="button" data-l="fr">FR</button><button type="button" data-l="en">EN</button><button type="button" data-l="it">IT</button><button type="button" data-l="es">ES</button>
+  </div>
+</header>
+
+<!-- ═════════ ACCUEIL ═════════ -->
+<main id="v-home">
+  <h1 data-t="home_title"></h1>
+  <p class="lead" data-t="home_lead"></p>
+  <nav class="modules">
+    <button class="mod" type="button" data-go="report" style="--c:var(--report)">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span>
+      <span class="tx"><strong>Safety Report</strong><small data-t="m_report"></small></span><span class="chev">›</span>
+    </button>
+    <button class="mod" type="button" data-go="docs" style="--c:var(--docs)">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M8 13h8M8 17h6"/></svg></span>
+      <span class="tx"><strong data-t="docs_title"></strong><small data-t="m_docs"></small><span id="docs-badge"></span></span><span class="chev">›</span>
+    </button>
+    <button class="mod" type="button" data-go="tst" style="--c:var(--tst)">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><path d="M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="m9 14 2 2 4-4"/></svg></span>
+      <span class="tx"><strong data-t="tst_title"></strong><small data-t="m_tst"></small><span id="tst-badge"></span></span><span class="chev">›</span>
+    </button>
+  </nav>
+  <p class="foot"><span data-t="foot"></span> · v1.0</p>
+</main>
+
+<!-- ═════════ SAFETY REPORT ═════════ -->
+<main id="v-report" class="hide">
+  <iframe id="report-frame" title="Safety Report" allow="camera; geolocation"></iframe>
+  <div class="report-alt"><a id="report-open" href="#" target="_blank" rel="noopener" data-t="report_open"></a></div>
+</main>
+
+<!-- ═════════ DOCUMENTATION ═════════ -->
+<main id="v-docs" class="hide" style="--c:var(--docs)">
+  <section id="d-login" class="hide">
+    <h1 data-t="docs_title"></h1>
+    <p class="lead" data-t="docs_login_lead"></p>
+    <div class="panel">
+      <div id="d-step1">
+        <div class="f"><label for="d-email" data-t="email_saf"></label><input id="d-email" type="email" inputmode="email" autocomplete="email" placeholder="prenom.nom@saf-helico.com"></div>
+        <button class="btn main" id="d-send" type="button" data-t="send_code"></button>
+      </div>
+      <div id="d-step2" class="hide">
+        <p class="note" id="d-sent" style="margin:0 0 12px"></p>
+        <div class="f"><label for="d-code" data-t="code6"></label><input id="d-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" style="letter-spacing:.4em;font-size:22px;text-align:center"></div>
+        <button class="btn main" id="d-verify" type="button" data-t="sign_in"></button>
+        <button class="btn link" id="d-restart" type="button" data-t="other_email"></button>
+      </div>
+      <p class="msg err" id="d-err"></p>
+    </div>
+  </section>
+  <section id="d-app" class="hide">
+    <h1 data-t="docs_title"></h1>
+    <div class="who" style="margin:0 0 10px"><p class="note" id="d-me" style="margin:0"></p><button class="btn link" id="d-out" type="button" data-t="sign_out"></button></div>
+    <input type="search" id="d-q" autocomplete="off">
+    <div id="d-must"></div>
+    <div class="crumbs" id="d-crumbs"></div>
+    <div id="d-list"></div>
+  </section>
+  <p class="msg err" id="d-fatal"></p>
+</main>
+
+<!-- ═════════ BRIEFING TST ═════════ -->
+<main id="v-tst" class="hide">
+  <section id="t-form">
+    <h1 data-t="tst_title"></h1>
+    <p class="lead" data-t="tst_lead"></p>
+
+    <h2 data-t="sec_briefer"></h2>
+    <div class="panel">
+      <div id="t-bset">
+        <div class="f"><label for="t-bemail" data-t="briefer_email"></label><input id="t-bemail" type="email" inputmode="email" autocomplete="email"></div>
+        <button class="btn wide" id="t-bcheck" type="button" data-t="briefer_check"></button>
+        <p class="msg" id="t-bmsg"></p>
+      </div>
+      <div id="t-bshow" class="who hide"><div><b id="t-bname"></b><div class="note" id="t-bmail" style="margin:2px 0 0"></div></div><button class="btn link" id="t-bchange" type="button" data-t="change"></button></div>
+    </div>
+
+    <h2 data-t="sec_mission"></h2>
+    <div class="panel">
+      <div class="row2">
+        <div class="f"><label for="t-mref"><span data-t="mission_ref"></span> <span class="opt" data-t="optional"></span></label><input id="t-mref" type="text" maxlength="120" placeholder="M-2026-0004"></div>
+        <div class="f"><label for="t-site"><span data-t="site"></span> <span class="opt" data-t="optional"></span></label><input id="t-site" type="text" maxlength="200"></div>
+      </div>
+      <p class="note" id="t-date"></p>
+    </div>
+
+    <h2 data-t="sec_tst"></h2>
+    <div class="panel">
+      <div class="row2">
+        <div class="f"><label for="t-last" data-t="last"></label><input id="t-last" type="text" maxlength="120" autocomplete="off" autocapitalize="characters"></div>
+        <div class="f"><label for="t-first" data-t="first"></label><input id="t-first" type="text" maxlength="120" autocomplete="off" autocapitalize="words"></div>
+      </div>
+      <div class="row2">
+        <div class="f"><label for="t-company" data-t="company"></label><input id="t-company" type="text" maxlength="150" autocomplete="off"></div>
+        <div class="f"><label for="t-func"><span data-t="function"></span> <span class="opt" data-t="optional"></span></label><input id="t-func" type="text" maxlength="120" autocomplete="off"></div>
+      </div>
+      <div class="f"><label for="t-email"><span data-t="email"></span> <span class="opt" data-t="optional"></span></label><input id="t-email" type="email" inputmode="email" maxlength="254" autocomplete="off"></div>
+      <label class="sw"><input type="checkbox" id="t-onboard"><span data-t="onboard"></span></label>
+    </div>
+
+    <div class="prog"><h2 data-t="sec_topics"></h2><span id="t-count"></span></div>
+    <p class="note" data-t="topics_hint" style="margin-top:0"></p>
+    <div class="bar"><i id="t-bar"></i></div>
+    <div id="t-items"></div>
+
+    <h2 data-t="sec_sign"></h2>
+    <div class="f"><label data-t="sig_tst"></label><div class="sig"><canvas id="sig-tst" aria-label="Signature TST"></canvas><span class="hint" data-t="sign_here"></span><button class="btn clear" type="button" data-clear="sig-tst" data-t="clear"></button></div></div>
+    <div class="f"><label data-t="sig_briefer"></label><div class="sig"><canvas id="sig-brf" aria-label="Signature briefeur"></canvas><span class="hint" data-t="sign_here"></span><button class="btn clear" type="button" data-clear="sig-brf" data-t="clear"></button></div></div>
+
+    <p class="msg err" id="t-why"></p>
+    <button class="btn main" id="t-save" type="button" data-t="save" style="margin-top:8px"></button>
+    <p class="note" data-t="save_note"></p>
+  </section>
+
+  <section id="t-done" class="hide">
+    <div class="panel done" id="t-done-box">
+      <h1 id="t-done-title" style="font-size:28px"></h1>
+      <p id="t-done-text" style="margin:6px 0 0"></p>
+      <p class="note" id="t-done-ref"></p>
+    </div>
+    <div class="stack">
+      <button class="btn main" id="t-next" type="button" data-t="next_tst"></button>
+      <button class="btn wide" id="t-print" type="button" data-t="print"></button>
+      <button class="btn wide" id="t-home" type="button" data-t="to_home"></button>
+    </div>
+  </section>
+
+  <section id="t-queue-wrap" class="hide">
+    <h2 data-t="sec_queue"></h2>
+    <div class="panel"><div id="t-queue"></div><button class="btn wide" id="t-sync" type="button" data-t="retry" style="margin-top:12px"></button></div>
+  </section>
+</main>
+
+<div id="print"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════════════
+   SAF Mobile — porte d'entrée équipage : Safety Report, Documentation
+   compagnie, Briefing TST.
+   · Safety Report : le formulaire existant /sms/SAF_Report.html (inchangé,
+     même table saf_reports du projet SMS).
+   · Documentation : mêmes données que le bloc « Documents compagnie » du
+     portail (portal_folders / portal_docs / portal_reads, espace privé
+     portal-docs du projet SMS), connexion par code e-mail à 6 chiffres.
+   · Briefing TST : déposé dans le Crew Training (projet qbbrdwvclaqdpaxmcayh)
+     par la fonction tst_briefing_submit ; file d'attente hors ligne.
+   ════════════════════════════════════════════════════════════════════ */
+const PORTAL = location.hostname === 'saf-international-portail.netlify.app' ? '' : 'https://saf-international-portail.netlify.app';
+const REPORT_URL = PORTAL + '/sms/SAF_Report.html';
+const READER_URL = PORTAL + '/lecteur.html';
+const SMS_URL  = 'https://qaqehmxoehcvzcojcqkm.supabase.co';
+const SMS_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhcWVobXhvZWhjdnpjb2pjcWttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMDE3NDMsImV4cCI6MjA5NjU3Nzc0M30.NQ8KjmF2E_cygwO5F7bNya7sy7_TkuVIBwYxQR6GR7Q';
+const CT_URL   = 'https://qbbrdwvclaqdpaxmcayh.supabase.co';
+const CT_ANON  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYnJkd3ZjbGFxZHBheG1jYXloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MTg0MjMsImV4cCI6MjEwNDE5NDQyM30.OcnSmvi1maLtlSWICt5PC_Ca4M6e0YgZmiCj1ThKG2g';
+const DOC_BUCKET = 'portal-docs';
+const K = { lang:'safm_lang', briefer:'safm_briefer', queue:'safm_tst_queue', sent:'safm_tst_sent', mission:'safm_tst_mission' };
+
+/* Points du briefing TST — OM-A §8.2.1 (FR, EN, IT, ES) */
+const ITEMS = [["Type de mission", "Type of mission", "Tipo di missione", "Tipo de misión"], ["Responsabilité individuelle", "Individual responsibility", "Responsabilità individuale", "Responsabilidad individual"], ["Déroulement de l'opération", "Sequence of the operation", "Sequenza dell'operazione", "Secuencia de la operación"], ["Terrain / Obstacles", "Terrain / Obstacles", "Terreno / Ostacoli", "Terreno / Obstáculos"], ["Dangers / Zone dangereuse", "Hazards / Danger area", "Pericoli / Area pericolosa", "Peligros / Zona peligrosa"], ["Comportement autour de l'hélicoptère, y compris les procédures d'urgence", "Behavior around the helicopter, including emergency procedures", "Comportamento intorno all'elicottero, comprese le procedure di emergenza", "Comportamiento alrededor del helicóptero, incluidos los procedimientos de emergencia"], ["Procédures de chargement et de déchargement", "Loading and unloading procedures", "Procedure di carico e scarico", "Procedimientos de carga y descarga"], ["Utilisation de la porte en fonctionnement normal et en urgence", "Operation of the door in normal and emergency conditions", "Uso della porta in condizioni normali e di emergenza", "Uso de la puerta en condiciones normales y de emergencia"], ["Équipements de communication et signaux manuels", "Operation of communication equipment and use of hand signs", "Utilizzo delle apparecchiature di comunicazione e segnali manuali", "Uso del equipo de comunicación y señales manuales"], ["Précautions lors des atterrissages en pente", "Beware of slope landings", "Precauzioni durante gli atterraggi in pendenza", "Precauciones en los aterrizajes en pendiente"], ["Limitations de performance (hélicoptère, équipe)", "Restrictions on performance (helicopter, team)", "Limitazioni delle prestazioni (elicottero, squadra)", "Limitaciones de rendimiento (helicóptero, equipo)"], ["Consignes de sécurité, y compris interdiction de fumer à proximité du carburant", "Safety instructions, including a smoking ban near fuel", "Istruzioni di sicurezza, incluso il divieto di fumare vicino al carburante", "Instrucciones de seguridad, incluida la prohibición de fumar cerca del combustible"], ["Procédures d'urgence, y compris emplacement du matériel de premiers secours", "Emergency procedures, including location of first aid equipment", "Procedure di emergenza, inclusa la posizione dei dispositivi di primo soccorso", "Procedimientos de emergencia, incluida la ubicación del material de primeros auxilios"], ["Comportement à bord de l'hélicoptère, y compris procédures d'urgence", "Behavior in the helicopter, including emergency procedures", "Comportamento a bordo dell'elicottero, comprese le procedure di emergenza", "Comportamiento a bordo del helicóptero, incluidos los procedimientos de emergencia"], ["Rangement des outils et bagages à main", "Stowing of tools and hand luggage", "Stivaggio degli attrezzi e del bagaglio a mano", "Estiba de herramientas y equipaje de mano"], ["Comportement à l'embarquement et au débarquement", "Behavior during boarding and disembarking", "Comportamento durante l'imbarco e lo sbarco", "Comportamiento durante el embarque y desembarque"], ["Manipulation des moyens de communication et utilisation des signaux manuels", "Handling of communications equipment and use of hand signals", "Gestione delle apparecchiature di comunicazione e utilizzo dei segnali manuali", "Manejo de equipos de comunicación y uso de señales manuales"], ["Briefing sur les marchandises dangereuses à bord", "Dangerous goods carried onboard – briefing", "Briefing sulle merci pericolose trasportate a bordo", "Briefing sobre mercancías peligrosas a bordo"], ["Utilisation du système d'intercommunication", "Use of the intercommunication system", "Utilizzo del sistema interfonico", "Uso del sistema de intercomunicación"], ["Utilisation de la radio TFF66 (80 MHz)", "Use of the TFF66 radio (80 MHz)", "Utilizzo della radio TFF66 (80 MHz)", "Uso de la radio TFF66 (80 MHz)"], ["Utilisation du système de sirène", "Use of the siren system", "Utilizzo del sistema di sirena", "Uso del sistema de sirena"]];
+
+const I18N = {
+fr:{home_title:'Applications équipage',home_lead:'Choisissez ce que vous voulez faire.',m_report:'Signaler un événement, un danger ou un problème de sûreté',docs_title:'Documentation compagnie',m_docs:'OM, SOP, Mini SOP, documents à lire',tst_title:'Briefing TST',m_tst:'Briefer un Task Specialist et l’enregistrer au Crew Training',foot:'SAF International · usage interne',
+ report_open:'Ouvrir le formulaire en pleine page',
+ docs_login_lead:'Connectez-vous avec votre adresse SAF. Vous recevez un code à 6 chiffres par e-mail.',email_saf:'Adresse e-mail SAF',send_code:'Recevoir le code',code6:'Code reçu par e-mail',sign_in:'Se connecter',other_email:'Utiliser une autre adresse',sign_out:'Se déconnecter',
+ code_sent:'Code envoyé à {e}. Il peut mettre une minute à arriver.',bad_email:'Utilisez votre adresse @saf-helico.com.',bad_code:'Saisissez les 6 chiffres du code.',wrong_code:'Code incorrect ou expiré. Demandez-en un nouveau.',rate:'Trop de demandes. Attendez une minute puis réessayez.',
+ not_staff:'Votre adresse n’est pas inscrite dans le personnel du portail. Demandez au Safety Manager de l’ajouter.',offline:'Pas de connexion Internet. La documentation nécessite le réseau.',lib_missing:'Le module de connexion n’a pas pu se charger. Vérifiez la connexion puis rechargez la page.',
+ search:'Rechercher un document',all_docs:'Tous les documents',to_read:'À lire',read:'Lu',must_read:'Lecture obligatoire',n_docs:'{n} doc.',no_doc:'Aucun document ici.',no_result:'Aucun document ne correspond.',signed_as:'Connecté : {e}',
+ open_doc:'Ouvrir le document',ack_label:'J’ai lu et compris ce document',ack_btn:'Enregistrer ma lecture',ack_ok:'Lecture enregistrée.',ack_done:'Lecture enregistrée le {d}.',close:'Fermer',rev:'Rév.',issue:'Éd.',open_err:'Impossible d’ouvrir le document.',
+ tst_lead:'Briefing obligatoire avant toute opération avec un Task Specialist (OM-A §8.2.1), valable 12 mois. Le TST lit la liste dans sa langue avec les boutons en haut.',
+ sec_briefer:'Briefeur (pilote ou TSOP)',briefer_email:'Votre adresse e-mail (celle du Crew Training)',briefer_check:'Vérifier',change:'Changer',briefer_unknown:'Adresse inconnue du Crew Training ou personne inactive. Seuls les pilotes et TSOP actifs peuvent briefer.',briefer_offline:'Hors ligne : adresse conservée, elle sera vérifiée à l’envoi.',
+ sec_mission:'Mission',mission_ref:'N° de mission',site:'Lieu / chantier',optional:'(facultatif)',date_today:'Date du briefing : {d}',
+ sec_tst:'Task Specialist',last:'Nom',first:'Prénom',company:'Société / service',function:'Fonction',email:'E-mail',onboard:'Le TST embarque à bord de l’hélicoptère',
+ sec_topics:'Points abordés',topics_hint:'Cochez seulement les points réellement expliqués. Les autres restent « non abordés » dans l’enregistrement.',covered:'{n} / {t} abordés',
+ sec_sign:'Signatures',sig_tst:'Signature du TST',sig_briefer:'Signature du briefeur',sign_here:'Signez avec le doigt',clear:'Effacer',
+ save:'Enregistrer le briefing',save_note:'Envoyé au Crew Training dès qu’il y a du réseau. Sans réseau, le briefing reste sur ce téléphone et part automatiquement plus tard.',
+ why_briefer:'Indiquez et vérifiez votre adresse de briefeur.',why_identity:'Renseignez le nom, le prénom et la société du TST.',why_email:'L’e-mail du TST n’est pas valide.',why_topics:'Cochez au moins un point abordé.',why_sigs:'Les deux signatures sont nécessaires.',
+ sent_title:'Briefing enregistré',sent_text:'{p} est enregistré au Crew Training, en attente de validation par le NPCT. Valable jusqu’au {d}.',queued_title:'Briefing gardé sur ce téléphone',queued_text:'Pas de réseau : le briefing de {p} sera envoyé automatiquement au retour de la connexion. Ne désinstallez pas l’application d’ici là.',
+ rejected_title:'Briefing refusé par le Crew Training',ref:'Référence {r}',next_tst:'Briefer un autre TST (même mission)',print:'Imprimer / PDF',to_home:'Retour à l’accueil',
+ sec_queue:'Briefings sur ce téléphone',retry:'Envoyer maintenant',q_wait:'en attente',q_err:'refusé',q_sent:'envoyé',queue_badge:'{n} briefing(s) en attente d’envoi',queue_none:'',
+ err_BRIEFER_UNKNOWN:'Briefeur inconnu ou inactif au Crew Training.',err_TST_IDENTITY:'Identité du TST incomplète.',err_TST_SIGNATURE:'Signature du TST manquante.',err_BRIEFER_SIGNATURE:'Signature du briefeur manquante.',err_TOPICS_NONE:'Aucun point abordé.',err_RATE:'Trop de briefings envoyés aujourd’hui par ce briefeur.',err_DATE:'Date du briefing hors délai (30 jours max).',err_generic:'Refusé par le serveur : {m}',
+ pr_title:'Attestation de briefing Task Specialist',pr_covered:'Abordé',pr_not:'Non abordé',pr_valid:'Valable jusqu’au',pr_mission:'Mission',pr_site:'Lieu',pr_briefer:'Briefeur',pr_tst:'Task Specialist',pr_onboard:'Embarque à bord',yes:'Oui',no:'Non'},
+en:{home_title:'Crew applications',home_lead:'Choose what you want to do.',m_report:'Report an occurrence, a hazard or a security issue',docs_title:'Company documents',m_docs:'OM, SOP, Mini SOP, required reading',tst_title:'TST briefing',m_tst:'Brief a Task Specialist and record it in Crew Training',foot:'SAF International · internal use',
+ report_open:'Open the form full page',
+ docs_login_lead:'Sign in with your SAF address. You will receive a 6-digit code by email.',email_saf:'SAF email address',send_code:'Get the code',code6:'Code received by email',sign_in:'Sign in',other_email:'Use another address',sign_out:'Sign out',
+ code_sent:'Code sent to {e}. It may take a minute to arrive.',bad_email:'Use your @saf-helico.com address.',bad_code:'Enter the 6 digits of the code.',wrong_code:'Wrong or expired code. Ask for a new one.',rate:'Too many requests. Wait a minute and try again.',
+ not_staff:'Your address is not registered as portal staff. Ask the Safety Manager to add it.',offline:'No internet connection. Documents need the network.',lib_missing:'The sign-in module could not load. Check the connection and reload the page.',
+ search:'Search a document',all_docs:'All documents',to_read:'To read',read:'Read',must_read:'Required reading',n_docs:'{n} doc.',no_doc:'No documents here.',no_result:'No matching document.',signed_as:'Signed in: {e}',
+ open_doc:'Open the document',ack_label:'I have read and understood this document',ack_btn:'Record my reading',ack_ok:'Reading recorded.',ack_done:'Reading recorded on {d}.',close:'Close',rev:'Rev.',issue:'Iss.',open_err:'The document could not be opened.',
+ tst_lead:'Mandatory briefing before any operation with a Task Specialist (OM-A §8.2.1), valid 12 months. The TST reads the list in their language with the buttons at the top.',
+ sec_briefer:'Briefer (pilot or TSOP)',briefer_email:'Your email address (the Crew Training one)',briefer_check:'Check',change:'Change',briefer_unknown:'Address unknown to Crew Training or person inactive. Only active pilots and TSOPs can brief.',briefer_offline:'Offline: address kept, it will be checked when sending.',
+ sec_mission:'Mission',mission_ref:'Mission no.',site:'Place / worksite',optional:'(optional)',date_today:'Briefing date: {d}',
+ sec_tst:'Task Specialist',last:'Last name',first:'First name',company:'Company / unit',function:'Function',email:'Email',onboard:'The TST flies on board the helicopter',
+ sec_topics:'Topics covered',topics_hint:'Check only the topics actually explained. The others are recorded as “not covered”.',covered:'{n} / {t} covered',
+ sec_sign:'Signatures',sig_tst:'TST signature',sig_briefer:'Briefer signature',sign_here:'Sign with your finger',clear:'Clear',
+ save:'Save the briefing',save_note:'Sent to Crew Training as soon as there is network. Without network it stays on this phone and is sent automatically later.',
+ why_briefer:'Enter and check your briefer address.',why_identity:'Enter the TST last name, first name and company.',why_email:'The TST email is not valid.',why_topics:'Check at least one covered topic.',why_sigs:'Both signatures are required.',
+ sent_title:'Briefing saved',sent_text:'{p} is recorded in Crew Training, awaiting NPCT validation. Valid until {d}.',queued_title:'Briefing kept on this phone',queued_text:'No network: the briefing of {p} will be sent automatically when the connection returns. Do not uninstall the app until then.',
+ rejected_title:'Briefing refused by Crew Training',ref:'Reference {r}',next_tst:'Brief another TST (same mission)',print:'Print / PDF',to_home:'Back to home',
+ sec_queue:'Briefings on this phone',retry:'Send now',q_wait:'waiting',q_err:'refused',q_sent:'sent',queue_badge:'{n} briefing(s) waiting to be sent',queue_none:'',
+ err_BRIEFER_UNKNOWN:'Briefer unknown or inactive in Crew Training.',err_TST_IDENTITY:'TST identity incomplete.',err_TST_SIGNATURE:'TST signature missing.',err_BRIEFER_SIGNATURE:'Briefer signature missing.',err_TOPICS_NONE:'No topic covered.',err_RATE:'Too many briefings sent today by this briefer.',err_DATE:'Briefing date out of range (30 days max).',err_generic:'Refused by the server: {m}',
+ pr_title:'Task Specialist briefing certificate',pr_covered:'Covered',pr_not:'Not covered',pr_valid:'Valid until',pr_mission:'Mission',pr_site:'Place',pr_briefer:'Briefer',pr_tst:'Task Specialist',pr_onboard:'Flies on board',yes:'Yes',no:'No'},
+it:{home_title:'Applicazioni equipaggio',home_lead:'Scegli cosa vuoi fare.',m_report:'Segnala un evento, un pericolo o un problema di security',docs_title:'Documentazione aziendale',m_docs:'OM, SOP, Mini SOP, letture obbligatorie',tst_title:'Briefing TST',m_tst:'Fare il briefing a un Task Specialist e registrarlo nel Crew Training',foot:'SAF International · uso interno',
+ report_open:'Apri il modulo a pagina intera',
+ docs_login_lead:'Accedi con il tuo indirizzo SAF. Riceverai un codice di 6 cifre via e-mail.',email_saf:'Indirizzo e-mail SAF',send_code:'Ricevi il codice',code6:'Codice ricevuto via e-mail',sign_in:'Accedi',other_email:'Usa un altro indirizzo',sign_out:'Esci',
+ code_sent:'Codice inviato a {e}. Può impiegare un minuto ad arrivare.',bad_email:'Usa il tuo indirizzo @saf-helico.com.',bad_code:'Inserisci le 6 cifre del codice.',wrong_code:'Codice errato o scaduto. Richiedine uno nuovo.',rate:'Troppe richieste. Attendi un minuto e riprova.',
+ not_staff:'Il tuo indirizzo non è registrato tra il personale del portale. Chiedi al Safety Manager di aggiungerlo.',offline:'Nessuna connessione Internet. La documentazione richiede la rete.',lib_missing:'Il modulo di accesso non si è caricato. Controlla la connessione e ricarica la pagina.',
+ search:'Cerca un documento',all_docs:'Tutti i documenti',to_read:'Da leggere',read:'Letto',must_read:'Lettura obbligatoria',n_docs:'{n} doc.',no_doc:'Nessun documento qui.',no_result:'Nessun documento corrispondente.',signed_as:'Connesso: {e}',
+ open_doc:'Apri il documento',ack_label:'Ho letto e compreso questo documento',ack_btn:'Registra la lettura',ack_ok:'Lettura registrata.',ack_done:'Lettura registrata il {d}.',close:'Chiudi',rev:'Rev.',issue:'Ed.',open_err:'Impossibile aprire il documento.',
+ tst_lead:'Briefing obbligatorio prima di ogni operazione con un Task Specialist (OM-A §8.2.1), valido 12 mesi. Il TST legge l’elenco nella sua lingua con i pulsanti in alto.',
+ sec_briefer:'Chi fa il briefing (pilota o TSOP)',briefer_email:'Il tuo indirizzo e-mail (quello del Crew Training)',briefer_check:'Verifica',change:'Cambia',briefer_unknown:'Indirizzo sconosciuto al Crew Training o persona non attiva. Solo piloti e TSOP attivi possono fare il briefing.',briefer_offline:'Offline: indirizzo conservato, sarà verificato all’invio.',
+ sec_mission:'Missione',mission_ref:'N. missione',site:'Luogo / cantiere',optional:'(facoltativo)',date_today:'Data del briefing: {d}',
+ sec_tst:'Task Specialist',last:'Cognome',first:'Nome',company:'Società / servizio',function:'Funzione',email:'E-mail',onboard:'Il TST sale a bordo dell’elicottero',
+ sec_topics:'Punti trattati',topics_hint:'Seleziona solo i punti realmente spiegati. Gli altri restano «non trattati» nella registrazione.',covered:'{n} / {t} trattati',
+ sec_sign:'Firme',sig_tst:'Firma del TST',sig_briefer:'Firma di chi fa il briefing',sign_here:'Firma con il dito',clear:'Cancella',
+ save:'Registra il briefing',save_note:'Inviato al Crew Training appena c’è rete. Senza rete resta su questo telefono e parte automaticamente più tardi.',
+ why_briefer:'Inserisci e verifica il tuo indirizzo.',why_identity:'Inserisci cognome, nome e società del TST.',why_email:'L’e-mail del TST non è valida.',why_topics:'Seleziona almeno un punto trattato.',why_sigs:'Servono entrambe le firme.',
+ sent_title:'Briefing registrato',sent_text:'{p} è registrato nel Crew Training, in attesa di validazione dell’NPCT. Valido fino al {d}.',queued_title:'Briefing conservato su questo telefono',queued_text:'Nessuna rete: il briefing di {p} sarà inviato automaticamente al ritorno della connessione. Non disinstallare l’applicazione fino ad allora.',
+ rejected_title:'Briefing rifiutato dal Crew Training',ref:'Riferimento {r}',next_tst:'Briefing a un altro TST (stessa missione)',print:'Stampa / PDF',to_home:'Torna alla home',
+ sec_queue:'Briefing su questo telefono',retry:'Invia ora',q_wait:'in attesa',q_err:'rifiutato',q_sent:'inviato',queue_badge:'{n} briefing in attesa di invio',queue_none:'',
+ err_BRIEFER_UNKNOWN:'Chi fa il briefing è sconosciuto o non attivo nel Crew Training.',err_TST_IDENTITY:'Identità del TST incompleta.',err_TST_SIGNATURE:'Firma del TST mancante.',err_BRIEFER_SIGNATURE:'Firma di chi fa il briefing mancante.',err_TOPICS_NONE:'Nessun punto trattato.',err_RATE:'Troppi briefing inviati oggi.',err_DATE:'Data del briefing fuori termine (max 30 giorni).',err_generic:'Rifiutato dal server: {m}',
+ pr_title:'Attestato di briefing Task Specialist',pr_covered:'Trattato',pr_not:'Non trattato',pr_valid:'Valido fino al',pr_mission:'Missione',pr_site:'Luogo',pr_briefer:'Briefing di',pr_tst:'Task Specialist',pr_onboard:'Sale a bordo',yes:'Sì',no:'No'},
+es:{home_title:'Aplicaciones de tripulación',home_lead:'Elija lo que quiere hacer.',m_report:'Notificar un suceso, un peligro o un problema de seguridad',docs_title:'Documentación de la compañía',m_docs:'OM, SOP, Mini SOP, lecturas obligatorias',tst_title:'Briefing TST',m_tst:'Dar el briefing a un Task Specialist y registrarlo en Crew Training',foot:'SAF International · uso interno',
+ report_open:'Abrir el formulario a pantalla completa',
+ docs_login_lead:'Conéctese con su dirección SAF. Recibirá un código de 6 cifras por correo.',email_saf:'Correo electrónico SAF',send_code:'Recibir el código',code6:'Código recibido por correo',sign_in:'Conectarse',other_email:'Usar otra dirección',sign_out:'Desconectarse',
+ code_sent:'Código enviado a {e}. Puede tardar un minuto.',bad_email:'Use su dirección @saf-helico.com.',bad_code:'Introduzca las 6 cifras del código.',wrong_code:'Código incorrecto o caducado. Pida uno nuevo.',rate:'Demasiadas solicitudes. Espere un minuto y vuelva a intentarlo.',
+ not_staff:'Su dirección no está registrada en el personal del portal. Pida al Safety Manager que la añada.',offline:'Sin conexión a Internet. La documentación necesita la red.',lib_missing:'El módulo de conexión no se ha cargado. Compruebe la conexión y recargue la página.',
+ search:'Buscar un documento',all_docs:'Todos los documentos',to_read:'Por leer',read:'Leído',must_read:'Lectura obligatoria',n_docs:'{n} doc.',no_doc:'No hay documentos aquí.',no_result:'Ningún documento coincide.',signed_as:'Conectado: {e}',
+ open_doc:'Abrir el documento',ack_label:'He leído y comprendido este documento',ack_btn:'Registrar mi lectura',ack_ok:'Lectura registrada.',ack_done:'Lectura registrada el {d}.',close:'Cerrar',rev:'Rev.',issue:'Ed.',open_err:'No se ha podido abrir el documento.',
+ tst_lead:'Briefing obligatorio antes de cualquier operación con un Task Specialist (OM-A §8.2.1), válido 12 meses. El TST lee la lista en su idioma con los botones de arriba.',
+ sec_briefer:'Quien da el briefing (piloto o TSOP)',briefer_email:'Su correo (el de Crew Training)',briefer_check:'Comprobar',change:'Cambiar',briefer_unknown:'Dirección desconocida en Crew Training o persona inactiva. Solo pilotos y TSOP activos pueden dar el briefing.',briefer_offline:'Sin conexión: dirección guardada, se comprobará al enviar.',
+ sec_mission:'Misión',mission_ref:'N.º de misión',site:'Lugar / obra',optional:'(opcional)',date_today:'Fecha del briefing: {d}',
+ sec_tst:'Task Specialist',last:'Apellidos',first:'Nombre',company:'Empresa / servicio',function:'Función',email:'Correo',onboard:'El TST embarca en el helicóptero',
+ sec_topics:'Puntos tratados',topics_hint:'Marque solo los puntos realmente explicados. Los demás quedan «no tratados» en el registro.',covered:'{n} / {t} tratados',
+ sec_sign:'Firmas',sig_tst:'Firma del TST',sig_briefer:'Firma de quien da el briefing',sign_here:'Firme con el dedo',clear:'Borrar',
+ save:'Guardar el briefing',save_note:'Se envía a Crew Training en cuanto hay red. Sin red se queda en este teléfono y se envía automáticamente más tarde.',
+ why_briefer:'Indique y compruebe su dirección.',why_identity:'Indique apellidos, nombre y empresa del TST.',why_email:'El correo del TST no es válido.',why_topics:'Marque al menos un punto tratado.',why_sigs:'Se necesitan las dos firmas.',
+ sent_title:'Briefing guardado',sent_text:'{p} está registrado en Crew Training, pendiente de validación por el NPCT. Válido hasta el {d}.',queued_title:'Briefing guardado en este teléfono',queued_text:'Sin red: el briefing de {p} se enviará automáticamente cuando vuelva la conexión. No desinstale la aplicación hasta entonces.',
+ rejected_title:'Briefing rechazado por Crew Training',ref:'Referencia {r}',next_tst:'Briefing a otro TST (misma misión)',print:'Imprimir / PDF',to_home:'Volver al inicio',
+ sec_queue:'Briefings en este teléfono',retry:'Enviar ahora',q_wait:'pendiente',q_err:'rechazado',q_sent:'enviado',queue_badge:'{n} briefing(s) pendiente(s) de envío',queue_none:'',
+ err_BRIEFER_UNKNOWN:'Quien da el briefing es desconocido o está inactivo en Crew Training.',err_TST_IDENTITY:'Identidad del TST incompleta.',err_TST_SIGNATURE:'Falta la firma del TST.',err_BRIEFER_SIGNATURE:'Falta la firma de quien da el briefing.',err_TOPICS_NONE:'Ningún punto tratado.',err_RATE:'Demasiados briefings enviados hoy.',err_DATE:'Fecha del briefing fuera de plazo (máx. 30 días).',err_generic:'Rechazado por el servidor: {m}',
+ pr_title:'Certificado de briefing Task Specialist',pr_covered:'Tratado',pr_not:'No tratado',pr_valid:'Válido hasta el',pr_mission:'Misión',pr_site:'Lugar',pr_briefer:'Briefing de',pr_tst:'Task Specialist',pr_onboard:'Embarca',yes:'Sí',no:'No'}
+};
+
+/* ── Utilitaires ── */
+const $ = id => document.getElementById(id);
+const h = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+let lang = LS.get(K.lang, null) || ((navigator.language || 'fr').slice(0,2));
+if(!I18N[lang]) lang = 'fr';
+const T = (k, vars) => { let s = (I18N[lang][k] != null ? I18N[lang][k] : I18N.fr[k]) || k; if(vars) for(const v in vars) s = s.split('{' + v + '}').join(vars[v]); return s; };
+const fmtDate = d => new Date(String(d).length === 10 ? d + 'T12:00:00' : d).toLocaleDateString(lang === 'en' ? 'en-GB' : lang, { day:'2-digit', month:'long', year:'numeric' });
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+const plus12m = iso => { const d = new Date(iso + 'T12:00:00'); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0,10); };
+
+/* ── Langue ── */
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-l]').forEach(b => b.classList.toggle('on', b.dataset.l === lang));
+  document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
+  $('d-q').placeholder = T('search');
+  $('t-date').textContent = T('date_today', { d: fmtDate(today()) });
+  setWhere();
+  drawItems(); updateTst(); renderQueue(); renderBadges();
+  if(DOCS.ready) renderDocs();
+  if(!$('t-done').classList.contains('hide') && LAST) showDone(LAST.state, LAST.item, LAST.err);
+}
+document.querySelectorAll('[data-l]').forEach(b => b.addEventListener('click', () => { lang = b.dataset.l; LS.set(K.lang, lang); applyLang(); }));
+
+/* ── Navigation (le bouton retour du téléphone fonctionne) ── */
+const VIEWS = ['home','report','docs','tst'];
+let view = 'home';
+function setWhere(){ $('where').textContent = view === 'home' ? 'SAF Mobile' : view === 'report' ? 'Safety Report' : view === 'docs' ? T('docs_title') : T('tst_title'); }
+function route(){
+  const v = (location.hash || '').replace('#','');
+  view = VIEWS.includes(v) ? v : 'home';
+  VIEWS.forEach(x => $('v-' + x).classList.toggle('hide', x !== view));
+  $('back').classList.toggle('hide', view === 'home');
+  document.querySelector('#band img').classList.toggle('hide', view !== 'home');
+  setWhere(); window.scrollTo(0, 0);
+  if(view === 'report' && !$('report-frame').src) $('report-frame').src = REPORT_URL;
+  if(view === 'docs') docsEnter();
+  if(view === 'tst'){ requestAnimationFrame(() => { PADS.forEach(p => p.resize()); }); syncQueue(); }
+  if(view === 'home') renderBadges();
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
+$('back').addEventListener('click', () => { if(history.length > 1 && view !== 'home') history.back(); else location.hash = ''; });
+window.addEventListener('hashchange', route);
+$('report-open').href = REPORT_URL;
+
+/* ════════════════ DOCUMENTATION ════════════════ */
+const DOCS = { ready:false, folders:[], docs:[], reads:{}, cur:null, email:'' };
+let sms = null;
+function smsClient(){
+  if(sms) return sms;
+  if(!window.supabase || !window.supabase.createClient) return null;
+  sms = window.supabase.createClient(SMS_URL, SMS_ANON, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } });
+  return sms;
+}
+function docsShow(which){ $('d-login').classList.toggle('hide', which !== 'login'); $('d-app').classList.toggle('hide', which !== 'app'); }
+async function docsEnter(){
+  $('d-fatal').textContent = '';
+  const c = smsClient();
+  if(!c){ docsShow(''); $('d-fatal').textContent = navigator.onLine ? T('lib_missing') : T('offline'); return; }
+  const { data } = await c.auth.getSession();
+  if(!data || !data.session){ docsShow('login'); return; }
+  DOCS.email = data.session.user.email || '';
+  docsShow('app'); $('d-me').textContent = T('signed_as', { e: DOCS.email });
+  if(!DOCS.ready) await docsLoad();
+}
+async function docsLoad(){
+  const c = smsClient(); $('d-list').innerHTML = '<div class="list"><div class="empty">…</div></div>';
+  try{
+    const role = await c.rpc('portal_role');
+    if(!role.error && !role.data){ $('d-list').innerHTML = ''; $('d-fatal').textContent = T('not_staff'); return; }
+    const [f, d, r] = await Promise.all([
+      c.from('portal_folders').select('id,parent_id,name,sort_order'),
+      c.from('portal_docs').select('id,title,reference,issue,revision,revision_date,folder_id,storage_path,file_name,mandatory,doc_type,published_at').eq('status','published'),
+      c.from('portal_reads').select('doc_id,read_at').eq('user_id', (await c.auth.getUser()).data.user.id)
+    ]);
+    if(f.error) throw f.error; if(d.error) throw d.error;
+    DOCS.folders = f.data || []; DOCS.docs = d.data || [];
+    DOCS.reads = {}; (r.data || []).forEach(x => { DOCS.reads[x.doc_id] = x.read_at; });
+    DOCS.ready = true; renderDocs(); renderBadges();
+  }catch(e){ $('d-list').innerHTML = ''; $('d-fatal').textContent = navigator.onLine ? (e.message || String(e)) : T('offline'); }
+}
+function childFolders(pid){ return DOCS.folders.filter(f => (f.parent_id || null) === (pid || null)).sort((a,b) => (a.sort_order||0)-(b.sort_order||0) || a.name.localeCompare(b.name)); }
+function docsIn(fid){ return DOCS.docs.filter(d => (d.folder_id || null) === (fid || null)).sort((a,b) => a.title.localeCompare(b.title)); }
+function countDeep(fid){ return docsIn(fid).length + childFolders(fid).reduce((n, f) => n + countDeep(f.id), 0); }
+function pathOf(fid){ const p = []; let f = DOCS.folders.find(x => x.id === fid); while(f){ p.unshift(f); f = DOCS.folders.find(x => x.id === f.parent_id); } return p; }
+const unreadMust = () => DOCS.docs.filter(d => d.mandatory && !DOCS.reads[d.id]);
+function docRow(d){
+  const json = /\.json$/i.test(d.storage_path || '');
+  const sub = [d.reference, d.issue ? T('issue') + ' ' + d.issue : '', d.revision ? T('rev') + ' ' + d.revision : ''].filter(Boolean).join(' – ');
+  const tag = d.mandatory ? (DOCS.reads[d.id] ? '<span class="tag read">' + h(T('read')) + '</span>' : '<span class="tag must">' + h(T('to_read')) + '</span>') : '';
+  return '<button class="li" type="button" data-doc="' + h(d.id) + '"><span class="k ' + (json ? 'htm">HTML' : 'pdf">PDF') + '</span><span class="t"><b>' + h(d.title) + tag + '</b>' + (sub ? '<small>' + h(sub) + '</small>' : '') + '</span></button>';
+}
+function renderDocs(){
+  const q = $('d-q').value.trim().toLowerCase();
+  const must = unreadMust();
+  $('d-must').innerHTML = (!q && must.length) ? '<h2>' + h(T('must_read')) + '</h2><div class="list">' + must.map(docRow).join('') + '</div>' : '';
+  if(q){
+    $('d-crumbs').innerHTML = '';
+    const hits = DOCS.docs.filter(d => [d.title, d.reference, d.file_name].join(' ').toLowerCase().includes(q));
+    $('d-list').innerHTML = '<div class="list">' + (hits.length ? hits.map(docRow).join('') : '<div class="empty">' + h(T('no_result')) + '</div>') + '</div>';
+  }else{
+    const p = DOCS.cur ? pathOf(DOCS.cur) : [];
+    $('d-crumbs').innerHTML = '<button type="button" data-f="">' + h(T('all_docs')) + '</button>' + p.map((f, i) => '<span>›</span>' + (i === p.length - 1 ? '<span>' + h(f.name) + '</span>' : '<button type="button" data-f="' + h(f.id) + '">' + h(f.name) + '</button>')).join('');
+    const fs = childFolders(DOCS.cur).filter(f => countDeep(f.id) > 0), ds = docsIn(DOCS.cur);
+    const rows = fs.map(f => '<button class="li" type="button" data-f="' + h(f.id) + '"><span class="k fd">▸</span><span class="t"><b>' + h(f.name) + '</b></span><span class="n">' + h(T('n_docs', { n: countDeep(f.id) })) + '</span></button>').join('') + ds.map(docRow).join('');
+    $('d-list').innerHTML = '<div class="list">' + (rows || '<div class="empty">' + h(T('no_doc')) + '</div>') + '</div>';
+  }
+}
+$('v-docs').addEventListener('click', e => {
+  const f = e.target.closest('[data-f]'); if(f){ DOCS.cur = f.dataset.f || null; renderDocs(); window.scrollTo(0, 0); return; }
+  const d = e.target.closest('[data-doc]'); if(d) openSheet(DOCS.docs.find(x => x.id === d.dataset.doc));
+});
+$('d-q').addEventListener('input', renderDocs);
+
+function openSheet(d){
+  if(!d) return;
+  const sub = [d.reference, d.issue ? T('issue') + ' ' + d.issue : '', d.revision ? T('rev') + ' ' + d.revision : '', d.revision_date ? fmtDate(d.revision_date) : ''].filter(Boolean).join(' – ');
+  const read = DOCS.reads[d.id];
+  const sh = document.createElement('div'); sh.className = 'sheet';
+  sh.innerHTML = '<div role="dialog" aria-modal="true"><h3>' + h(d.title) + '</h3><p class="meta">' + h(sub) + '</p><div class="stack">'
+    + '<button class="btn main" type="button" id="s-open">' + h(T('open_doc')) + '</button>'
+    + (d.mandatory ? (read ? '<p class="msg ok">' + h(T('ack_done', { d: fmtDate(read) })) + '</p>'
+        : '<label class="sw"><input type="checkbox" id="s-chk"><span>' + h(T('ack_label')) + '</span></label><button class="btn wide" type="button" id="s-ack" disabled>' + h(T('ack_btn')) + '</button>') : '')
+    + '<p class="msg" id="s-msg"></p><button class="btn wide" type="button" id="s-close">' + h(T('close')) + '</button></div></div>';
+  document.body.appendChild(sh);
+  const close = () => sh.remove();
+  sh.addEventListener('click', e => { if(e.target === sh) close(); });
+  sh.querySelector('#s-close').onclick = close;
+  sh.querySelector('#s-open').onclick = async () => {
+    /* fenêtre ouverte tout de suite (Safari bloque window.open après une attente) */
+    const w = window.open('', '_blank');
+    try{
+      const s = await smsClient().storage.from(DOC_BUCKET).createSignedUrl(d.storage_path, 900);
+      if(s.error || !s.data) throw (s.error || new Error('url'));
+      const url = /\.json$/i.test(d.storage_path) ? READER_URL + '?doc=' + encodeURIComponent(s.data.signedUrl) : s.data.signedUrl;
+      if(w) w.location.href = url; else location.href = url;
+    }catch(e){ if(w) w.close(); const m = sh.querySelector('#s-msg'); m.className = 'msg err'; m.textContent = T('open_err') + ' ' + (e.message || ''); }
+  };
+  const chk = sh.querySelector('#s-chk'), ack = sh.querySelector('#s-ack');
+  if(chk){ chk.onchange = () => { ack.disabled = !chk.checked; };
+    ack.onclick = async () => {
+      ack.disabled = true; const m = sh.querySelector('#s-msg');
+      const r = await smsClient().from('portal_reads').insert({ doc_id: d.id });
+      if(r.error && !/duplicate|unique/i.test(r.error.message)){ m.className = 'msg err'; m.textContent = r.error.message; ack.disabled = false; return; }
+      DOCS.reads[d.id] = new Date().toISOString(); m.className = 'msg ok'; m.textContent = T('ack_ok');
+      chk.closest('label').remove(); ack.remove(); renderDocs(); renderBadges();
+    };
+  }
+}
+
+/* connexion par code e-mail — même mécanisme que le portail */
+$('d-send').onclick = async () => {
+  const e = $('d-email').value.trim().toLowerCase(); $('d-err').textContent = '';
+  if(!/^[^@\s]+@saf-helico\.com$/i.test(e)){ $('d-err').textContent = T('bad_email'); return; }
+  const c = smsClient(); if(!c){ $('d-err').textContent = T('lib_missing'); return; }
+  $('d-send').disabled = true;
+  const r = await c.auth.signInWithOtp({ email: e, options:{ shouldCreateUser:true } });
+  $('d-send').disabled = false;
+  if(r.error){ $('d-err').textContent = /rate|seconds|too many/i.test(r.error.message) ? T('rate') : r.error.message; return; }
+  $('d-step1').classList.add('hide'); $('d-step2').classList.remove('hide');
+  $('d-sent').textContent = T('code_sent', { e }); $('d-code').value = ''; $('d-code').focus();
+};
+$('d-verify').onclick = async () => {
+  const code = $('d-code').value.replace(/\D/g, ''); $('d-err').textContent = '';
+  if(code.length !== 6){ $('d-err').textContent = T('bad_code'); return; }
+  $('d-verify').disabled = true;
+  const r = await smsClient().auth.verifyOtp({ email: $('d-email').value.trim().toLowerCase(), token: code, type:'email' });
+  $('d-verify').disabled = false;
+  if(r.error){ $('d-err').textContent = T('wrong_code'); return; }
+  DOCS.ready = false; docsEnter();
+};
+$('d-code').addEventListener('input', () => { const v = $('d-code').value.replace(/\D/g, '').slice(0, 6); $('d-code').value = v; if(v.length === 6) $('d-verify').click(); });
+$('d-email').addEventListener('keydown', e => { if(e.key === 'Enter') $('d-send').click(); });
+$('d-restart').onclick = () => { $('d-step2').classList.add('hide'); $('d-step1').classList.remove('hide'); $('d-err').textContent = ''; };
+$('d-out').onclick = async () => { try{ await smsClient().auth.signOut(); }catch(e){} DOCS.ready = false; DOCS.docs = []; DOCS.reads = {}; $('d-step2').classList.add('hide'); $('d-step1').classList.remove('hide'); docsShow('login'); renderBadges(); };
+
+/* ════════════════ BRIEFING TST ════════════════ */
+let covered = ITEMS.map(() => false), LAST = null;
+
+async function ctRpc(fn, body){
+  const r = await fetch(CT_URL + '/rest/v1/rpc/' + fn, { method:'POST', headers:{ 'Content-Type':'application/json', apikey:CT_ANON, Authorization:'Bearer ' + CT_ANON }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => null);
+  if(!r.ok){ const err = new Error((j && j.message) || ('HTTP ' + r.status)); err.server = true; throw err; }
+  return j;
+}
+
+/* Signatures au doigt */
+function Pad(id){
+  const cv = $(id), ctx = cv.getContext('2d'); let strokes = [], cur = null;
+  const draw = () => { ctx.clearRect(0, 0, cv.clientWidth, cv.clientHeight); ctx.strokeStyle = '#0a2238'; ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for(const s of strokes){ if(!s.length) continue; ctx.beginPath(); ctx.moveTo(s[0][0], s[0][1]); for(const p of s.slice(1)) ctx.lineTo(p[0], p[1]); if(s.length === 1) ctx.lineTo(s[0][0] + .1, s[0][1]); ctx.stroke(); } };
+  const pt = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); cur = [pt(e)]; strokes.push(cur); cv.parentNode.querySelector('.hint').style.display = 'none'; draw(); });
+  cv.addEventListener('pointermove', e => { if(!cur) return; cur.push(pt(e)); draw(); });
+  ['pointerup','pointercancel'].forEach(t => cv.addEventListener(t, () => { if(cur){ cur = null; updateTst(); } }));
+  const pad = {
+    resize(){ if(!cv.clientWidth) return; const d = window.devicePixelRatio || 1; cv.width = cv.clientWidth * d; cv.height = cv.clientHeight * d; ctx.setTransform(d, 0, 0, d, 0, 0); draw(); },
+    clear(){ strokes = []; cv.parentNode.querySelector('.hint').style.display = ''; draw(); updateTst(); },
+    filled(){ return strokes.reduce((n, s) => n + s.length, 0) > 8; },
+    png(){ /* image allégée, fond blanc, 600 px de large maxi */
+      const w = Math.min(600, cv.clientWidth), k = w / cv.clientWidth, o = document.createElement('canvas'); o.width = w; o.height = Math.round(cv.clientHeight * k);
+      const c = o.getContext('2d'); c.fillStyle = '#fff'; c.fillRect(0, 0, o.width, o.height); c.strokeStyle = '#000'; c.lineWidth = 2.4; c.lineCap = 'round'; c.lineJoin = 'round';
+      for(const s of strokes){ if(!s.length) continue; c.beginPath(); c.moveTo(s[0][0]*k, s[0][1]*k); for(const p of s.slice(1)) c.lineTo(p[0]*k, p[1]*k); if(s.length === 1) c.lineTo(s[0][0]*k + .1, s[0][1]*k); c.stroke(); }
+      return o.toDataURL('image/png'); }
+  };
+  return pad;
+}
+const PADS = [Pad('sig-tst'), Pad('sig-brf')];
+const [PAD_TST, PAD_BRF] = PADS;
+document.querySelectorAll('[data-clear]').forEach(b => b.addEventListener('click', () => (b.dataset.clear === 'sig-tst' ? PAD_TST : PAD_BRF).clear()));
+window.addEventListener('resize', () => { if(view === 'tst') PADS.forEach(p => p.resize()); });
+
+function drawItems(){
+  const j = ['fr','en','it','es'].indexOf(lang);
+  $('t-items').innerHTML = ITEMS.map((row, i) => '<label class="ck"><input type="checkbox" data-i="' + i + '"' + (covered[i] ? ' checked' : '') + '><span class="no">' + (i + 1) + '</span><span>' + h(row[j]) + '</span></label>').join('');
+}
+$('t-items').addEventListener('change', e => { const i = e.target.dataset.i; if(i != null){ covered[+i] = e.target.checked; updateTst(); } });
+
+/* briefeur */
+function showBriefer(){
+  const b = LS.get(K.briefer, null);
+  $('t-bset').classList.toggle('hide', !!b); $('t-bshow').classList.toggle('hide', !b);
+  if(b){ $('t-bname').textContent = b.name || b.email; $('t-bmail').textContent = b.name ? b.email : ''; }
+}
+$('t-bcheck').onclick = async () => {
+  const e = $('t-bemail').value.trim().toLowerCase(), m = $('t-bmsg'); m.className = 'msg'; m.textContent = '';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ m.className = 'msg err'; m.textContent = T('why_briefer'); return; }
+  $('t-bcheck').disabled = true;
+  try{
+    const r = await ctRpc('tst_briefer_check', { p_email: e });
+    if(!r || !r.ok){ m.className = 'msg err'; m.textContent = T('briefer_unknown'); }
+    else { LS.set(K.briefer, { email: e, name: r.name, checked: true }); showBriefer(); }
+  }catch(x){
+    if(x.server){ m.className = 'msg err'; m.textContent = x.message; }
+    else { LS.set(K.briefer, { email: e, name: '', checked: false }); showBriefer(); }
+  }
+  $('t-bcheck').disabled = false; updateTst();
+};
+$('t-bchange').onclick = () => { const b = LS.get(K.briefer, null); LS.set(K.briefer, null); try{ localStorage.removeItem(K.briefer); }catch(e){} $('t-bemail').value = b ? b.email : ''; showBriefer(); updateTst(); };
+
+function why(){
+  if(!LS.get(K.briefer, null)) return T('why_briefer');
+  if(!$('t-last').value.trim() || !$('t-first').value.trim() || !$('t-company').value.trim()) return T('why_identity');
+  if($('t-email').value.trim() && !$('t-email').checkValidity()) return T('why_email');
+  if(!covered.some(Boolean)) return T('why_topics');
+  if(!PAD_TST.filled() || !PAD_BRF.filled()) return T('why_sigs');
+  return '';
+}
+function updateTst(){
+  const n = covered.filter(Boolean).length;
+  $('t-count').textContent = T('covered', { n, t: ITEMS.length });
+  $('t-bar').style.width = (n / ITEMS.length * 100) + '%';
+  $('t-why').textContent = '';
+}
+['t-last','t-first','t-company','t-email'].forEach(id => $(id).addEventListener('input', updateTst));
+
+function newRef(){
+  const d = today().slice(2).replace(/-/g, ''), A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let r = ''; const b = new Uint8Array(5); crypto.getRandomValues(b); b.forEach(x => { r += A[x % A.length]; });
+  return 'TSTB-' + d + '-' + r;
+}
+$('t-save').onclick = async () => {
+  const w = why(); if(w){ $('t-why').textContent = w; return; }
+  const b = LS.get(K.briefer, null), on = today();
+  const p = {
+    ref: newRef(), briefed_on: on, briefed_at: new Date().toISOString(), device_at: new Date().toISOString(),
+    mission_ref: $('t-mref').value.trim(), site: $('t-site').value.trim(),
+    tst_last_name: $('t-last').value.trim(), tst_first_name: $('t-first').value.trim(), tst_company: $('t-company').value.trim(),
+    tst_function: $('t-func').value.trim(), tst_email: $('t-email').value.trim(), flies_onboard: $('t-onboard').checked, lang,
+    topics: ITEMS.map((x, i) => ({ n: i + 1, code: 'T' + String(i + 1).padStart(2,'0'), label_en: x[1], covered: covered[i] })),
+    tst_signature_png: PAD_TST.png(), briefer_signature_png: PAD_BRF.png(), briefer_email: b.email, user_agent: navigator.userAgent
+  };
+  LS.set(K.mission, { mission_ref: p.mission_ref, site: p.site });
+  const q = LS.get(K.queue, []); q.push({ p, briefer_name: b.name, tries: 0 });
+  if(!LS.set(K.queue, q)){ $('t-why').textContent = 'Stockage du téléphone plein.'; return; }
+  $('t-save').disabled = true;
+  await syncQueue();
+  $('t-save').disabled = false;
+  const sent = LS.get(K.sent, []).find(x => x.ref === p.ref), inQ = LS.get(K.queue, []).find(x => x.p.ref === p.ref);
+  showDone(sent ? 'sent' : inQ && inQ.err ? 'err' : 'queued', { ...p, briefer_name: b.name, valid_until: sent ? sent.valid_until : plus12m(on) }, inQ && inQ.err);
+};
+
+let syncing = false;
+async function syncQueue(){
+  if(syncing) return; syncing = true;
+  let q = LS.get(K.queue, []);
+  for(const it of q){
+    if(it.err && !it.force) continue;
+    try{
+      const r = await ctRpc('tst_briefing_submit', { p: it.p });
+      const sent = LS.get(K.sent, []);
+      sent.unshift({ ref: it.p.ref, name: it.p.tst_first_name + ' ' + it.p.tst_last_name.toUpperCase(), company: it.p.tst_company, on: it.p.briefed_on, valid_until: r.valid_until, at: new Date().toISOString() });
+      LS.set(K.sent, sent.slice(0, 40));
+      q = LS.get(K.queue, []).filter(x => x.p.ref !== it.p.ref); LS.set(K.queue, q);
+    }catch(e){
+      if(!e.server) break;                         /* pas de réseau : on réessaiera */
+      q = LS.get(K.queue, []); const x = q.find(y => y.p.ref === it.p.ref); if(x){ x.err = e.message; x.force = false; x.tries++; LS.set(K.queue, q); }
+    }
+  }
+  syncing = false; renderQueue(); renderBadges();
+}
+window.addEventListener('online', syncQueue);
+setInterval(() => { if(navigator.onLine && LS.get(K.queue, []).some(x => !x.err)) syncQueue(); }, 60000);
+$('t-sync').onclick = async () => { const q = LS.get(K.queue, []); q.forEach(x => { x.force = true; }); LS.set(K.queue, q); await syncQueue(); };
+
+const errText = m => { const k = 'err_' + String(m || '').trim(); return I18N.fr[k] ? T(k) : T('err_generic', { m }); };
+function renderQueue(){
+  const q = LS.get(K.queue, []), s = LS.get(K.sent, []).filter(x => x.on === today());
+  $('t-queue-wrap').classList.toggle('hide', !q.length && !s.length);
+  $('t-sync').classList.toggle('hide', !q.length);
+  $('t-queue').innerHTML = q.map(x => '<div class="qrow"><span>' + h(x.p.tst_first_name + ' ' + x.p.tst_last_name.toUpperCase()) + ' <em>· ' + h(x.p.tst_company) + '</em>' + (x.err ? '<br><span class="e">' + h(errText(x.err)) + '</span>' : '') + '</span><em>' + h(x.err ? T('q_err') : T('q_wait')) + '</em></div>').join('')
+    + s.map(x => '<div class="qrow"><span>' + h(x.name) + ' <em>· ' + h(x.company) + '</em></span><em style="color:var(--tst)">' + h(T('q_sent')) + '</em></div>').join('');
+}
+function renderBadges(){
+  const n = LS.get(K.queue, []).length;
+  $('tst-badge').innerHTML = n ? '<span class="badge q">' + h(T('queue_badge', { n })) + '</span>' : '';
+  const m = DOCS.ready ? unreadMust().length : 0;
+  $('docs-badge').innerHTML = m ? '<span class="badge q">' + h(T('to_read')) + ' : ' + m + '</span>' : '';
+}
+
+function showDone(state, item, err){
+  LAST = { state, item, err };
+  $('t-form').classList.add('hide'); $('t-done').classList.remove('hide');
+  const who = item.tst_first_name + ' ' + item.tst_last_name.toUpperCase();
+  $('t-done-box').className = 'panel done' + (state === 'sent' ? '' : ' q');
+  $('t-done-title').textContent = state === 'sent' ? T('sent_title') : state === 'err' ? T('rejected_title') : T('queued_title');
+  $('t-done-text').textContent = state === 'sent' ? T('sent_text', { p: who, d: fmtDate(item.valid_until) }) : state === 'err' ? errText(err) : T('queued_text', { p: who });
+  $('t-done-ref').textContent = T('ref', { r: item.ref });
+  buildPrint(item); window.scrollTo(0, 0);
+}
+function resetTst(keepMission){
+  ['t-last','t-first','t-company','t-func','t-email'].forEach(id => { $(id).value = ''; });
+  $('t-onboard').checked = false; PAD_TST.clear();
+  if(!keepMission){ covered = ITEMS.map(() => false); PAD_BRF.clear(); $('t-mref').value = ''; $('t-site').value = ''; }
+  drawItems(); updateTst();
+  $('t-done').classList.add('hide'); $('t-form').classList.remove('hide');
+  requestAnimationFrame(() => PADS.forEach(p => p.resize())); window.scrollTo(0, 0);
+}
+/* Briefing en série : même mission, mêmes points, signature du briefeur conservée */
+$('t-next').onclick = () => { resetTst(true); setTimeout(() => $('t-last').focus(), 50); };
+$('t-home').onclick = () => { resetTst(false); location.hash = ''; };
+$('t-print').onclick = () => window.print();
+
+function buildPrint(it){
+  const j = ['fr','en','it','es'].indexOf(lang);
+  $('print').innerHTML = '<h1>' + h(T('pr_title')) + '</h1><p>' + h(T('ref', { r: it.ref })) + ' · ' + h(fmtDate(it.briefed_on)) + ' · ' + h(T('pr_valid')) + ' ' + h(fmtDate(it.valid_until)) + '</p>'
+    + '<table><tr><th>' + h(T('pr_tst')) + '</th><td>' + h(it.tst_first_name + ' ' + it.tst_last_name.toUpperCase()) + ' — ' + h(it.tst_company) + (it.tst_function ? ' — ' + h(it.tst_function) : '') + '</td></tr>'
+    + '<tr><th>' + h(T('pr_briefer')) + '</th><td>' + h(it.briefer_name || it.briefer_email) + '</td></tr>'
+    + '<tr><th>' + h(T('pr_mission')) + '</th><td>' + h(it.mission_ref || '—') + '</td></tr><tr><th>' + h(T('pr_site')) + '</th><td>' + h(it.site || '—') + '</td></tr>'
+    + '<tr><th>' + h(T('pr_onboard')) + '</th><td>' + h(it.flies_onboard ? T('yes') : T('no')) + '</td></tr></table>'
+    + '<table>' + it.topics.map(t => '<tr><td>' + t.n + '</td><td>' + h(ITEMS[t.n - 1][j]) + '</td><td>' + h(t.covered ? T('pr_covered') : T('pr_not')) + '</td></tr>').join('') + '</table>'
+    + '<div class="sigs"><div>' + h(T('sig_tst')) + '<img src="' + it.tst_signature_png + '" alt=""></div><div>' + h(T('sig_briefer')) + '<img src="' + it.briefer_signature_png + '" alt=""></div></div>'
+    + '<p style="font-size:9pt;margin-top:10pt">SAF International — OM-A §8.2.1</p>';
+}
+
+/* ── Démarrage ── */
+(function init(){
+  const m = LS.get(K.mission, null); if(m){ $('t-mref').value = m.mission_ref || ''; $('t-site').value = m.site || ''; }
+  showBriefer(); applyLang(); route();
+  if(navigator.onLine) syncQueue();
+  /* session documentation déjà ouverte (même navigateur que le portail) : badge « À lire » */
+  const c = smsClient(); if(c) c.auth.getSession().then(r => { if(r.data && r.data.session && !DOCS.ready) docsLoad(); });
+})();
+</script>
+</body>
+</html>
