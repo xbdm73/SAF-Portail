@@ -762,7 +762,12 @@ function applyGate(){
 
 /* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
    le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
-const visible = s => (userRole!=='staff' || s.id==='docs') && (userRole!=='authority' || s.id==='sms') && (!s.roles || (userRole && s.roles.includes(userRole)));
+const visible = s => {
+   const session = readSession();
+   const paulReadOnly = userRole==='reader' && session && String(session.email).toLowerCase()==='paul.ruiz@saf-helico.com';
+   const paulApp = paulReadOnly && (s.id==='ops' || s.id==='ops-main');
+   return (userRole!=='staff' || s.id==='docs') && (userRole!=='authority' || s.id==='sms') && (paulApp || !s.roles || (userRole && s.roles.includes(userRole)));
+ };
 
 /* ---------- état de chaque système ---------- */
 async function check(sys){
@@ -2160,10 +2165,10 @@ resolveRole();
     const T2 = k => (typeof t === 'function' ? t(k) : k);
     send.onclick = async () => {
       err.textContent = ''; const e = em.value.trim().toLowerCase();
-      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ err.textContent = T2('otp_bad_email'); return; }
+      if(!/^[^@\s]+@saf-helico\.com$/i.test(e)){ err.textContent = 'Adresse SAF requise / SAF e-mail required (@saf-helico.com).'; return; }
       send.disabled = true;
       try{
-        const r = await C().auth.signInWithOtp({ email:e, options:{ shouldCreateUser:false } });
+        const r = await C().auth.signInWithOtp({ email:e, options:{ shouldCreateUser:true } });
         if(r.error) throw r.error;
         s1.hidden = true; s2.hidden = false; code.value = ''; code.focus();
         document.getElementById('otp-sent').textContent = T2('otp_sent').replace('{e}', e);
