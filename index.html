@@ -65,6 +65,9 @@ button,input{font:inherit;color:inherit}
 /* ---------- Accès réservé (admin, editor, reader) ---------- */
 .login-en{display:block;font-size:.84em;font-weight:400;color:var(--muted);line-height:1.45;margin-top:3px}
 body:not(.granted) .shell{display:none}
+.demo-bar{display:none;position:sticky;top:0;z-index:70;padding:7px 14px;text-align:center;font-size:13px;font-weight:600;background:#f2b84b;color:#2a1d00}
+body.is-demo .demo-bar{display:block}
+#demo-note{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:61;padding:8px 14px;border-radius:8px;font-size:12.5px;font-weight:600;background:#f2b84b;color:#2a1d00;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw;display:none}
 .gate{display:none;min-height:calc(100% - 84px);align-items:center;justify-content:center;padding:32px 16px}
 body.gated .gate{display:flex}
 .gate-box{max-width:420px;width:100%;text-align:center;border:1px solid var(--line);border-radius:12px;padding:32px 28px;background:var(--panel, transparent)}
@@ -624,6 +627,7 @@ main{padding-top:22px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+<div class="demo-bar" role="status">Mode démo — consultation complète ; les modifications sont simulées et ne sont pas enregistrées. <span class="login-en">Demo mode — changes are simulated and not saved.</span></div>
 
 <header class="top">
   <a class="top-logo" href="./" aria-label="SAF International">
@@ -925,13 +929,71 @@ const SAF_NEXT = (function(){
 })();
 /* Client Supabase du SMS : même clé de stockage, il renouvelle un jeton
    d'accès expiré (1 h) grâce au jeton de rafraîchissement. */
+/* ================================================================
+   COMPTE DÉMO (25.11.2026) — demo@saf-helico.com, connexion par mot de passe.
+   Lecture de tout ; toute écriture (tables, fichiers, fonctions, RPC) est
+   simulée ici et n'atteint jamais Supabase. La vraie garantie reste la RLS
+   (politiques demo_* de SAF_Portail_Demo_SQL.sql) : ce bac à sable n'est
+   qu'un confort d'interface.
+   ================================================================ */
+const SAF_DEMO_EMAIL = 'demo@saf-helico.com';
+const SAF_DEMO_RPC_OK = new Set(['portal_role']);   // RPC en lecture seule autorisées en démo
+function isDemoSession(){ const s=readSession(); return !!s && String(s.email).toLowerCase()===SAF_DEMO_EMAIL; }
+function safDemoNotice(){
+  let el=document.getElementById('demo-note');
+  if(!el){ el=document.createElement('div'); el.id='demo-note'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.textContent='Mode démo : modification simulée, rien n\u2019a été enregistré. / Demo mode: nothing was saved.';
+  el.style.display='block'; clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.display='none'; },4200);
+}
+function safDemoWrap(client){
+  const ok = data => ({ data, error:null, count:null, status:200, statusText:'OK (demo)' });
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random().toString(16).slice(2));
+  const bind = (o,k) => { const v=o[k]; return typeof v==='function' ? v.bind(o) : v; };
+  /* Fausse requête : accepte toute la chaîne (.select().eq().single()…) et
+     renvoie un succès avec les lignes envoyées, complétées d'un id. */
+  function fakeQuery(payload){
+    let single=false;
+    const rows = () => (Array.isArray(payload) ? payload : [payload || {}])
+      .map(r => Object.assign({ id:uid(), created_at:new Date().toISOString() }, r));
+    const q = new Proxy(function(){}, { get(_, k){
+      if(k==='then') return (res, rej) => { safDemoNotice(); const d=rows(); return Promise.resolve(ok(single ? d[0] : d)).then(res, rej); };
+      if(k==='single' || k==='maybeSingle') return () => { single=true; return q; };
+      return () => q;
+    }});
+    return q;
+  }
+  const TABLE_WRITES = new Set(['insert','update','upsert','delete']);
+  const FILE_WRITES  = new Set(['upload','update','move','copy','remove','createSignedUploadUrl','uploadToSignedUrl']);
+  return new Proxy(client, { get(t, k){
+    if(k==='from') return table => {
+      const b = t.from(table);
+      return new Proxy(b, { get(bt, bk){ return (TABLE_WRITES.has(bk) && isDemoSession()) ? (pl => fakeQuery(pl)) : bind(bt, bk); } });
+    };
+    if(k==='storage'){
+      const st = t.storage;
+      return new Proxy(st, { get(stt, sk){
+        if(sk!=='from') return bind(stt, sk);
+        return bucket => { const b = stt.from(bucket);
+          return new Proxy(b, { get(bb, bk){
+            if(FILE_WRITES.has(bk) && isDemoSession()) return async () => { safDemoNotice(); return ok(bk==='remove' ? [{ name:'demo' }] : { path:'demo/'+uid() }); };
+            return bind(bb, bk); } }); };
+      } });
+    }
+    if(k==='functions'){
+      const fn = t.functions;
+      return new Proxy(fn, { get(ft, fk){ return (fk==='invoke' && isDemoSession()) ? (async () => { safDemoNotice(); return ok({}); }) : bind(ft, fk); } });
+    }
+    if(k==='rpc') return (name, ...a) => (isDemoSession() && !SAF_DEMO_RPC_OK.has(name)) ? (safDemoNotice(), Promise.resolve(ok(null))) : t.rpc(name, ...a);
+    return bind(t, k);
+  } });
+}
 let sbClient = null;
 function getClient(){
   if(sbClient) return sbClient;
   try{
     if(window.supabase && window.supabase.createClient)
-      sbClient = window.supabase.createClient(SAF_SUPABASE_URL, SAF_SUPABASE_ANON,
-        { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } });
+      sbClient = safDemoWrap(window.supabase.createClient(SAF_SUPABASE_URL, SAF_SUPABASE_ANON,
+        { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } }));
   }catch(e){ sbClient = null; }
   return sbClient;
 }
@@ -956,20 +1018,23 @@ async function resolveRole(){
       if(result.error) throw result.error;
       role = result.data ? String(result.data).toLowerCase() : 'none';
     }catch(e){ role = 'none'; }
+    if(String(ses.email).toLowerCase()===SAF_DEMO_EMAIL) role = 'demo';
   }
   if(seq !== roleSeq) return;     // une lecture plus récente a pris le relais
   userRole = role;
-  if(SAF_NEXT && ['admin','editor','reader','authority'].includes(role)){ location.replace(SAF_NEXT); return; }
+  if(SAF_NEXT && ['admin','editor','reader','authority','demo'].includes(role)){ location.replace(SAF_NEXT); return; }
   applyGate(); render(); syncDocsView();
 }
 /* Portail réservé aux rôles SMS admin, editor et reader. Confort d'interface :
    les données restent protégées par la RLS de chaque système. */
-const SAF_PORTAL_ROLES = ['admin','editor','reader','staff','authority'];   /* staff = personnel : bloc Documents seul (19.10.2026) ; authority = OFAC : carte SMS seule (30.10.2026) */
+const SAF_PORTAL_ROLES = ['admin','editor','reader','staff','authority','demo'];   /* demo = démonstration, lecture totale (25.11.2026) */
+   /* staff = personnel : bloc Documents seul (19.10.2026) ; authority = OFAC : carte SMS seule (30.10.2026) */
 function applyGate(){
   const b=document.body, title=document.getElementById('gate-title'),
         msg=document.getElementById('gate-msg'), btn=document.getElementById('gate-btn');
   title.textContent=gateBi('gate_title');
   b.classList.toggle('is-staff', userRole==='staff');
+  b.classList.toggle('is-demo', userRole==='demo');
   const otp=document.getElementById('otp'); if(otp) otp.hidden = userRole!=='anon';
   if(typeof window.safDocsOnRole==='function') window.safDocsOnRole(userRole);
   if(userRole && SAF_PORTAL_ROLES.includes(userRole)){ b.classList.add('granted'); b.classList.remove('gated'); return; }
@@ -984,6 +1049,7 @@ function applyGate(){
 /* Carte sans « roles » : visible par tous. Avec « roles » : masquée tant que
    le rôle n'est pas lu, puis affichée seulement s'il figure dans la liste. */
 const visible = s => {
+   if(userRole==='demo') return true;   // compte démo : toutes les cartes
    const session = readSession();
    const paulReadOnly = userRole==='reader' && session && String(session.email).toLowerCase()==='paul.ruiz@saf-helico.com';
    const paulApp = paulReadOnly && (s.id==='ops' || s.id==='ops-main');
@@ -1154,7 +1220,7 @@ function render(){
 /* ---------- événements ---------- */
 function syncDocsView(){
   const requested = location.hash === '#docs';
-  const permitted = ['admin','editor','reader','staff'].includes(userRole);
+  const permitted = ['admin','editor','reader','staff','demo'].includes(userRole);
   const isOpen = requested && permitted;
   document.body.classList.toggle('docs-open',isOpen);
   /* Une seule vue visible : catalogue ou espace documentaire. */
@@ -1185,7 +1251,7 @@ document.getElementById('v-grid').onclick=()=>{ view='grid'; store.set('saf_port
 document.getElementById('v-list').onclick=()=>{ view='list'; store.set('saf_portal_view2',view); render(); };
 document.getElementById('btn-lang').onclick=()=>{ lang=lang==='fr'?'en':'fr'; store.set('saf_portal_lang',lang); applyLang(); };
 document.getElementById('btn-logout').onclick=async()=>{
-  try{ const c=getClient(); if(c) await c.auth.signOut(); }catch(e){}
+  try{ const c=getClient(); if(c) await c.auth.signOut({ scope:'local' }); }catch(e){}   // ce poste seulement : les autres sessions du même compte restent ouvertes
   try{ localStorage.removeItem('sb-'+SAF_SUPABASE_REF+'-auth-token'); }catch(e){}
   location.reload();
 };
@@ -1216,11 +1282,12 @@ window.addEventListener('pageshow',()=>{ renderWho(); render(); resolveRole(); }
       const password=document.getElementById('admin-password').value;
       const auth=await client.auth.signInWithPassword({email,password});
       if(auth.error)throw auth.error;
+      if(email===SAF_DEMO_EMAIL){ panel.hidden=true; document.getElementById('admin-password').value=''; await resolveRole(); return; }   // compte démo : pas de second facteur
       const role=await client.rpc('portal_role');
       if(role.error)throw role.error;
       const rl=String(role.data||'').toLowerCase();
       if(!['admin','editor','reader','authority'].includes(rl)) {
-        await client.auth.signOut();throw Error('Ce compte n\u2019a pas d\u2019accès par mot de passe. Personnel SAF : utilisez la connexion par code e-mail.');
+        await client.auth.signOut({ scope:'local' });throw Error('Ce compte n\u2019a pas d\u2019accès par mot de passe. Personnel SAF : utilisez la connexion par code e-mail.');
       }
       if(rl==='reader'||rl==='authority'){ panel.hidden=true; await resolveRole(); return; }   // pas de second facteur exigé (arbitrage du 25.09.2026)
       const level=await client.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -1432,8 +1499,8 @@ resolveRole();
   /* Accusé de lecture : toute personne inscrite au personnel (portal_people, actif),
      quel que soit son rôle. Le lecteur partagé sms@ n'y est pas inscrit : consultation seule. */
   const canAck = () => !!(S.person && S.person.active);
-  const isMgr = () => ['admin','editor'].includes(S.role);
-  const isAdmin = () => S.role === 'admin';
+  const isMgr = () => ['admin','editor','demo'].includes(S.role);
+  const isAdmin = () => ['admin','demo'].includes(S.role);
   const published = () => S.docs.filter(x => x.status === 'published');
   const pending = () => canAck() ? published().filter(x => x.mandatory && !S.my[x.id]) : [];
   const activePeople = () => S.people.filter(p => p.active);
@@ -1486,6 +1553,7 @@ resolveRole();
     try{
       const ses = (await c.auth.getSession()).data.session;
       S.uid = ses && ses.user ? ses.user.id : null; S.email = ses && ses.user ? ses.user.email : null; S.aal = ses ? jwtAal(ses.access_token) : null;
+      if(String(S.email || '').toLowerCase() === SAF_DEMO_EMAIL) S.aal = 'aal2';   // démo : boutons actifs, écritures simulées
       const r1 = await c.from('portal_docs').select('*').order('published_at', { ascending:false });
       if(r1.error) throw r1.error;
       S.docs = r1.data || [];
@@ -1573,7 +1641,7 @@ resolveRole();
   }
   function render(){
     const box = document.getElementById('docs'); if(!box) return;
-    const allowed = ['admin','editor','reader','staff'].includes(S.role);
+    const allowed = ['admin','editor','reader','staff','demo'].includes(S.role);
     box.hidden = !allowed;
     updateBadge();
     if(!allowed) return;
@@ -1780,7 +1848,7 @@ resolveRole();
   }
   function updateBadge(){
     const a = document.querySelector('.side a[data-nav="docs"]'); if(!a) return;
-    a.hidden = !['admin','editor','reader','staff'].includes(S.role);
+    a.hidden = !['admin','editor','reader','staff','demo'].includes(S.role);
     let b = a.querySelector('.badge'); const n = S.state === 'ready' ? pending().length : 0;
     if(n){ if(!b){ b = document.createElement('span'); b.className = 'badge'; a.appendChild(b); } b.textContent = n; } else if(b) b.remove();
   }
@@ -2534,7 +2602,7 @@ resolveRole();
   window.safDocsOnRole = function(role){
     const changed = role !== S.role; S.role = role;
     otpBind();
-    if(['admin','editor','reader','staff'].includes(role)){ if(changed || S.state === 'idle' || S.state === 'error') load(); else render(); }
+    if(['admin','editor','reader','staff','demo'].includes(role)){ if(changed || S.state === 'idle' || S.state === 'error') load(); else render(); }
     else { S.docs = []; S.reads = []; S.my = {}; S.state = 'idle'; render(); }
   };
   window.safDocsRender = render;
