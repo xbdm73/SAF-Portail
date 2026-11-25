@@ -545,7 +545,7 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
 @keyframes orbit{to{transform:rotate(360deg)}}
 .slot{position:absolute;width:0;height:0}
 .pl-spin{position:absolute;left:0;top:0;width:0;height:0;animation:orbit var(--t) linear infinite;animation-direction:var(--cdir)}
-.orbit:has(.pl:hover) .ring,.orbit:has(.pl:hover) .pl-spin,.orbit:has(.pl:hover) .pl-sat-carrier,.orbit:has(.pl:hover) .pl-sat-label,.orbit:focus-within .ring,.orbit:focus-within .pl-spin,.orbit:focus-within .pl-sat-carrier,.orbit:focus-within .pl-sat-label{animation-play-state:paused}
+@media (hover:hover) and (pointer:fine){.orbit:has(.pl:hover) .ring,.orbit:has(.pl:hover) .pl-spin,.orbit:has(.pl:hover) .pl-sat-carrier,.orbit:has(.pl:hover) .pl-sat-label,.orbit:focus-within .ring,.orbit:focus-within .pl-spin,.orbit:focus-within .pl-sat-carrier,.orbit:focus-within .pl-sat-label{animation-play-state:paused}}
 .pl{pointer-events:auto;position:absolute;left:calc(var(--psz)/-2);top:calc(var(--psz)/-2);width:var(--psz);height:var(--psz);display:block;text-decoration:none;color:var(--text);z-index:2}
 .pl-ball{position:relative;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;color:#fff;
   background:radial-gradient(circle at 32% 28%,color-mix(in srgb,var(--c) 45%,#fff) 0%,var(--c) 42%,color-mix(in srgb,var(--c) 55%,#000) 100%);
@@ -567,7 +567,7 @@ a.pl:focus-visible{outline:none}
 .pl-sat-label{position:absolute;left:0;top:0;transform:translate(-50%,-50%);display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;height:22px;padding:0 7px;border-radius:7px;border:1px solid var(--c);background:var(--card);color:var(--text);font-size:11px;font-weight:700;line-height:1;box-shadow:0 2px 8px #0004}
 @keyframes satspin{from{transform:rotate(var(--sa))}to{transform:rotate(calc(var(--sa) + 360deg))}}
 @keyframes satcounter{from{transform:rotate(calc(0deg - var(--sa)))}to{transform:rotate(calc(0deg - var(--sa) - 360deg))}}
-.orbit:has(.pl:hover) .pl-sat-orbit,.orbit:focus-within .pl-sat-orbit{animation-play-state:paused}
+@media (hover:hover) and (pointer:fine){.orbit:has(.pl:hover) .pl-sat-orbit,.orbit:focus-within .pl-sat-orbit{animation-play-state:paused}}
 @media(prefers-reduced-motion:reduce){.pl-sat-orbit{transform:rotate(var(--sa))}.pl-sat-carrier{transform:rotate(calc(0deg - var(--sa)))}}
 .orbit-pop{position:absolute;left:0;top:0;z-index:6;width:270px;padding:18px 18px 14px;border:1px solid color-mix(in srgb,var(--c,var(--line)) 35%,var(--line));border-radius:16px;
   background:color-mix(in srgb,var(--card) 92%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -722,6 +722,12 @@ body.granted:has(#grid.orbitview):not(.docs-open) .tools{margin:0 12px 8px;posit
 /* V14: small cruiser only; meteors retained */
 #grid.orbitview .v8-ship{width:clamp(34px,4.5vw,70px);left:-80px;animation:v14Cruiser 48s linear 3s infinite;filter:drop-shadow(0 0 3px #72cfff88)}
 @keyframes v14Cruiser{0%{left:-80px;top:12%;opacity:1;transform:rotate(5deg)}21%{left:calc(100% + 80px);top:28%;opacity:1;transform:rotate(5deg)}22%,49.99%{left:calc(100% + 80px);opacity:0}50%{left:calc(100% + 80px);top:65%;opacity:1;transform:scaleX(-1) rotate(5deg)}71%{left:-80px;top:50%;opacity:1;transform:scaleX(-1) rotate(5deg)}72%,100%{left:-80px;opacity:0}}
+
+/* V15 - iOS touch compatibility, no sticky hover pause */
+@media (hover:none), (pointer:coarse){
+ #grid.orbitview:not(.v7-paused) .ring,#grid.orbitview:not(.v7-paused) .pl-spin,#grid.orbitview:not(.v7-paused) .pl-sat-orbit,#grid.orbitview:not(.v7-paused) .pl-sat-carrier{animation-play-state:running}
+ #grid.orbitview .pl-ball{transition:none}
+}
 </style>
 <script>
 /* ================================================================
@@ -1327,11 +1333,13 @@ function v7Controls(g){
  const fr=lang==='fr';const d=document.createElement('details');d.className='v7-settings';
  d.innerHTML=`<summary>${fr?'Réglages animation':'Animation settings'}</summary><div class="v7-controls"><label>${fr?'Vitesse':'Speed'}<select data-pref="speed"><option value="stop">${fr?'Arrêt':'Pause'}</option><option value="slow">${fr?'Lente':'Slow'}</option><option value="normal">Normal</option><option value="fast">${fr?'Rapide':'Fast'}</option></select></label><label>${fr?'Rayonnement':'Glow'} <input data-pref="halo" type="range" min="0" max="100"><output></output></label><label>${fr?'Étoiles':'Stars'}<input data-pref="stars" type="checkbox"></label><label>Satellites<input data-pref="sats" type="checkbox"></label><button class="btn sm" type="button">${fr?'Réinitialiser':'Reset'}</button></div>`;
  function sync(){d.querySelectorAll('[data-pref]').forEach(e=>{const v=v7Prefs[e.dataset.pref];if(e.type==='checkbox')e.checked=!!v;else e.value=v;});d.querySelector('output').textContent=v7Prefs.halo+'%';v7Apply(g);}
- d.addEventListener('input',e=>{const k=e.target.dataset.pref;if(!k)return;v7Prefs[k]=e.target.type==='checkbox'?e.target.checked:e.target.type==='range'?Number(e.target.value):e.target.value;sync();try{localStorage.setItem('saf-orbit-v7',JSON.stringify(v7Prefs));}catch(err){}});
+ function updateOrbitPref(e){const k=e.target.dataset.pref;if(!k)return;v7Prefs[k]=e.target.type==='checkbox'?e.target.checked:e.target.type==='range'?Number(e.target.value):e.target.value;sync();try{localStorage.setItem('saf-orbit-v7',JSON.stringify(v7Prefs));}catch(err){}}
+ d.addEventListener('input',updateOrbitPref);d.addEventListener('change',updateOrbitPref);
  d.querySelector('button').onclick=()=>{v7Prefs={...v7Defaults};sync();try{localStorage.removeItem('saf-orbit-v7');}catch(e){}};
  g.append(d);sync();
 }
-document.addEventListener('visibilitychange',()=>document.body.classList.toggle('v7-hidden',document.hidden));
+function syncOrbitVisibility(){document.body.classList.toggle('v7-hidden',document.hidden);}
+document.addEventListener('visibilitychange',syncOrbitVisibility);window.addEventListener('pageshow',()=>{syncOrbitVisibility();requestAnimationFrame(fitOrbitStage);});
 
 function renderOrbit(g,list,q){
   setViewButtons();
