@@ -509,17 +509,8 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
 /* ================================================================
    VUE ORBITE — 25.11.2026 (planètes autour du logo SAF)
    ================================================================ */
-/* Planètes centrées : colonne vide à gauche, fiche à droite, orbite au milieu */
-.orbitview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,600px) minmax(0,1fr);gap:20px;align-items:center;padding:8px 0 28px}
-.orbitview > .orbit{grid-column:2}
-.orbitview > .orbit-info{grid-column:3;justify-self:end;width:100%;max-width:270px}
-.orbitview > .empty{grid-column:1/-1}
-@media (max-width:1300px){
-  .orbitview{grid-template-columns:1fr}
-  .orbitview > .orbit,.orbitview > .orbit-info{grid-column:1}
-  .orbitview > .orbit-info{justify-self:center;max-width:460px;min-height:0}
-  .orbitview .oi-hint{padding-top:0}
-}
+/* Planètes centrées ; la fiche du système flotte à côté de la planète survolée */
+.orbitview{position:relative;display:block;padding:8px 0 20px}
 .orbit{position:relative;width:min(100%,600px,calc(100dvh - 200px));min-width:min(100%,420px);aspect-ratio:1;margin:0 auto;--psz:66px}
 .orbit .stars{position:absolute;inset:-6%;border-radius:50%;pointer-events:none;opacity:.55;
   background-image:
@@ -544,7 +535,7 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
 :root[data-device="phone"] .pl-name .full{display:none}
 :root[data-device="phone"] .pl-name .short{display:inline}
 @keyframes sunpulse{50%{box-shadow:0 0 0 1px var(--line),0 0 0 20px color-mix(in srgb,var(--brand) 3%,transparent),0 0 90px 12px color-mix(in srgb,var(--brand) 28%,transparent)}}
-.ring{position:absolute;border-radius:50%;border:1px dashed color-mix(in srgb,var(--text) 16%,transparent);animation:orbit var(--t) linear infinite;animation-direction:var(--dir)}
+.ring{position:absolute;border-radius:50%;pointer-events:none;border:1px dashed color-mix(in srgb,var(--text) 16%,transparent);animation:orbit var(--t) linear infinite;animation-direction:var(--dir)}
 /* Même vitesse pour les deux orbites : les planètes gardent leurs écarts et ne se chevauchent jamais */
 .ring.r1{inset:21%;--t:90s;--dir:normal;--cdir:reverse}
 .ring.r2{inset:2%;--t:90s;--dir:normal;--cdir:reverse}
@@ -552,7 +543,7 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
 .slot{position:absolute;width:0;height:0}
 .pl-spin{position:absolute;left:0;top:0;width:0;height:0;animation:orbit var(--t) linear infinite;animation-direction:var(--cdir)}
 .orbit:hover .ring,.orbit:hover .pl-spin,.orbit:focus-within .ring,.orbit:focus-within .pl-spin{animation-play-state:paused}
-.pl{position:absolute;left:calc(var(--psz)/-2);top:calc(var(--psz)/-2);width:var(--psz);height:var(--psz);display:block;text-decoration:none;color:var(--text);z-index:2}
+.pl{pointer-events:auto;position:absolute;left:calc(var(--psz)/-2);top:calc(var(--psz)/-2);width:var(--psz);height:var(--psz);display:block;text-decoration:none;color:var(--text);z-index:2}
 .pl-ball{position:relative;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;color:#fff;
   background:radial-gradient(circle at 32% 28%,color-mix(in srgb,var(--c) 45%,#fff) 0%,var(--c) 42%,color-mix(in srgb,var(--c) 55%,#000) 100%);
   box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent),0 0 26px -4px color-mix(in srgb,var(--c) 70%,transparent),inset -6px -8px 14px rgba(0,0,0,.22);
@@ -567,15 +558,20 @@ a.pl:hover .pl-ball,a.pl:focus-visible .pl-ball{transform:scale(1.15);box-shadow
 a.pl:hover .pl-name,a.pl:focus-visible .pl-name{border-color:color-mix(in srgb,var(--c) 60%,transparent)}
 a.pl:focus-visible{outline:none}
 .pl.off .pl-ball{filter:grayscale(.8);opacity:.55}
-.orbit-info{position:relative;min-height:190px;padding:24px 22px 18px;border:1px solid var(--line);border-radius:var(--r-lg,18px);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
-.orbit-info::before{content:"";position:absolute;left:22px;right:22px;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--c,transparent) 30%,var(--c,transparent) 70%,transparent)}
-.orbit-info .sys-ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:var(--c);
+.orbit-pop{position:absolute;left:0;top:0;z-index:6;width:270px;padding:18px 18px 14px;border:1px solid color-mix(in srgb,var(--c,var(--line)) 35%,var(--line));border-radius:16px;
+  background:color-mix(in srgb,var(--card) 92%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:0 20px 50px -20px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.03) inset;pointer-events:none;
+  opacity:0;visibility:hidden;transform:scale(.97);transition:opacity .15s ease,transform .15s ease,visibility 0s linear .15s}
+.orbit-pop.on{opacity:1;visibility:visible;transform:none;transition:opacity .15s ease,transform .15s ease}
+.orbit-pop::before{content:"";position:absolute;left:18px;right:18px;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--c,transparent) 30%,var(--c,transparent) 70%,transparent)}
+.orbit-pop .op-top{display:flex;align-items:center;gap:12px}
+.orbit-pop .sys-ico{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--c);
   background:linear-gradient(140deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 8%,transparent));box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 32%,transparent) inset}
-.orbit-info .sys-ico svg{width:22px;height:22px}
-.oi-name{margin:14px 0 6px;font-size:16.5px;font-weight:700;font-stretch:112%;letter-spacing:-.01em}
-.oi-desc{margin:0 0 16px;color:var(--muted);font-size:13.5px;line-height:1.55}
-.oi-hint{margin:0;color:var(--muted);font-size:14px;line-height:1.6;padding-top:56px;text-align:center}
-.orbit-info .sys-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--faint)}
+.orbit-pop .sys-ico svg{width:20px;height:20px}
+.orbit-pop .sys-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--faint);padding-top:10px;border-top:1px solid var(--line)}
+.orbit-hint{margin:6px 0 0;text-align:center;color:var(--faint);font-size:12.5px}
+.oi-name{margin:0;font-size:16px;font-weight:700;font-stretch:112%;letter-spacing:-.01em}
+.oi-desc{margin:12px 0 12px;color:var(--muted);font-size:13.5px;line-height:1.55}
 /* Tablette et téléphone */
 :root[data-device="tablet"] .orbit{--psz:60px}
 :root[data-device="phone"] .orbitview{padding:18px 0 30px;gap:0}
@@ -585,7 +581,7 @@ a.pl:focus-visible{outline:none}
 :root[data-device="phone"] .sun{inset:39%}
 :root[data-device="phone"] .pl-name{font-size:10.5px;padding:2px 7px;top:calc(100% + 5px)}
 :root[data-device="phone"] .pl-dot{width:10px;height:10px}
-:root[data-device="phone"] .orbit-info{display:none}
+:root[data-device="phone"] .orbit-pop{display:none}
 /* Titre « Systèmes » retiré de l'affichage (25.11.2026) : conservé pour les lecteurs d'écran et le lien #systems */
 .head{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important;box-shadow:none!important}
 main{padding-top:22px}
@@ -1058,24 +1054,33 @@ function sysInfo(s){
   const nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
   return { st, label, last, name:nm[lang]||nm.fr, desc:ds[lang]||ds.fr };
 }
-let orbitShown = null;
-function orbitInfoHTML(s){
-  const o = document.querySelector('.orbit-info');
-  if(!o) return;
-  orbitShown = s ? s.id : null;
-  if(!s){
-    const touch = document.documentElement.getAttribute('data-touch')==='1';
-    o.style.removeProperty('--c');
-    o.innerHTML = `<p class="oi-hint">${esc(ORBIT_T[lang][touch?'hint_touch':'hint'])}</p>`;
-    return;
-  }
+let orbitShown = null, orbitEl = null;
+/* Fiche du système : s'affiche à côté de la planète survolée (ou sélectionnée au clavier),
+   du côté où il y a de la place, et disparaît quand on la quitte. */
+function orbitPop(s, el){
+  const g = document.getElementById('grid'), pop = g && g.querySelector('.orbit-pop');
+  if(!pop) return;
+  if(!s || !el || document.documentElement.getAttribute('data-touch')==='1'){ pop.classList.remove('on'); orbitShown = null; orbitEl = null; return; }
+  orbitShown = s.id; orbitEl = el;
   const i = sysInfo(s);
-  o.style.setProperty('--c', s.color);
-  o.innerHTML = `
-    <span class="sys-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.icon]||ICONS.shield}</svg></span>
-    <p class="oi-name">${esc(i.name)}</p>
+  pop.style.setProperty('--c', s.color);
+  pop.innerHTML = `
+    <div class="op-top"><span class="sys-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.icon]||ICONS.shield}</svg></span>
+    <p class="oi-name">${esc(i.name)}</p></div>
     <p class="oi-desc">${esc(i.desc)}</p>
     <div class="sys-foot"><span class="status" data-s="${i.st}"><i></i>${i.label}</span><span>${esc(i.last)}</span></div>`;
+  const vr = g.getBoundingClientRect(), br = el.querySelector('.pl-ball').getBoundingClientRect();
+  const pw = pop.offsetWidth, phh = pop.offsetHeight, gap = 18;
+  const cx = br.left + br.width/2 - vr.left, cy = br.top + br.height/2 - vr.top;
+  /* Côté extérieur de l'orbite d'abord (la fiche ne cache pas les autres planètes), sinon côté intérieur */
+  const rightPos = br.right - vr.left + gap, leftPos = br.left - vr.left - gap - pw;
+  const outward = cx >= vr.width/2 ? rightPos : leftPos, inward = cx >= vr.width/2 ? leftPos : rightPos;
+  let left = (outward >= 0 && outward + pw <= vr.width) ? outward : inward;
+  left = Math.max(0, Math.min(left, vr.width - pw));
+  let top = cy - phh/2;
+  top = Math.max(0, Math.min(top, vr.height - phh));
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  pop.classList.add('on');
 }
 /* Les contrôles d'état des systèmes relancent render() plusieurs fois au chargement.
    Si les planètes sont déjà en place, on met seulement à jour leur état et leur nom :
@@ -1096,7 +1101,7 @@ function renderOrbit(g,list,q){
       el.setAttribute('aria-label', i.name+' \u2014 '+i.label);
     });
     const shown = list.find(s=>s.id===orbitShown);
-    orbitInfoHTML(shown || null);
+    if(shown && orbitEl && orbitEl.isConnected) orbitPop(shown, orbitEl);
     return;
   }
   g.className='orbitview';
@@ -1122,15 +1127,18 @@ function renderOrbit(g,list,q){
     }).join('');
     return `<div class="ring r${rings.length===1?'1':ri+1}">${slots}</div>`;
   }).join('');
-  g.innerHTML = `<div class="orbit"><div class="stars" aria-hidden="true"></div>${sun}${ringHTML}</div><aside class="orbit-info" aria-live="polite"></aside>`;
+  const touch = document.documentElement.getAttribute('data-touch')==='1';
+  g.innerHTML = `<div class="orbit"><div class="stars" aria-hidden="true"></div>${sun}${ringHTML}</div><p class="orbit-hint">${esc(ORBIT_T[lang][touch?'hint_touch':'hint'])}</p><div class="orbit-pop" role="tooltip"></div>`;
   const ph = orbitPhase();
   g.querySelectorAll('.ring,.pl-spin').forEach(el=>el.style.animationDelay = ph);
-  orbitInfoHTML(list.find(s=>s.id===orbitShown) || null);
+  orbitShown = null; orbitEl = null;
   const byId = Object.fromEntries(list.map(s=>[s.id,s]));
   g.querySelectorAll('.pl').forEach(el=>{
     const s = byId[el.dataset.id];
-    el.addEventListener('mouseenter',()=>orbitInfoHTML(s));
-    el.addEventListener('focus',()=>orbitInfoHTML(s));
+    el.addEventListener('mouseenter',()=>orbitPop(s, el));
+    el.addEventListener('focus',()=>orbitPop(s, el));
+    el.addEventListener('mouseleave',()=>orbitPop(null));
+    el.addEventListener('blur',()=>orbitPop(null));
   });
 }
 
