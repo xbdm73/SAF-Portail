@@ -505,6 +505,78 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
 :root[data-device="phone"] .gate-box{border-radius:18px}
 :root[data-device="phone"] .dbox,:root[data-device="phone"] .dbox.wide{border-radius:0}
 :root[data-device="tablet"] .side a[aria-current="page"]::before{left:-6px}
+
+/* ================================================================
+   VUE ORBITE — 25.11.2026 (planètes autour du logo SAF)
+   ================================================================ */
+.orbitview{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:center;padding:36px 0 44px}
+@media (max-width:1180px){.orbitview{grid-template-columns:1fr}}
+.orbit{position:relative;width:min(100%,600px);aspect-ratio:1;margin:0 auto;--psz:66px}
+.orbit .stars{position:absolute;inset:-6%;border-radius:50%;pointer-events:none;opacity:.55;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 22%,var(--text),transparent 60%),radial-gradient(1px 1px at 82% 14%,var(--text),transparent 60%),
+    radial-gradient(1.2px 1.2px at 68% 84%,var(--text),transparent 60%),radial-gradient(1px 1px at 22% 74%,var(--text),transparent 60%),
+    radial-gradient(1.6px 1.6px at 90% 56%,var(--text),transparent 60%),radial-gradient(1px 1px at 40% 8%,var(--text),transparent 60%),
+    radial-gradient(1.2px 1.2px at 6% 50%,var(--text),transparent 60%),radial-gradient(1px 1px at 56% 96%,var(--text),transparent 60%),
+    radial-gradient(1px 1px at 30% 40%,var(--text),transparent 60%),radial-gradient(1.3px 1.3px at 74% 36%,var(--text),transparent 60%);
+  -webkit-mask:radial-gradient(circle,#000 55%,transparent 72%);mask:radial-gradient(circle,#000 55%,transparent 72%);
+  animation:twinkle 7s ease-in-out infinite}
+:root[data-theme="light"] .orbit .stars{opacity:.22}
+@keyframes twinkle{50%{opacity:.25}}
+.sun{position:absolute;inset:38%;border-radius:50%;display:grid;place-items:center;z-index:1;
+  background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--panel) 92%,var(--brand)) 0%,var(--panel) 70%);
+  box-shadow:0 0 0 1px var(--line),0 0 0 14px color-mix(in srgb,var(--brand) 5%,transparent),0 0 70px 6px color-mix(in srgb,var(--brand) 22%,transparent);
+  animation:sunpulse 6s ease-in-out infinite}
+.sun img{width:76%;height:auto;display:block}
+.sun img.logo-dark{display:none}
+:root[data-theme="dark"] .sun img.logo-light{display:none}
+:root[data-theme="dark"] .sun img.logo-dark{display:block}
+.pl-name .short{display:none}
+:root[data-device="phone"] .pl-name .full{display:none}
+:root[data-device="phone"] .pl-name .short{display:inline}
+@keyframes sunpulse{50%{box-shadow:0 0 0 1px var(--line),0 0 0 20px color-mix(in srgb,var(--brand) 3%,transparent),0 0 90px 12px color-mix(in srgb,var(--brand) 28%,transparent)}}
+.ring{position:absolute;border-radius:50%;border:1px dashed color-mix(in srgb,var(--text) 16%,transparent);animation:orbit var(--t) linear infinite;animation-direction:var(--dir)}
+/* Même vitesse pour les deux orbites : les planètes gardent leurs écarts et ne se chevauchent jamais */
+.ring.r1{inset:21%;--t:90s;--dir:normal;--cdir:reverse}
+.ring.r2{inset:2%;--t:90s;--dir:normal;--cdir:reverse}
+@keyframes orbit{to{transform:rotate(360deg)}}
+.slot{position:absolute;width:0;height:0}
+.pl-spin{position:absolute;left:0;top:0;width:0;height:0;animation:orbit var(--t) linear infinite;animation-direction:var(--cdir)}
+.orbit:hover .ring,.orbit:hover .pl-spin,.orbit:focus-within .ring,.orbit:focus-within .pl-spin{animation-play-state:paused}
+.pl{position:absolute;left:calc(var(--psz)/-2);top:calc(var(--psz)/-2);width:var(--psz);height:var(--psz);display:block;text-decoration:none;color:var(--text);z-index:2}
+.pl-ball{position:relative;display:grid;place-items:center;width:100%;height:100%;border-radius:50%;color:#fff;
+  background:radial-gradient(circle at 32% 28%,color-mix(in srgb,var(--c) 45%,#fff) 0%,var(--c) 42%,color-mix(in srgb,var(--c) 55%,#000) 100%);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent),0 0 26px -4px color-mix(in srgb,var(--c) 70%,transparent),inset -6px -8px 14px rgba(0,0,0,.22);
+  transition:transform .2s ease,box-shadow .2s ease}
+.pl-ball svg{width:42%;height:42%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.pl-dot{position:absolute;top:3%;right:3%;width:13px;height:13px;border-radius:50%;background:var(--off);border:2px solid var(--bg)}
+.pl-dot[data-s="ok"]{background:var(--ok)} .pl-dot[data-s="err"]{background:var(--err)} .pl-dot[data-s="pending"]{background:var(--warn)}
+.pl-name{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);white-space:nowrap;font-size:12.5px;font-weight:600;line-height:1.3;
+  padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--bg) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+a.pl:hover .pl-ball,a.pl:focus-visible .pl-ball{transform:scale(1.15);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 70%,transparent),0 0 40px 0 color-mix(in srgb,var(--c) 80%,transparent),inset -6px -8px 14px rgba(0,0,0,.22)}
+a.pl:hover .pl-name,a.pl:focus-visible .pl-name{border-color:color-mix(in srgb,var(--c) 60%,transparent)}
+a.pl:focus-visible{outline:none}
+.pl.off .pl-ball{filter:grayscale(.8);opacity:.55}
+.orbit-info{position:relative;min-height:190px;padding:24px 22px 18px;border:1px solid var(--line);border-radius:var(--r-lg,18px);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.orbit-info::before{content:"";position:absolute;left:22px;right:22px;top:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--c,transparent) 30%,var(--c,transparent) 70%,transparent)}
+.orbit-info .sys-ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:var(--c);
+  background:linear-gradient(140deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 8%,transparent));box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 32%,transparent) inset}
+.orbit-info .sys-ico svg{width:22px;height:22px}
+.oi-name{margin:14px 0 6px;font-size:18px;font-weight:700;font-stretch:112%;letter-spacing:-.01em}
+.oi-desc{margin:0 0 16px;color:var(--muted);font-size:13.5px;line-height:1.55}
+.oi-hint{margin:0;color:var(--muted);font-size:14px;line-height:1.6;padding-top:56px;text-align:center}
+.orbit-info .sys-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--faint)}
+/* Tablette et téléphone */
+:root[data-device="tablet"] .orbit{--psz:60px}
+:root[data-device="phone"] .orbitview{padding:18px 0 30px;gap:0}
+:root[data-device="phone"] .orbit{--psz:46px;width:min(100%,360px)}
+:root[data-device="phone"] .ring.r1{inset:23%}
+:root[data-device="phone"] .ring.r2{inset:7%}
+:root[data-device="phone"] .sun{inset:39%}
+:root[data-device="phone"] .pl-name{font-size:10.5px;padding:2px 7px;top:calc(100% + 5px)}
+:root[data-device="phone"] .pl-dot{width:10px;height:10px}
+:root[data-device="phone"] .orbit-info{display:none}
 /* ================== FIN DESIGN MODERNISÉ ================== */
 </style>
 <script>
@@ -641,6 +713,9 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
         <kbd>/</kbd>
       </label>
       <div class="seg" role="group" aria-label="Affichage">
+        <button type="button" id="v-orbit" aria-pressed="false" title="Orbite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-30 12 12)"/><circle cx="19.5" cy="7.6" r="1.4" fill="currentColor" stroke="none"/></svg>
+        </button>
         <button type="button" id="v-grid" aria-pressed="true" title="Grille">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         </button>
@@ -769,7 +844,7 @@ const store = {
 };
 
 let lang  = store.get('saf_portal_lang','fr');
-let view  = store.get('saf_portal_view','grid');
+let view  = store.get('saf_portal_view2','orbit');
 let theme = store.get('saf_portal_theme', null);
 const health = {};               // id -> ok | err | ext | pending | cfg
 let userRole = null;             // null = pas encore lu ; 'anon' = pas de session valide ; 'none' = aucune ligne
@@ -947,12 +1022,87 @@ function filtered(){
   return base.filter(s=>[s.name.fr,s.name.en,s.desc.fr,s.desc.en,s.id].join(' ').toLowerCase().includes(q));
 }
 
+
+/* ================================================================
+   VUE ORBITE — 25.11.2026
+   Chaque système est une planète qui tourne autour du logo SAF.
+   Le mouvement s'arrête au survol (pour cliquer facilement) et pour
+   les personnes qui ont demandé moins d'animations à leur appareil.
+   ================================================================ */
+const ORBIT_T = {
+  fr:{ hint:'Survolez une planète pour voir le système, cliquez pour l\u2019ouvrir.', hint_touch:'Touchez une planète pour ouvrir le système.', open:'Ouvrir' },
+  en:{ hint:'Hover a planet to see the system, click to open it.', hint_touch:'Tap a planet to open the system.', open:'Open' }
+};
+/* Noms courts affichés sur téléphone, faute de place autour des orbites */
+const ORBIT_SHORT = { docs:'Documents', sms:'SMS', ops:'Crew Training', elearn:'E-learning', 'ops-main':'OPS', retex:'RETEX', traj:{fr:'Trajectoire',en:'Trajectory'}, fleet:{fr:'Flotte',en:'Fleet'} };
+function setViewButtons(){
+  ['orbit','grid','list'].forEach(v=>{ const b=document.getElementById('v-'+v); if(b) b.setAttribute('aria-pressed',view===v); });
+}
+function sysInfo(s){
+  const st = s.id==='docs' ? 'ok' : (health[s.id] || (s.url?'pending':'cfg'));
+  const label = {ok:t('s_ok'),err:t('s_err'),pending:t('s_pending'),cfg:t('s_cfg'),ext:t('s_ext')}[st];
+  const last = s.id==='docs' ? ORBIT_T[lang].open : (recent[s.id] ? t('opened')+' '+ago(recent[s.id]) : t('never'));
+  const alt = (userRole==='reader' && s.reader) ? s.reader : null;
+  const nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
+  return { st, label, last, name:nm[lang]||nm.fr, desc:ds[lang]||ds.fr };
+}
+function orbitInfoHTML(s){
+  const o = document.querySelector('.orbit-info');
+  if(!o) return;
+  if(!s){
+    const touch = document.documentElement.getAttribute('data-touch')==='1';
+    o.style.removeProperty('--c');
+    o.innerHTML = `<p class="oi-hint">${esc(ORBIT_T[lang][touch?'hint_touch':'hint'])}</p>`;
+    return;
+  }
+  const i = sysInfo(s);
+  o.style.setProperty('--c', s.color);
+  o.innerHTML = `
+    <span class="sys-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.icon]||ICONS.shield}</svg></span>
+    <p class="oi-name">${esc(i.name)}</p>
+    <p class="oi-desc">${esc(i.desc)}</p>
+    <div class="sys-foot"><span class="status" data-s="${i.st}"><i></i>${i.label}</span><span>${esc(i.last)}</span></div>`;
+}
+function renderOrbit(g,list,q){
+  g.className='orbitview';
+  setViewButtons();
+  if(!list.length){ g.innerHTML = `<div class="empty">${esc(t('empty',{q}))}</div>`; return; }
+  const n = list.length;
+  const inner = n<=4 ? n : Math.floor(n/2);
+  const rings = n<=4 ? [list] : [list.slice(0,inner), list.slice(inner)];
+  const logoL = document.querySelector('.top-logo .logo-light'), logoD = document.querySelector('.top-logo .logo-dark');
+  const sun = `<div class="sun" aria-hidden="true">${logoL?`<img class="logo-light" src="${logoL.src}" alt="">`:''}${logoD?`<img class="logo-dark" src="${logoD.src}" alt="">`:''}</div>`;
+  const ringHTML = rings.map((items,ri)=>{
+    const offset = -Math.PI/2 + (ri ? Math.PI/items.length : 0);
+    const slots = items.map((s,k)=>{
+      const a = offset + 2*Math.PI*k/items.length;
+      const x = 50 + 50*Math.cos(a), y = 50 + 50*Math.sin(a);
+      const i = sysInfo(s);
+      const icon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[s.icon]||ICONS.shield}</svg>`;
+      const body = `<span class="pl-ball">${icon}<i class="pl-dot" data-s="${i.st}"></i></span><span class="pl-name"><span class="full">${esc(i.name)}</span><span class="short">${esc((v=>typeof v==='object'?(v[lang]||v.fr):v)(ORBIT_SHORT[s.id]||i.name))}</span></span>`;
+      const el = s.url
+        ? `<a class="pl" href="${esc(s.url)}" data-id="${s.id}" aria-label="${esc(i.name+' — '+i.label)}">${body}</a>`
+        : `<span class="pl off" data-id="${s.id}">${body}</span>`;
+      return `<div class="slot" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%;--c:${s.color}"><div class="pl-spin">${el}</div></div>`;
+    }).join('');
+    return `<div class="ring r${rings.length===1?'1':ri+1}">${slots}</div>`;
+  }).join('');
+  g.innerHTML = `<div class="orbit"><div class="stars" aria-hidden="true"></div>${sun}${ringHTML}</div><aside class="orbit-info" aria-live="polite"></aside>`;
+  orbitInfoHTML(null);
+  const byId = Object.fromEntries(list.map(s=>[s.id,s]));
+  g.querySelectorAll('.pl').forEach(el=>{
+    const s = byId[el.dataset.id];
+    el.addEventListener('mouseenter',()=>orbitInfoHTML(s));
+    el.addEventListener('focus',()=>orbitInfoHTML(s));
+  });
+}
+
 function render(){
   const g=document.getElementById('grid'), list=filtered(), q=document.getElementById('q').value.trim();
+  if(view==='orbit'){ renderOrbit(g,list,q); return; }
   g.className='grid'+(view==='list'?' list':'');
   g.innerHTML = list.length ? list.map(card).join('') : `<div class="empty">${esc(t('empty',{q}))}</div>`;
-  document.getElementById('v-grid').setAttribute('aria-pressed',view==='grid');
-  document.getElementById('v-list').setAttribute('aria-pressed',view==='list');
+  setViewButtons();
 }
 
 /* ---------- événements ---------- */
@@ -973,7 +1123,7 @@ function syncDocsView(){
 }
 window.addEventListener('hashchange',syncDocsView);
 document.getElementById('grid').addEventListener('click',e=>{
-  const a=e.target.closest('a.sys'); if(!a) return;
+  const a=e.target.closest('a.sys, a.pl'); if(!a) return;
   recent[a.dataset.id]=Date.now(); store.set('saf_portal_recent',recent);
 });
 document.getElementById('q').addEventListener('input',render);
@@ -984,8 +1134,9 @@ document.getElementById('q').addEventListener('keydown',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='/' && document.activeElement.tagName!=='INPUT'){ e.preventDefault(); document.getElementById('q').focus(); }
 });
-document.getElementById('v-grid').onclick=()=>{ view='grid'; store.set('saf_portal_view',view); render(); };
-document.getElementById('v-list').onclick=()=>{ view='list'; store.set('saf_portal_view',view); render(); };
+document.getElementById('v-orbit').onclick=()=>{ view='orbit'; store.set('saf_portal_view2',view); render(); };
+document.getElementById('v-grid').onclick=()=>{ view='grid'; store.set('saf_portal_view2',view); render(); };
+document.getElementById('v-list').onclick=()=>{ view='list'; store.set('saf_portal_view2',view); render(); };
 document.getElementById('btn-lang').onclick=()=>{ lang=lang==='fr'?'en':'fr'; store.set('saf_portal_lang',lang); applyLang(); };
 document.getElementById('btn-logout').onclick=async()=>{
   try{ const c=getClient(); if(c) await c.auth.signOut(); }catch(e){}
