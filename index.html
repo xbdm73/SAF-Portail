@@ -509,9 +509,18 @@ a.sys:focus-visible{outline-offset:3px;border-radius:var(--r-lg)}
 /* ================================================================
    VUE ORBITE — 25.11.2026 (planètes autour du logo SAF)
    ================================================================ */
-.orbitview{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:center;padding:36px 0 44px}
-@media (max-width:1180px){.orbitview{grid-template-columns:1fr}}
-.orbit{position:relative;width:min(100%,600px);aspect-ratio:1;margin:0 auto;--psz:66px}
+/* Planètes centrées : colonne vide à gauche, fiche à droite, orbite au milieu */
+.orbitview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,600px) minmax(0,1fr);gap:20px;align-items:center;padding:8px 0 28px}
+.orbitview > .orbit{grid-column:2}
+.orbitview > .orbit-info{grid-column:3;justify-self:end;width:100%;max-width:270px}
+.orbitview > .empty{grid-column:1/-1}
+@media (max-width:1300px){
+  .orbitview{grid-template-columns:1fr}
+  .orbitview > .orbit,.orbitview > .orbit-info{grid-column:1}
+  .orbitview > .orbit-info{justify-self:center;max-width:460px;min-height:0}
+  .orbitview .oi-hint{padding-top:0}
+}
+.orbit{position:relative;width:min(100%,600px,calc(100dvh - 200px));min-width:min(100%,420px);aspect-ratio:1;margin:0 auto;--psz:66px}
 .orbit .stars{position:absolute;inset:-6%;border-radius:50%;pointer-events:none;opacity:.55;
   background-image:
     radial-gradient(1.4px 1.4px at 12% 22%,var(--text),transparent 60%),radial-gradient(1px 1px at 82% 14%,var(--text),transparent 60%),
@@ -563,7 +572,7 @@ a.pl:focus-visible{outline:none}
 .orbit-info .sys-ico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:var(--c);
   background:linear-gradient(140deg,color-mix(in srgb,var(--c) 30%,transparent),color-mix(in srgb,var(--c) 8%,transparent));box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 32%,transparent) inset}
 .orbit-info .sys-ico svg{width:22px;height:22px}
-.oi-name{margin:14px 0 6px;font-size:18px;font-weight:700;font-stretch:112%;letter-spacing:-.01em}
+.oi-name{margin:14px 0 6px;font-size:16.5px;font-weight:700;font-stretch:112%;letter-spacing:-.01em}
 .oi-desc{margin:0 0 16px;color:var(--muted);font-size:13.5px;line-height:1.55}
 .oi-hint{margin:0;color:var(--muted);font-size:14px;line-height:1.6;padding-top:56px;text-align:center}
 .orbit-info .sys-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--faint)}
@@ -577,6 +586,9 @@ a.pl:focus-visible{outline:none}
 :root[data-device="phone"] .pl-name{font-size:10.5px;padding:2px 7px;top:calc(100% + 5px)}
 :root[data-device="phone"] .pl-dot{width:10px;height:10px}
 :root[data-device="phone"] .orbit-info{display:none}
+/* Titre « Systèmes » retiré de l'affichage (25.11.2026) : conservé pour les lecteurs d'écran et le lien #systems */
+.head{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important;box-shadow:none!important}
+main{padding-top:22px}
 /* ================== FIN DESIGN MODERNISÉ ================== */
 </style>
 <script>
@@ -1046,9 +1058,11 @@ function sysInfo(s){
   const nm = alt ? alt.name : s.name, ds = alt ? alt.desc : s.desc;
   return { st, label, last, name:nm[lang]||nm.fr, desc:ds[lang]||ds.fr };
 }
+let orbitShown = null;
 function orbitInfoHTML(s){
   const o = document.querySelector('.orbit-info');
   if(!o) return;
+  orbitShown = s ? s.id : null;
   if(!s){
     const touch = document.documentElement.getAttribute('data-touch')==='1';
     o.style.removeProperty('--c');
@@ -1063,9 +1077,30 @@ function orbitInfoHTML(s){
     <p class="oi-desc">${esc(i.desc)}</p>
     <div class="sys-foot"><span class="status" data-s="${i.st}"><i></i>${i.label}</span><span>${esc(i.last)}</span></div>`;
 }
+/* Les contrôles d'état des systèmes relancent render() plusieurs fois au chargement.
+   Si les planètes sont déjà en place, on met seulement à jour leur état et leur nom :
+   reconstruire l'orbite la ferait sauter à sa position de départ. */
+const ORBIT_T0 = Date.now(), ORBIT_PERIOD = 90;
+function orbitPhase(){ return '-' + (((Date.now()-ORBIT_T0)/1000) % ORBIT_PERIOD).toFixed(2) + 's'; }
 function renderOrbit(g,list,q){
-  g.className='orbitview';
   setViewButtons();
+  const key = list.map(s=>s.id).join('|');
+  if(g.className==='orbitview' && g.dataset.orbitKey===key && g.querySelector('.orbit')){
+    list.forEach(s=>{
+      const el = g.querySelector('.pl[data-id="'+s.id+'"]'); if(!el) return;
+      const i = sysInfo(s);
+      const dot = el.querySelector('.pl-dot'); if(dot && dot.dataset.s!==i.st) dot.dataset.s = i.st;
+      const full = el.querySelector('.pl-name .full'); if(full && full.textContent!==i.name) full.textContent = i.name;
+      const sh = el.querySelector('.pl-name .short'), v = ORBIT_SHORT[s.id]||i.name, st = typeof v==='object' ? (v[lang]||v.fr) : v;
+      if(sh && sh.textContent!==st) sh.textContent = st;
+      el.setAttribute('aria-label', i.name+' \u2014 '+i.label);
+    });
+    const shown = list.find(s=>s.id===orbitShown);
+    orbitInfoHTML(shown || null);
+    return;
+  }
+  g.className='orbitview';
+  g.dataset.orbitKey = key;
   if(!list.length){ g.innerHTML = `<div class="empty">${esc(t('empty',{q}))}</div>`; return; }
   const n = list.length;
   const inner = n<=4 ? n : Math.floor(n/2);
@@ -1088,7 +1123,9 @@ function renderOrbit(g,list,q){
     return `<div class="ring r${rings.length===1?'1':ri+1}">${slots}</div>`;
   }).join('');
   g.innerHTML = `<div class="orbit"><div class="stars" aria-hidden="true"></div>${sun}${ringHTML}</div><aside class="orbit-info" aria-live="polite"></aside>`;
-  orbitInfoHTML(null);
+  const ph = orbitPhase();
+  g.querySelectorAll('.ring,.pl-spin').forEach(el=>el.style.animationDelay = ph);
+  orbitInfoHTML(list.find(s=>s.id===orbitShown) || null);
   const byId = Object.fromEntries(list.map(s=>[s.id,s]));
   g.querySelectorAll('.pl').forEach(el=>{
     const s = byId[el.dataset.id];
@@ -1100,6 +1137,7 @@ function renderOrbit(g,list,q){
 function render(){
   const g=document.getElementById('grid'), list=filtered(), q=document.getElementById('q').value.trim();
   if(view==='orbit'){ renderOrbit(g,list,q); return; }
+  g.dataset.orbitKey='';
   g.className='grid'+(view==='list'?' list':'');
   g.innerHTML = list.length ? list.map(card).join('') : `<div class="empty">${esc(t('empty',{q}))}</div>`;
   setViewButtons();
