@@ -948,6 +948,12 @@ const SAF_SYSTEMS = [
     desc:{fr:'Position en temps réel de la flotte AS 332, ETE/ETA vers les chantiers du jour, météo et feux.',
           en:'Live position of the AS 332 fleet, ETE/ETA to today\u2019s work sites, weather and fires.'},
     url:SAF_SMS_URL + 'SAF_Suivi_Flotte.html',
+    roles:['admin','editor','reader'] },
+  { id:'pv', color:'#7a68b8', icon:'handover',
+    name:{fr:'PV appareils', en:'Aircraft handovers'},
+    desc:{fr:'PV de prise en charge et de restitution envoyés depuis SAF Mobile : où est chaque appareil, matériel à bord, écarts entre sortie et retour, signatures et PDF.',
+          en:'Handover and return reports sent from SAF Mobile: where each aircraft is, equipment on board, differences between handover and return, signatures and PDF.'},
+    url:'SAF_PV.html',
     roles:['admin','editor','reader'] }
 ];
 
@@ -964,6 +970,7 @@ const ICONS = {
   flame:'<path d="M12 22c4 0 7-2.8 7-7 0-4.5-4-7-4-11-3 2-5 5-5 8-1-1-2-2-2-4-2 2-3 4.5-3 7 0 4.2 3 7 7 7z"/>',
   notes:'<path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h4"/>',
   pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
+  handover:'<path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
   route:'<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/>'
 };
 
@@ -1247,7 +1254,7 @@ const ORBIT_T = {
   en:{ hint:'Hover a planet to see the system, click to open it.', hint_touch:'Tap a planet to open the system.', open:'Open' }
 };
 /* Noms courts affichés sur téléphone, faute de place autour des orbites */
-const ORBIT_SHORT = { docs:'Documents', sms:'SMS', ops:'Crew Training', elearn:'E-learning', 'ops-main':'OPS', retex:'RETEX', traj:{fr:'Trajectoire',en:'Trajectory'}, fleet:{fr:'Flotte',en:'Fleet'} };
+const ORBIT_SHORT = { docs:'Documents', sms:'SMS', ops:'Crew Training', elearn:'E-learning', 'ops-main':'OPS', retex:'RETEX', traj:{fr:'Trajectoire',en:'Trajectory'}, fleet:{fr:'Flotte',en:'Fleet'}, pv:'PV' };
 const ORBIT_SAT = {
   docs:{fr:['OMM','OM','SOP','Lectures'], en:['OMM','OM','SOP','Reading']},
   sms:{fr:['OMM','SMS','CMS'], en:['OMM','SMS','CMS']},
@@ -1256,7 +1263,8 @@ const ORBIT_SAT = {
   'ops-main':{fr:['Opérations'], en:['Operations']},
   retex:{fr:['Rapports','CSV','PDF'], en:['Reports','CSV','PDF']},
   traj:{fr:['Carte 3D','Profil','Rapport'], en:['3D map','Profile','Report']},
-  fleet:{fr:['Position','Météo','ETA'], en:['Position','Weather','ETA']}
+  fleet:{fr:['Position','Météo','ETA'], en:['Position','Weather','ETA']},
+  pv:{fr:['Prise en charge','Restitution','Matériel'], en:['Handover','Return','Equipment']}
 };
 function orbitSatellites(s){
   const cfg=ORBIT_SAT[s.id];
