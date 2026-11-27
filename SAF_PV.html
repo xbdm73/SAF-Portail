@@ -69,6 +69,11 @@ table.eq td.c,table.eq th.c{text-align:center;width:90px}
 .obs.dmg{border-left:4px solid var(--err)}
 .sigs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
 .sigs img{display:block;width:100%;height:120px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:4px}
+.btn.danger{color:var(--err);border-color:var(--err);margin-right:auto}
+.del{background:var(--panel2);border:1.5px solid var(--err);border-radius:12px;padding:14px;margin-top:16px}
+.del textarea{width:100%;min-height:70px;border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel);font:inherit;color:inherit;margin:6px 0}
+.del .err{color:var(--err);font-size:14px;margin:4px 0 0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--band);color:#fff;padding:10px 18px;border-radius:10px;font-weight:600;z-index:40}
 .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
 @media (max-width:560px){.sigs{grid-template-columns:1fr} header .who{display:none}}
 #print{display:none}
@@ -130,7 +135,7 @@ const h = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;'
 const fd = iso => iso ? iso.split('-').reverse().join('/') : '';
 const ft = t => t ? String(t).slice(0,5) : '';
 const MV = { pickup:'Prise en charge', return:'Restitution' };
-let sb = null, ALL = [];
+let sb = null, ALL = [], CAN_DEL = false;
 
 function gate(html){ $('gate').innerHTML = html; $('gate').classList.remove('hide'); $('content').classList.add('hide'); }
 async function start(){
@@ -139,6 +144,7 @@ async function start(){
   const { data } = await sb.auth.getSession();
   if(!data || !data.session){ gate('<p>Connectez-vous d’abord sur le portail SAF International, puis revenez sur cette page.</p><p><a href="./">Aller au portail</a></p>'); return; }
   $('who').textContent = data.session.user.email || '';
+  { const r = await sb.rpc('fleet_handover_can_delete'); CAN_DEL = !r.error && r.data === true; }
   await load();
 }
 async function load(){
@@ -216,11 +222,31 @@ async function openPv(id){
     + '<h4 style="margin:16px 0 6px">Observations (dégât majeur constaté)</h4><div class="obs' + (x.major_damage ? ' dmg' : '') + '">' + h(x.observations || 'Rien à signaler') + '</div>'
     + '<div class="sigs"><div><b>Preneur : ' + h(x.taker) + '</b><br>' + h(x.taker_signer) + (sig.taker_signature_png ? '<img src="' + sig.taker_signature_png + '" alt="Signature du preneur">' : '') + '</div>'
     + '<div><b>SAF Hélicoptères</b><br>' + h(x.saf_signer) + (sig.saf_signature_png ? '<img src="' + sig.saf_signature_png + '" alt="Signature SAF">' : '') + '</div></div>'
-    + '<div class="acts"><button class="btn" type="button" id="s-close2">Fermer</button><button class="btn main" type="button" id="s-print">Imprimer / PDF</button></div>';
+    + '<div id="s-del-box"></div>'
+    + '<div class="acts">' + (CAN_DEL ? '<button class="btn danger" type="button" id="s-del">Supprimer ce PV</button>' : '') + '<button class="btn" type="button" id="s-close2">Fermer</button><button class="btn main" type="button" id="s-print">Imprimer / PDF</button></div>';
   $('s-close').onclick = $('s-close2').onclick = closePv;
   $('s-print').onclick = () => { buildPrint(x, sig, eqRows); window.print(); };
+  if(CAN_DEL) $('s-del').onclick = () => askDelete(x);
   $('s-close').focus();
 }
+/* Suppression (admins) : motif obligatoire, le PV est archivé dans fleet_handovers_deleted */
+function askDelete(x){
+  $('s-del').disabled = true;
+  $('s-del-box').innerHTML = '<div class="del"><b>Supprimer le PV ' + h(x.ref) + ' ?</b><br><span class="muted">Il disparaît de la liste. Une copie est archivée avec votre nom, la date et le motif.</span>'
+    + '<textarea id="d-reason" maxlength="500" placeholder="Motif de la suppression (obligatoire), par ex. PV de test, doublon, erreur d’appareil"></textarea>'
+    + '<div class="acts" style="margin-top:6px"><button class="btn" type="button" id="d-cancel">Annuler</button><button class="btn main" type="button" id="d-ok" style="background:var(--err);border-color:var(--err)">Supprimer définitivement</button></div><p class="err" id="d-err"></p></div>';
+  $('d-reason').focus();
+  $('d-cancel').onclick = () => { $('s-del-box').innerHTML = ''; $('s-del').disabled = false; };
+  $('d-ok').onclick = async () => {
+    const reason = $('d-reason').value.trim();
+    if(reason.length < 3){ $('d-err').textContent = 'Indiquez le motif de la suppression.'; $('d-reason').focus(); return; }
+    $('d-ok').disabled = true; $('d-err').textContent = '';
+    const { error } = await sb.rpc('fleet_handover_delete', { p_id: x.id, p_reason: reason });
+    if(error){ $('d-ok').disabled = false; $('d-err').textContent = /not_allowed/.test(error.message) ? 'Suppression réservée aux administrateurs.' : 'Suppression impossible : ' + error.message; return; }
+    ALL = ALL.filter(y => y.id !== x.id); closePv(); drawCards(); drawRows(); toast('PV ' + x.ref + ' supprimé');
+  };
+}
+function toast(msg){ const d = document.createElement('div'); d.className = 'toast'; d.setAttribute('role','status'); d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), 3500); }
 function closePv(){ $('sheet').classList.add('hide'); }
 $('sheet').addEventListener('click', e => { if(e.target.id === 'sheet') closePv(); });
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closePv(); });
