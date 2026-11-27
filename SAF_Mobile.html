@@ -15,7 +15,7 @@
 <style>
 :root{
   --sky:#e6f0f9; --paper:#ffffff; --ink:#0a2238; --ink2:#34506b; --line:#bfd2e4; --band:#0b2a4a;
-  --gold:#c99a1f; --report:#c42b1c; --docs:#1d5096; --tst:#1d7a4c; --warn:#8a5a00; --err:#b42318;
+  --gold:#c99a1f; --report:#c42b1c; --docs:#1d5096; --tst:#1d7a4c; --pv:#5a4a8c; --warn:#8a5a00; --err:#b42318;
   --sans:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --cond:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
   color-scheme:light;
@@ -57,6 +57,51 @@ p.lead{color:var(--ink2);margin:0 0 18px}
 .badge.q{background:#fff2d6;color:var(--warn);border:1px solid #f0d08a}
 .badge.ok{background:#dff3e8;color:var(--tst);border:1px solid #9fd4b6}
 .foot{color:var(--ink2);font-size:13px;margin-top:22px}
+
+
+/* ── Accueil : vue planètes (comme le portail SAF) ── */
+body:has(#v-home:not(.hide)){background:#02040b}
+#v-home.space{position:relative;max-width:none;min-height:calc(100dvh - 58px - env(safe-area-inset-top,0px));padding:10px 0 calc(env(safe-area-inset-bottom,0px) + 16px);overflow:hidden;color:#eef5ff;
+  background:radial-gradient(ellipse at 12% 78%,#183b7233,transparent 58%),radial-gradient(ellipse at 85% 15%,#382b6933,transparent 55%),#02040b;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#v-home .stars{position:absolute;inset:0;pointer-events:none;opacity:.85;
+  background-image:radial-gradient(1.5px 1.5px at 15% 25%,#c8e1ff,transparent),radial-gradient(1px 1px at 65% 80%,#fff,transparent),radial-gradient(1px 1px at 85% 12%,#c4b6ff,transparent),radial-gradient(1.2px 1.2px at 40% 55%,#fff,transparent);
+  background-size:213px 191px,97px 153px,173px 127px,131px 239px;animation:twinkle 7s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.45}}
+.orbit{--o:min(82vw,580px,calc(100dvh - 200px));--psz:calc(var(--o)*.21);--R:calc(var(--o)*.36);position:relative;width:var(--o);height:var(--o);margin:8px auto 0;flex-shrink:0;animation:enter .8s ease-out both}
+@keyframes enter{from{opacity:0;transform:scale(.92)}}
+.orbit .ring{position:absolute;inset:calc(50% - var(--R));border-radius:50%;border:1px solid #eef5ff22;box-shadow:0 0 0 1px #eef5ff08 inset}
+.sun{position:absolute;inset:34%;border-radius:50%;display:grid;place-items:center;isolation:isolate;z-index:1;
+  background:radial-gradient(circle,#fff 0%,#fff4cb 48%,#fbc36b 83%,#ee8d32 100%);box-shadow:0 0 22px 6px #ffb34388,0 0 65px 20px #ff8a283d;animation:glow 5s ease-in-out infinite}
+.sun::before{content:"";position:absolute;inset:-70%;z-index:-2;border-radius:50%;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg,#ffd388bb 0deg,#ff8b3c55 2deg,transparent 7deg 12deg,#ffb14c99 15deg,transparent 21deg 28deg);
+  -webkit-mask-image:radial-gradient(circle,transparent 18%,#000 26%,#000a 32%,transparent 60%);mask-image:radial-gradient(circle,transparent 18%,#000 26%,#000a 32%,transparent 60%);animation:spin 60s linear infinite}
+.sun::after{content:"";position:absolute;inset:-45%;z-index:-1;border-radius:50%;pointer-events:none;background:radial-gradient(circle,#fff4acbb 15%,#ffb64c88 26%,#ff772b33 42%,transparent 66%)}
+.sun img{width:80%;height:auto;position:relative;z-index:1;filter:drop-shadow(0 1px 2px #0004)}
+@keyframes glow{50%{box-shadow:0 0 32px 10px #ffb34399,0 0 85px 25px #ff8a284d}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.carousel{position:absolute;inset:0;animation:spin 120s linear infinite;z-index:2}
+.slot{position:absolute;left:50%;top:50%;width:0;height:0;transform:rotate(var(--a)) translateX(var(--R)) rotate(calc(0deg - var(--a)))}
+.counter{position:absolute;left:0;top:0;width:0;height:0;animation:spin 120s linear infinite reverse}
+.pl{position:absolute;left:calc(var(--psz)/-2);top:calc(var(--psz)/-2);width:var(--psz);height:var(--psz);padding:0;border:0;background:none;cursor:pointer;color:#eef5ff;-webkit-tap-highlight-color:transparent}
+.pl .ball{display:grid;place-items:center;width:100%;height:100%;border-radius:50%;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#fff9,transparent 32%),radial-gradient(circle at 35% 30%,var(--c) 13%,color-mix(in srgb,var(--c) 65%,#000) 55%,#070d18 100%);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent),0 0 28px -4px color-mix(in srgb,var(--c) 85%,transparent);transition:transform .2s ease}
+.pl .ball svg{width:44%;height:44%;filter:drop-shadow(0 1px 1px #0006)}
+.pl:active .ball,.pl:focus-visible .ball{transform:scale(1.12)}
+.pl .nm{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:calc(var(--psz)*1.95);text-align:center;line-height:1.1}
+.pl .nm b{display:inline-block;font-family:var(--cond);font-weight:700;font-size:clamp(13px,calc(var(--o)*.037),17px);padding:3px 9px;border-radius:999px;background:#101a29d9;border:1px solid color-mix(in srgb,var(--c) 45%,#273a51)}
+.pl .nm .badge{display:block;margin:4px auto 0;width:max-content;font-size:11.5px;padding:1px 8px}
+.orbit:has(.pl:active) .carousel,.orbit:has(.pl:active) .counter,.orbit:focus-within .carousel,.orbit:focus-within .counter{animation-play-state:paused}
+.orbit-hint{position:relative;margin:calc(var(--psz,60px)*.2 + 26px) 0 0;color:#a7b7ca;font-size:14px;text-align:center}
+#v-home .foot{position:relative;color:#6f8399;margin-top:10px}
+.flight{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:3}
+.ship{position:absolute;left:-180px;top:14%;width:120px;aspect-ratio:260/112;animation:fly 60s linear 6s infinite;filter:drop-shadow(0 0 8px #72cfff) drop-shadow(0 0 16px #398aff80)}
+.ship svg{width:100%;height:100%;overflow:visible}
+.v8-exhaust{animation:engine .45s ease-in-out infinite alternate;transform-origin:right center}
+@keyframes engine{to{opacity:.55}}
+@keyframes fly{0%{left:-180px;top:14%;opacity:1;transform:rotate(8deg)}16%{left:calc(100% + 180px);top:30%;opacity:1;transform:rotate(8deg)}17%,49%{left:calc(100% + 180px);top:30%;opacity:0}50%{left:calc(100% + 180px);top:80%;opacity:1;transform:scaleX(-1) rotate(9deg)}66%{left:-180px;top:64%;opacity:1;transform:scaleX(-1) rotate(9deg)}67%,100%{left:-180px;top:64%;opacity:0}}
+@media (prefers-reduced-motion:reduce){.carousel,.counter,.sun,.sun::before,#v-home .stars,.orbit{animation:none!important}.flight{display:none}}
 
 /* ── Éléments de formulaire ── */
 .panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
@@ -137,6 +182,33 @@ input:focus,select:focus{border-color:var(--docs)}
 
 .qrbox{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;max-width:360px;margin:6px auto 10px}
 .qrbox svg{display:block;width:100%;height:auto}
+/* ── PV prise en charge / restitution ── */
+#v-pv{--c:var(--pv)}
+#v-pv input[type=date],#v-pv input[type=time],#v-pv textarea{width:100%;min-height:50px;border:1.5px solid #8fa9c2;border-radius:10px;background:#fff;padding:11px 13px;font-size:17px;color:var(--ink)}
+#v-pv textarea{min-height:96px;resize:vertical;font:inherit}
+#v-pv input[readonly]{background:#eef3f8;border-color:var(--line);font-weight:600}
+.pv-seg{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid #8fa9c2;border-radius:11px;overflow:hidden}
+.pv-seg button{border:0;background:#fff;min-height:54px;padding:8px;font-weight:600;cursor:pointer;color:var(--ink2)}
+.pv-seg button+button{border-left:1.5px solid #8fa9c2}
+.pv-seg button.on{background:var(--pv);color:#fff}
+.pv-grp{font-family:var(--cond);font-weight:700;font-size:19px;margin:14px 0 4px;color:var(--ink)}
+.pv-grp:first-child{margin-top:0}
+.pv-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.pv-row .lb{font-weight:500}
+.pv-sub{font-weight:600;color:var(--ink);padding:10px 0 2px;border-top:1px solid var(--line)}
+.pv-row.in{border-top:1px dashed var(--line)}
+.pv-row.in .lb{padding-left:12px;border-left:3px solid color-mix(in srgb,var(--pv) 35%,#fff)}
+.pv-row .lb small{display:block;color:var(--ink2);font-weight:400;font-size:14px}
+.pv-row.on .lb{color:var(--pv)}
+.pv-row input[type=checkbox]{width:28px;height:28px;margin:0;accent-color:var(--pv)}
+.pv-step{display:flex;align-items:center;border:1.5px solid #8fa9c2;border-radius:10px;overflow:hidden;background:#fff}
+.pv-step button{width:40px;height:44px;border:0;background:#eef3f8;font-size:22px;cursor:pointer;color:var(--ink)}
+#v-pv .pv-step input{width:48px;min-height:44px;border:0;border-radius:0;text-align:center;padding:4px;font-size:17px}
+.pv-head{display:grid;grid-template-columns:1fr auto auto;gap:10px;font-size:13px;color:var(--ink2);font-weight:600;padding-bottom:6px}
+.pv-head span:nth-child(2){width:28px;text-align:center}
+.pv-head span:nth-child(3){width:128px;text-align:center}
+.pv-bad input,.pv-bad select,.pv-bad .pv-seg,.pv-bad canvas{border-color:var(--err)!important}
+.pv-warn{background:#fff2d6;border:1px solid #f0d08a;border-radius:12px;padding:12px 14px;margin:12px 0;color:var(--warn)}
 /* ── Attestation imprimable ── */
 #print{display:none}
 @media print{
@@ -164,24 +236,30 @@ input:focus,select:focus{border-color:var(--docs)}
 </header>
 
 <!-- ═════════ ACCUEIL ═════════ -->
-<main id="v-home">
-  <h1 data-t="home_title"></h1>
-  <p class="lead" data-t="home_lead"></p>
-  <nav class="modules">
-    <button class="mod" type="button" data-go="report" style="--c:var(--report)">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span>
-      <span class="tx"><strong>Safety Report</strong><small data-t="m_report"></small></span><span class="chev">›</span>
-    </button>
-    <button class="mod" type="button" data-go="docs" style="--c:var(--docs)">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M8 13h8M8 17h6"/></svg></span>
-      <span class="tx"><strong data-t="docs_title"></strong><small data-t="m_docs"></small><span id="docs-badge"></span></span><span class="chev">›</span>
-    </button>
-    <button class="mod" type="button" data-go="tst" style="--c:var(--tst)">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><path d="M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="m9 14 2 2 4-4"/></svg></span>
-      <span class="tx"><strong data-t="tst_title"></strong><small data-t="m_tst"></small><span id="tst-badge"></span></span><span class="chev">›</span>
-    </button>
+<main id="v-home" class="space">
+  <div class="stars" aria-hidden="true"></div>
+  <div class="flight" aria-hidden="true"><div class="ship"><svg viewBox="0 0 260 112" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="crHull" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".35" stop-color="#e0e9f5"/><stop offset=".65" stop-color="#8498b3"/><stop offset="1" stop-color="#344961"/></linearGradient><linearGradient id="crWing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fafcff"/><stop offset=".55" stop-color="#bac9dc"/><stop offset="1" stop-color="#50627e"/></linearGradient><linearGradient id="crJet"><stop stop-color="#2478ff" stop-opacity="0"/><stop offset=".75" stop-color="#46baff" stop-opacity=".65"/><stop offset="1" stop-color="#e6ffff"/></linearGradient><linearGradient id="crGlass" x2="0" y2="1"><stop stop-color="#9decff"/><stop offset="1" stop-color="#15314e"/></linearGradient></defs><g stroke-linejoin="round"><g class="v8-exhaust" fill="url(#crJet)"><path d="M0 22 Q22 12 52 18 L52 28 Q22 32 0 22Z"/><path d="M0 90 Q22 80 52 84 L52 94 Q22 100 0 90Z"/><path d="M12 56 Q28 44 69 49 L69 63 Q28 68 12 56Z"/></g><path d="M53 42 Q69 24 106 13 Q144 6 179 28 L190 44 L119 53Z" fill="url(#crWing)" stroke="#d8e4f4"/><path d="M53 70 Q69 88 106 99 Q144 106 179 84 L190 68 L119 59Z" fill="url(#crWing)" stroke="#bac9da"/><path d="M43 16 Q63 8 100 14 L145 25 Q151 30 143 34 L60 35 Q47 32 43 16Z" fill="url(#crHull)" stroke="#e8f1ff"/><path d="M43 96 Q63 104 100 98 L145 87 Q151 82 143 78 L60 77 Q47 80 43 96Z" fill="url(#crHull)" stroke="#b7c7dc"/><path d="M55 44 Q83 34 119 35 Q166 36 201 45 Q234 48 254 56 Q234 64 201 67 Q166 76 119 77 Q83 78 55 68 L49 56Z" fill="url(#crHull)" stroke="#e7f2ff" stroke-width="1.2"/><path d="M65 56 Q118 43 173 48 L237 56 L173 64 Q118 69 65 56Z" fill="#aabbd0" opacity=".65"/><path d="M174 49 Q191 46 216 53 L228 56 L216 59 Q191 66 174 63 L184 56Z" fill="url(#crGlass)" stroke="#74dcff"/><path d="M62 19 L85 19 L125 25 M62 93 L85 93 L125 87 M73 46 Q113 40 159 43 M73 66 Q113 72 159 69" fill="none" stroke="#426783" stroke-width="1.3"/><path d="M45 19 L45 27 M45 85 L45 93 M53 50 L53 62" stroke="#bdfaff" stroke-width="4" stroke-linecap="round"/><path d="M79 29 L105 29 M79 83 L105 83 M125 42 L154 44 M125 70 L154 68" stroke="#55cfff" stroke-width="1.6" stroke-linecap="round"/><path d="M100 15 L119 19 M100 97 L119 93" stroke="#f25540" stroke-width="2"/><text x="128" y="59" font-family="Arial,sans-serif" font-size="8" font-weight="bold" fill="#263b56" letter-spacing="1">SAF</text></g></svg></div></div>
+  <h1 class="sr" data-t="home_title"></h1>
+  <nav class="orbit" aria-label="Modules">
+    <div class="ring"></div>
+    <div class="sun"><img src="data:image/png;base64,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" alt="SAF International"></div>
+    <div class="carousel">
+      <div class="slot" style="--a:-90deg"><div class="counter">
+        <button class="pl" type="button" data-go="report" style="--c:var(--report)"><span class="ball"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg></span><span class="nm"><b>Safety Report</b></span></button>
+      </div></div>
+      <div class="slot" style="--a:0deg"><div class="counter">
+        <button class="pl" type="button" data-go="docs" style="--c:var(--docs)"><span class="ball"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v5h5M8 13h8M8 17h6"/></svg></span><span class="nm"><b data-t="docs_title"></b><span id="docs-badge"></span></span></button>
+      </div></div>
+      <div class="slot" style="--a:90deg"><div class="counter">
+        <button class="pl" type="button" data-go="tst" style="--c:var(--tst)"><span class="ball"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><path d="M8 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2"/><path d="m9 14 2 2 4-4"/></svg></span><span class="nm"><b data-t="tst_title"></b><span id="tst-badge"></span></span></button>
+      </div></div>
+      <div class="slot" style="--a:180deg"><div class="counter">
+        <button class="pl" type="button" data-go="pv" style="--c:var(--pv)"><span class="ball"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M12 6v3"/><path d="M5 12c0-1.7 3-3 7-3s7 1.3 7 3-3 3-7 3-7-1.3-7-3z"/><path d="M19 12h2"/><path d="M8 15l-1 3h10l-1-3"/></svg></span><span class="nm"><b id="pv-tile-t"></b><span id="pv-badge"></span></span></button>
+      </div></div>
+    </div>
   </nav>
-  <p class="foot"><span data-t="foot"></span> · v1.0</p>
+  <p class="orbit-hint" id="orbit-hint"></p>
+  <p class="foot"><span data-t="foot"></span> · v1.2</p>
 </main>
 
 <!-- ═════════ SAFETY REPORT ═════════ -->
@@ -316,6 +394,73 @@ input:focus,select:focus{border-color:var(--docs)}
   <section id="t-queue-wrap" class="hide">
     <h2 data-t="sec_queue"></h2>
     <div class="panel"><div id="t-queue"></div><button class="btn wide" id="t-sync" type="button" data-t="retry" style="margin-top:12px"></button></div>
+  </section>
+</main>
+
+<!-- ═════════ PV PRISE EN CHARGE / RESTITUTION ═════════ -->
+<main id="v-pv" class="hide">
+  <section id="p-form">
+    <h1 data-p="title"></h1>
+    <p class="lead" data-p="lead"></p>
+    <div class="panel">
+      <div class="f" id="pf-taker"><label for="p-taker"><span data-p="taker"></span> *</label>
+        <input id="p-taker" type="text" list="p-takers" autocomplete="off" maxlength="120">
+        <datalist id="p-takers"><option value="Heliswiss International"></option></datalist></div>
+      <div class="f" id="pf-mvt"><label><span data-p="movement"></span> *</label>
+        <div class="pv-seg"><button type="button" data-mvt="pickup" id="p-mvt-pickup"></button><button type="button" data-mvt="return" data-p="return"></button></div></div>
+      <div class="f" id="pf-reg"><label for="p-reg"><span data-p="reg"></span> *</label>
+        <select id="p-reg"></select></div>
+      <div class="row2">
+        <div class="f"><label for="p-type" data-p="type"></label><input id="p-type" type="text" readonly tabindex="-1"></div>
+        <div class="f"><label for="p-msn" data-p="msn"></label><input id="p-msn" type="text" readonly tabindex="-1"></div>
+        <div class="f" id="pf-date"><label for="p-date"><span data-p="date"></span> *</label><input id="p-date" type="date"></div>
+        <div class="f" id="pf-time"><label for="p-time"><span data-p="time"></span> *</label><input id="p-time" type="time"></div>
+      </div>
+      <div class="f"><label for="p-order"><span data-p="order"></span> <span class="opt" data-p="optional"></span></label><input id="p-order" type="text" maxlength="60" autocomplete="off"></div>
+    </div>
+
+    <h2 data-p="equipment"></h2>
+    <div class="panel">
+      <div class="pv-head"><span></span><span data-p="present"></span><span data-p="qty"></span></div>
+      <div id="p-items"></div>
+    </div>
+
+    <h2 data-p="obs"></h2>
+    <div class="panel"><div class="f"><textarea id="p-obs" maxlength="4000"></textarea><p class="note" data-p="obs_hint"></p></div></div>
+
+    <h2 data-p="signatures"></h2>
+    <div class="panel">
+      <div class="f" id="pf-sig1"><label for="p-signer1" id="p-sig1-label"></label>
+        <input id="p-signer1" type="text" maxlength="120" autocomplete="off" style="margin-bottom:8px">
+        <div class="sig"><canvas id="p-sig1" aria-label="Signature preneur"></canvas><span class="hint" data-p="sign_here"></span><button class="btn clear" type="button" data-pvclear="1" data-p="clear"></button></div></div>
+      <div class="f" id="pf-sig2"><label for="p-signer2"><span>SAF Hélicoptères</span> *</label>
+        <input id="p-signer2" type="text" maxlength="120" autocomplete="name" style="margin-bottom:8px">
+        <div class="sig"><canvas id="p-sig2" aria-label="Signature SAF"></canvas><span class="hint" data-p="sign_here"></span><button class="btn clear" type="button" data-pvclear="2" data-p="clear"></button></div></div>
+    </div>
+
+    <p class="msg err" id="p-why"></p>
+    <button class="btn main" id="p-save" type="button" data-p="save" style="margin-top:8px"></button>
+    <p class="note" data-p="save_note"></p>
+  </section>
+
+  <section id="p-done" class="hide">
+    <div class="panel done" id="p-done-box" style="border-left-color:var(--pv)">
+      <h1 id="p-done-title" style="font-size:28px"></h1>
+      <p id="p-done-text" style="margin:6px 0 0"></p>
+      <p class="note" id="p-done-ref"></p>
+    </div>
+    <div class="pv-warn hide" id="p-damage"><span data-p="damage_text"></span>
+      <button class="btn main" id="p-to-report" type="button" data-p="damage_btn" style="margin-top:10px;--c:var(--report)"></button></div>
+    <div class="stack">
+      <button class="btn main" id="p-new" type="button" data-p="new"></button>
+      <button class="btn wide" id="p-print" type="button" data-p="print"></button>
+      <button class="btn wide" id="p-home" type="button" data-p="to_home"></button>
+    </div>
+  </section>
+
+  <section id="p-queue-wrap" class="hide">
+    <h2 data-p="queue"></h2>
+    <div class="panel"><div id="p-queue"></div><button class="btn wide" id="p-sync" type="button" data-p="retry" style="margin-top:12px"></button></div>
   </section>
 </main>
 
@@ -2635,6 +2780,8 @@ var qrcode = function() {
      portal-docs du projet SMS), connexion par code e-mail à 6 chiffres.
    · Briefing TST : déposé dans le Crew Training (projet qbbrdwvclaqdpaxmcayh)
      par la fonction tst_briefing_submit ; file d'attente hors ligne.
+   · PV prise en charge / restitution : table fleet_handovers du projet SMS
+     (provisoire), par la fonction fleet_handover_submit ; file hors ligne.
    ════════════════════════════════════════════════════════════════════ */
 const PORTAL = location.hostname === 'saf-international-portail.netlify.app' ? '' : 'https://saf-international-portail.netlify.app';
 const REPORT_URL = PORTAL + '/sms/SAF_Report.html';
@@ -2753,7 +2900,7 @@ function applyLang(){
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   $('d-q').placeholder = T('search');
   setWhere();
-  drawItems(); updateTst(); renderQueue(); renderBadges(); drawTrainers();
+  drawItems(); updateTst(); renderQueue(); pvApply(); renderBadges(); drawTrainers();
   if(DOCS.ready) renderDocs();
   if(view === 'brief') renderBriefHead();
   if(view === 'tst' && currentSession()) drawQr(currentSession());
@@ -2762,9 +2909,9 @@ function applyLang(){
 document.querySelectorAll('[data-l]').forEach(b => b.addEventListener('click', () => { lang = b.dataset.l; LS.set(K.lang, lang); applyLang(); }));
 
 /* ── Navigation (le bouton retour du téléphone fonctionne) ── */
-const VIEWS = ['home','report','docs','tst','brief'];
+const VIEWS = ['home','report','docs','tst','brief','pv'];
 let view = 'home';
-function setWhere(){ $('where').textContent = view === 'home' ? 'SAF Mobile' : view === 'report' ? 'Safety Report' : view === 'docs' ? T('docs_title') : view === 'brief' ? '' : T('tst_title'); }
+function setWhere(){ $('where').textContent = view === 'home' ? 'SAF Mobile' : view === 'report' ? 'Safety Report' : view === 'docs' ? T('docs_title') : view === 'brief' ? '' : view === 'pv' ? TP('tile_t') : T('tst_title'); }
 function route(){
   const raw = (location.hash || '').replace('#','');
   const briefId = raw.startsWith('brief=') ? raw.slice(6) : null;
@@ -2776,9 +2923,10 @@ function route(){
   if(view === 'report' && !$('report-frame').src) $('report-frame').src = REPORT_URL;
   if(view === 'docs') docsEnter();
   if(view === 'tst') tstEnter();
+  if(view === 'pv') pvEnter();
   if(view === 'brief') briefEnter(briefId);
   if(view === 'home') renderBadges();
-  syncQueue();
+  syncQueue(); syncPv();
 }
 document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.go; }));
 $('back').addEventListener('click', () => { location.hash = view === 'brief' ? 'tst' : ''; });
@@ -3186,6 +3334,7 @@ function renderQueue(){
   $('t-queue').innerHTML = q.map(x => '<div class="qrow"><span>' + h(x.p.tst_first_name + ' ' + x.p.tst_last_name.toUpperCase()) + ' <em>· ' + h(x.p.tst_company) + '</em>' + (x.err ? '<br><span class="e">' + h(errText(x.err)) + '</span>' : '') + '</span><em>' + h(x.err ? T('q_err') : T('q_wait')) + '</em></div>').join('');
 }
 function renderBadges(){
+  pvBadge();
   const n = LS.get(K.queue, []).length;
   $('tst-badge').innerHTML = n ? '<span class="badge q">' + h(T('queue_badge', { n })) + '</span>' : (currentSession() ? '<span class="badge ok">QR · ' + h(fmtTime(currentSession().expires_at)) + '</span>' : '');
   const m = DOCS.ready ? unreadMust().length : 0;
@@ -3218,6 +3367,224 @@ function buildPrint(it){
     + '<div class="sigs"><div>' + h(T('sig_tst')) + '<img src="' + it.tst_signature_png + '" alt=""></div></div>'
     + '<p style="font-size:9pt;margin-top:10pt">SAF International — OM-A §8.2.1</p>';
 }
+
+/* ════════════════ PV PRISE EN CHARGE / RESTITUTION ════════════════
+   Stockage provisoire : projet SMS (qaqehmxoehcvzcojcqkm), table
+   fleet_handovers, à côté de fleet_aircraft. Dépôt uniquement par la
+   fonction fleet_handover_submit ; file d'attente hors ligne comme le TST. */
+const PV_FLEET = [ { reg:'HB-ZKN', type:'AS 332 C1', msn:'9010' }, { reg:'HB-ZIP', type:'AS 332 C1e', msn:'2864' }, { reg:'F-HRTS', type:'AS 332 C1e', msn:'3017' } ];
+const PV_SUBS = {
+  cles:  ['Clés','Keys','Chiavi','Llaves'],
+  docs:  ['Mallette documents','Document case','Valigetta documenti','Maletín de documentos'],
+  heslo: ['Élingue | Matériel HESLO','Sling | HESLO equipment','Braca | Materiale HESLO','Eslinga | Material HESLO']
+};
+const PV_ITEMS = [
+  { g:['Appareil et documents','Aircraft and documents','Aeromobile e documenti','Aeronave y documentos'] },
+  { id:'bachage',   l:['Lots de bachage','Cover sets','Set di teli di copertura','Juegos de fundas'] },
+  { s:'cles' },
+  { id:'cle_portes',     p:'cles', l:['Portes','Doors','Porte','Puertas'] },
+  { id:'cle_soute',      p:'cles', l:['Soute','Hold','Vano bagagli','Bodega'] },
+  { id:'cle_reservoirs', p:'cles', l:['Bouchons de réservoirs','Fuel caps','Tappi serbatoi','Tapones de depósitos'] },
+  { id:'crm',       l:['Pochette ignifugée avec CRM','Fireproof pouch with CRM','Busta ignifuga con CRM','Bolsa ignífuga con CRM'] },
+  { id:'thermique', l:['Gants et pochette emballement thermique','Gloves and thermal runaway bag','Guanti e busta per thermal runaway','Guantes y bolsa para fuga térmica'] },
+  { s:'docs' },
+  { id:'doc_afm', p:'docs', l:['AFM','AFM','AFM','AFM'] },
+  { id:'doc_mel', p:'docs', l:['MEL','MEL','MEL','MEL'] },
+  { id:'doc_crm', p:'docs', l:['CRM','CRM','CRM','CRM'], n:['Compte rendu mécanique','Maintenance report','Resoconto meccanico','Informe mecánico'] },
+  { id:'bluebook',  l:['Blue Book','Blue Book','Blue Book','Blue Book'] },
+  { g:['Casques','Headsets','Cuffie','Cascos'] },
+  { id:'casq_ab',   l:['Casques antibruit','Ear defenders','Cuffie antirumore','Cascos antirruido'] },
+  { id:'casq_radio',l:['Casques radio','Radio headsets','Cuffie radio','Cascos de radio'] },
+  { id:'raccords',  l:['Raccords casques US/NATO','US/NATO headset adapters','Adattatori cuffie US/NATO','Adaptadores de cascos US/OTAN'] },
+  { g:['Matériel de levage','Lifting equipment','Attrezzatura di sollevamento','Equipo de elevación'] },
+  { s:'heslo' },
+  { id:'elingue_30', p:'heslo', l:['Élingue 30 m','Sling 30 m','Braca 30 m','Eslinga 30 m'] },
+  { id:'elingue_50', p:'heslo', l:['Élingue 50 m','Sling 50 m','Braca 50 m','Eslinga 50 m'] },
+  { id:'crochet_6t', p:'heslo', l:['Crochet 6 tonnes','6-tonne hook','Gancio 6 tonnellate','Gancho de 6 toneladas'] },
+  { g:['Survie','Survival','Sopravvivenza','Supervivencia'] },
+  { id:'life_jacket',l:['Life jacket','Life jacket','Giubbotti di salvataggio','Chalecos salvavidas'] },
+  { id:'life_raft', l:['Life Raft 12 pax','Life raft 12 pax','Zattera 12 pax','Balsa 12 pax'] }
+];
+/* libellé complet d'un élément (avec sa sous-partie), pour l'enregistrement et l'impression */
+const pvLabel = (it, j) => (it.p ? PV_SUBS[it.p][j] + ' – ' : '') + it.l[j] + (it.n ? ' (' + it.n[j] + ')' : '');
+const I18N_PV = {
+fr:{tile_t:'Prise en charge appareil',tile_s:'PV de prise en charge ou de restitution, inventaire du matériel',title:'PV de prise en charge / restitution',lead:'À remplir au pied de l’appareil avec le preneur, puis à signer par les deux parties.',
+ taker:'Preneur',movement:'Mouvement',pickup:'Prise en charge par {t}',the_taker:'le preneur',return:'Restitution',reg:'Immatriculation',choose:'— Choisir —',type:'Type d’hélicoptère',msn:'N° de série',date:'Date',time:'Heure',order:'N° de commande d’exécution',optional:'(facultatif)',
+ equipment:'Matériel à bord',present:'Présent',qty:'Nombre',obs:'Observations (dégât majeur constaté)',obs_hint:'Laissez vide s’il n’y a rien à signaler.',signatures:'Signatures',sig_taker:'Preneur : {t}',sign_here:'Signer ici',clear:'Effacer',signer:'Nom du signataire',
+ save:'Enregistrer le PV',save_note:'Sans réseau, le PV reste sur le téléphone et part tout seul dès que la connexion revient.',missing:'Complétez les champs en rouge.',
+ sent_title:'PV enregistré',sent_text:'PV de {m} de {r} enregistré pour {t}.',queued_title:'PV en attente d’envoi',queued_text:'Pas de réseau : le PV est gardé sur ce téléphone et partira automatiquement.',rejected_title:'PV refusé',ref:'Référence : {r}',
+ damage_text:'Un dégât majeur est noté dans ce PV. Faites aussi un Safety Report pour qu’il soit analysé.',damage_btn:'Faire un Safety Report',new:'Nouveau PV',print:'Imprimer / PDF',to_home:'Retour à l’accueil',queue:'PV en attente d’envoi',retry:'Réessayer l’envoi',queue_badge:'{n} en attente',
+ mv_pickup:'prise en charge',mv_return:'restitution',pr_title:'PV de {m} de l’appareil',none:'Rien à signaler',yes:'Oui',
+ err_bad_date:'La date doit se situer dans les 7 derniers jours.',err_bad_reg:'Immatriculation inconnue.',err_bad_signature:'Signature illisible, recommencez.',err_generic:'Refusé par le serveur : {m}'},
+en:{tile_t:'Aircraft handover',tile_s:'Handover or return report, equipment inventory',title:'Aircraft handover / return report',lead:'Fill in beside the aircraft with the receiving party, then both parties sign.',
+ taker:'Receiving party',movement:'Movement',pickup:'Handover to {t}',the_taker:'the receiving party',return:'Return',reg:'Registration',choose:'— Select —',type:'Helicopter type',msn:'Serial number',date:'Date',time:'Time',order:'Work order no.',optional:'(optional)',
+ equipment:'Equipment on board',present:'Present',qty:'Qty',obs:'Remarks (major damage found)',obs_hint:'Leave empty if nothing to report.',signatures:'Signatures',sig_taker:'Receiving party: {t}',sign_here:'Sign here',clear:'Clear',signer:'Signatory name',
+ save:'Save the report',save_note:'Without network the report stays on the phone and is sent automatically when the connection returns.',missing:'Complete the fields in red.',
+ sent_title:'Report saved',sent_text:'{m} report for {r} saved for {t}.',queued_title:'Report waiting to be sent',queued_text:'No network: the report is kept on this phone and will be sent automatically.',rejected_title:'Report rejected',ref:'Reference: {r}',
+ damage_text:'Major damage is recorded in this report. Please also file a Safety Report so it gets analysed.',damage_btn:'File a Safety Report',new:'New report',print:'Print / PDF',to_home:'Back to home',queue:'Reports waiting to be sent',retry:'Retry sending',queue_badge:'{n} waiting',
+ mv_pickup:'Handover',mv_return:'Return',pr_title:'Aircraft {m} report',none:'Nothing to report',yes:'Yes',
+ err_bad_date:'The date must be within the last 7 days.',err_bad_reg:'Unknown registration.',err_bad_signature:'Signature unreadable, please sign again.',err_generic:'Rejected by the server: {m}'},
+it:{tile_t:'Presa in carico aeromobile',tile_s:'Verbale di presa in carico o di restituzione, inventario',title:'Verbale di presa in carico / restituzione',lead:'Da compilare accanto all’aeromobile con il ricevente, poi firmano entrambe le parti.',
+ taker:'Ricevente',movement:'Movimento',pickup:'Presa in carico da {t}',the_taker:'il ricevente',return:'Restituzione',reg:'Immatricolazione',choose:'— Scegliere —',type:'Tipo di elicottero',msn:'N° di serie',date:'Data',time:'Ora',order:'N° ordine di esecuzione',optional:'(facoltativo)',
+ equipment:'Materiale a bordo',present:'Presente',qty:'Numero',obs:'Osservazioni (danno maggiore constatato)',obs_hint:'Lasciare vuoto se non c’è nulla da segnalare.',signatures:'Firme',sig_taker:'Ricevente: {t}',sign_here:'Firmare qui',clear:'Cancella',signer:'Nome del firmatario',
+ save:'Registra il verbale',save_note:'Senza rete il verbale resta sul telefono e parte da solo quando torna la connessione.',missing:'Completare i campi in rosso.',
+ sent_title:'Verbale registrato',sent_text:'Verbale di {m} di {r} registrato per {t}.',queued_title:'Verbale in attesa di invio',queued_text:'Nessuna rete: il verbale resta su questo telefono e partirà automaticamente.',rejected_title:'Verbale rifiutato',ref:'Riferimento: {r}',
+ damage_text:'In questo verbale è annotato un danno maggiore. Compilare anche un Safety Report perché venga analizzato.',damage_btn:'Compila un Safety Report',new:'Nuovo verbale',print:'Stampa / PDF',to_home:'Torna alla home',queue:'Verbali in attesa di invio',retry:'Riprova l’invio',queue_badge:'{n} in attesa',
+ mv_pickup:'presa in carico',mv_return:'restituzione',pr_title:'Verbale di {m} dell’aeromobile',none:'Nulla da segnalare',yes:'Sì',
+ err_bad_date:'La data deve essere negli ultimi 7 giorni.',err_bad_reg:'Immatricolazione sconosciuta.',err_bad_signature:'Firma illeggibile, rifirmare.',err_generic:'Rifiutato dal server: {m}'},
+es:{tile_t:'Entrega de aeronave',tile_s:'Acta de entrega o de devolución, inventario del material',title:'Acta de entrega / devolución',lead:'Rellenar junto a la aeronave con el receptor y firmar ambas partes.',
+ taker:'Receptor',movement:'Movimiento',pickup:'Entrega a {t}',the_taker:'el receptor',return:'Devolución',reg:'Matrícula',choose:'— Elegir —',type:'Tipo de helicóptero',msn:'N° de serie',date:'Fecha',time:'Hora',order:'N° de orden de ejecución',optional:'(opcional)',
+ equipment:'Material a bordo',present:'Presente',qty:'Cantidad',obs:'Observaciones (daño mayor constatado)',obs_hint:'Dejar vacío si no hay nada que señalar.',signatures:'Firmas',sig_taker:'Receptor: {t}',sign_here:'Firmar aquí',clear:'Borrar',signer:'Nombre del firmante',
+ save:'Guardar el acta',save_note:'Sin red, el acta se queda en el teléfono y se envía sola al volver la conexión.',missing:'Complete los campos en rojo.',
+ sent_title:'Acta guardada',sent_text:'Acta de {m} de {r} guardada para {t}.',queued_title:'Acta pendiente de envío',queued_text:'Sin red: el acta se guarda en este teléfono y se enviará automáticamente.',rejected_title:'Acta rechazada',ref:'Referencia: {r}',
+ damage_text:'Esta acta registra un daño mayor. Haga también un Safety Report para que se analice.',damage_btn:'Hacer un Safety Report',new:'Nueva acta',print:'Imprimir / PDF',to_home:'Volver al inicio',queue:'Actas pendientes de envío',retry:'Reintentar el envío',queue_badge:'{n} pendientes',
+ mv_pickup:'entrega',mv_return:'devolución',pr_title:'Acta de {m} de la aeronave',none:'Nada que señalar',yes:'Sí',
+ err_bad_date:'La fecha debe estar dentro de los últimos 7 días.',err_bad_reg:'Matrícula desconocida.',err_bad_signature:'Firma ilegible, firme de nuevo.',err_generic:'Rechazado por el servidor: {m}'}
+};
+const TP = (k, vars) => { let s = ((I18N_PV[lang] || {})[k] != null ? I18N_PV[lang][k] : I18N_PV.fr[k]) || k; if(vars) for(const v in vars) s = s.split('{' + v + '}').join(vars[v]); return s; };
+const PVL = () => Math.max(0, ['fr','en','it','es'].indexOf(lang));
+const K_PV = { queue:'safm_pv_queue', signer:'safm_pv_saf_signer' };
+const PV = { mvt:null, last:null };
+const PAD_PV1 = Pad('p-sig1'), PAD_PV2 = Pad('p-sig2');
+document.querySelectorAll('[data-pvclear]').forEach(b => b.addEventListener('click', () => (b.dataset.pvclear === '1' ? PAD_PV1 : PAD_PV2).clear()));
+window.addEventListener('resize', () => { if(view === 'pv'){ PAD_PV1.resize(); PAD_PV2.resize(); } });
+
+async function smsRpc(fn, body){
+  const r = await fetch(SMS_URL + '/rest/v1/rpc/' + fn, { method:'POST', headers:{ 'Content-Type':'application/json', apikey:SMS_ANON, Authorization:'Bearer ' + SMS_ANON }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => null);
+  if(!r.ok){ const err = new Error((j && j.message) || ('HTTP ' + r.status)); err.server = true; throw err; }
+  return j;
+}
+const pvErr = m => { const k = 'err_' + String(m || '').trim(); return I18N_PV.fr[k] ? TP(k) : TP('err_generic', { m }); };
+
+function pvDrawItems(){
+  const keep = {}; document.querySelectorAll('#p-items .pv-row').forEach(r => { keep[r.dataset.id] = { on:r.querySelector('input[type=checkbox]').checked, n:r.querySelector('.pv-step input').value }; });
+  const j = PVL();
+  $('p-items').innerHTML = PV_ITEMS.map(it => it.g ? '<div class="pv-grp">' + h(it.g[j]) + '</div>'
+    : it.s ? '<div class="pv-sub">' + h(PV_SUBS[it.s][j]) + '</div>'
+    : '<div class="pv-row' + (it.p ? ' in' : '') + '" data-id="' + it.id + '"><span class="lb">' + h(it.l[j]) + (it.n ? '<small>' + h(it.n[j]) + '</small>' : '') + '</span>'
+      + '<input type="checkbox" aria-label="' + h(pvLabel(it, j)) + '">'
+      + '<span class="pv-step"><button type="button" data-d="-1" aria-label="−">−</button><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="0" aria-label="' + h(TP('qty')) + '"><button type="button" data-d="1" aria-label="+">+</button></span></div>').join('');
+  document.querySelectorAll('#p-items .pv-row').forEach(r => {
+    const box = r.querySelector('input[type=checkbox]'), num = r.querySelector('.pv-step input');
+    const sync = () => r.classList.toggle('on', box.checked);
+    if(keep[r.dataset.id]){ box.checked = keep[r.dataset.id].on; num.value = keep[r.dataset.id].n; sync(); }
+    box.addEventListener('change', () => { if(box.checked && !(+num.value > 0)) num.value = 1; if(!box.checked) num.value = ''; sync(); });
+    num.addEventListener('input', () => { num.value = num.value.replace(/\D/g, ''); box.checked = +num.value > 0; sync(); });
+    r.querySelectorAll('.pv-step button').forEach(b => b.addEventListener('click', () => { const v = Math.max(0, Math.min(999, (parseInt(num.value) || 0) + (+b.dataset.d))); num.value = v || ''; box.checked = v > 0; sync(); }));
+  });
+}
+function pvTakerName(){ return $('p-taker').value.trim() || TP('the_taker'); }
+function pvApply(){
+  document.querySelectorAll('[data-p]').forEach(el => { el.textContent = TP(el.dataset.p); });
+  $('pv-tile-t').textContent = TP('tile_t');
+  $('orbit-hint').textContent = ({fr:'Touchez une planète pour ouvrir le module',en:'Tap a planet to open the module',it:'Tocca un pianeta per aprire il modulo',es:'Toque un planeta para abrir el módulo'})[lang] || 'Touchez une planète pour ouvrir le module';
+  $('p-mvt-pickup').textContent = TP('pickup', { t: pvTakerName() });
+  $('p-sig1-label').textContent = TP('sig_taker', { t: $('p-taker').value.trim() || '—' }) + ' *';
+  $('p-signer1').placeholder = TP('signer'); $('p-signer2').placeholder = TP('signer');
+  const sel = $('p-reg'), cur = sel.value;
+  sel.innerHTML = '<option value="">' + h(TP('choose')) + '</option>' + PV_FLEET.map(a => '<option>' + a.reg + '</option>').join(''); sel.value = cur;
+  pvDrawItems(); pvRenderQueue();
+  if(!$('p-done').classList.contains('hide') && PV.last) pvShowDone(PV.last.state, PV.last.item, PV.last.err);
+}
+function pvSetMvt(m){ PV.mvt = m; document.querySelectorAll('[data-mvt]').forEach(b => b.classList.toggle('on', b.dataset.mvt === m)); $('pf-mvt').classList.remove('pv-bad'); }
+document.querySelectorAll('[data-mvt]').forEach(b => b.addEventListener('click', () => pvSetMvt(b.dataset.mvt)));
+$('p-taker').addEventListener('input', () => { $('p-mvt-pickup').textContent = TP('pickup', { t: pvTakerName() }); $('p-sig1-label').textContent = TP('sig_taker', { t: $('p-taker').value.trim() || '—' }) + ' *'; $('pf-taker').classList.remove('pv-bad'); });
+$('p-reg').addEventListener('change', () => { const a = PV_FLEET.find(x => x.reg === $('p-reg').value); $('p-type').value = a ? a.type : ''; $('p-msn').value = a ? a.msn : ''; $('pf-reg').classList.remove('pv-bad'); });
+['p-date','p-time','p-signer1','p-signer2'].forEach(id => $(id).addEventListener('input', () => $(id).closest('.f').classList.remove('pv-bad')));
+function pvNow(){ const d = new Date(); $('p-date').value = today(); $('p-time').value = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+function pvReset(){
+  $('p-taker').value = ''; $('p-reg').value = ''; $('p-type').value = ''; $('p-msn').value = ''; $('p-order').value = ''; $('p-obs').value = ''; $('p-signer1').value = '';
+  $('p-signer2').value = LS.get(K_PV.signer, '') || ''; pvSetMvt(null); pvNow(); PAD_PV1.clear(); PAD_PV2.clear();
+  document.querySelectorAll('#p-items .pv-row').forEach(r => { r.querySelector('input[type=checkbox]').checked = false; r.querySelector('.pv-step input').value = ''; r.classList.remove('on'); });
+  document.querySelectorAll('#v-pv .pv-bad').forEach(x => x.classList.remove('pv-bad')); $('p-why').textContent = '';
+  $('p-form').classList.remove('hide'); $('p-done').classList.add('hide'); pvApply();
+}
+function pvEnter(){ requestAnimationFrame(() => { PAD_PV1.resize(); PAD_PV2.resize(); }); pvRenderQueue(); }
+
+$('p-save').addEventListener('click', async () => {
+  const bad = [];
+  if(!$('p-taker').value.trim()) bad.push('pf-taker');
+  if(!PV.mvt) bad.push('pf-mvt');
+  if(!$('p-reg').value) bad.push('pf-reg');
+  if(!$('p-date').value) bad.push('pf-date');
+  if(!$('p-time').value) bad.push('pf-time');
+  if($('p-signer1').value.trim().length < 2 || !PAD_PV1.filled()) bad.push('pf-sig1');
+  if($('p-signer2').value.trim().length < 2 || !PAD_PV2.filled()) bad.push('pf-sig2');
+  document.querySelectorAll('#v-pv .pv-bad').forEach(x => x.classList.remove('pv-bad'));
+  bad.forEach(id => $(id).classList.add('pv-bad'));
+  if(bad.length){ $('p-why').textContent = TP('missing'); $(bad[0]).scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+  $('p-why').textContent = '';
+  const a = PV_FLEET.find(x => x.reg === $('p-reg').value);
+  const stamp = $('p-date').value.replace(/-/g,'') + '-' + $('p-time').value.replace(':','');
+  const rnd = Math.random().toString(36).slice(2, 5).toUpperCase();
+  const equipment = [...document.querySelectorAll('#p-items .pv-row')].map(r => { const it = PV_ITEMS.find(x => x.id === r.dataset.id);
+    return { id: it.id, label: pvLabel(it, 0), present: r.querySelector('input[type=checkbox]').checked, n: parseInt(r.querySelector('.pv-step input').value) || 0 }; });
+  const p = { ref: 'PV-' + a.reg.replace('-','') + '-' + stamp + '-' + rnd, movement: PV.mvt, taker: $('p-taker').value.trim(), reg: a.reg, aircraft_type: a.type, msn: a.msn,
+    event_date: $('p-date').value, event_time: $('p-time').value, order_no: $('p-order').value.trim(), equipment, observations: $('p-obs').value.trim(),
+    taker_signer: $('p-signer1').value.trim(), taker_signature_png: PAD_PV1.png(), saf_signer: $('p-signer2').value.trim(), saf_signature_png: PAD_PV2.png(), lang };
+  LS.set(K_PV.signer, p.saf_signer);
+  $('p-save').disabled = true;
+  try{ await smsRpc('fleet_handover_submit', { p }); pvShowDone('sent', p); }
+  catch(e){
+    if(e.server){ pvShowDone('err', p, e.message); }
+    else { const q = LS.get(K_PV.queue, []); q.push({ p, err:null, tries:0 }); if(!LS.set(K_PV.queue, q)) { pvShowDone('err', p, 'storage'); } else pvShowDone('queued', p); }
+  }
+  finally{ $('p-save').disabled = false; renderBadges(); pvRenderQueue(); }
+});
+function pvShowDone(state, item, err){
+  PV.last = { state, item, err };
+  $('p-form').classList.add('hide'); $('p-done').classList.remove('hide');
+  const m = TP(item.movement === 'pickup' ? 'mv_pickup' : 'mv_return');
+  $('p-done-box').style.borderLeftColor = state === 'sent' ? 'var(--pv)' : state === 'err' ? 'var(--err)' : 'var(--gold)';
+  $('p-done-title').textContent = state === 'sent' ? TP('sent_title') : state === 'err' ? TP('rejected_title') : TP('queued_title');
+  $('p-done-text').textContent = state === 'sent' ? TP('sent_text', { m, r: item.reg, t: item.taker }) : state === 'err' ? pvErr(err) : TP('queued_text');
+  $('p-done-ref').textContent = TP('ref', { r: item.ref });
+  $('p-damage').classList.toggle('hide', !item.observations);
+  pvBuildPrint(item); window.scrollTo(0, 0);
+}
+$('p-new').onclick = () => { PV.last = null; pvReset(); window.scrollTo(0, 0); requestAnimationFrame(() => { PAD_PV1.resize(); PAD_PV2.resize(); }); };
+$('p-print').onclick = () => { if(PV.last) pvBuildPrint(PV.last.item); window.print(); };
+$('p-home').onclick = () => { location.hash = ''; };
+$('p-to-report').onclick = () => { location.hash = 'report'; };
+
+function pvBuildPrint(it){
+  const j = PVL(), m = TP(it.movement === 'pickup' ? 'mv_pickup' : 'mv_return'), [y, mo, d] = it.event_date.split('-');
+  const rows = it.equipment.map(e => { const def = PV_ITEMS.find(x => x.id === e.id); const lb = def ? pvLabel(def, j) : e.label;
+    return '<tr><td>' + h(lb) + '</td><td style="text-align:center">' + (e.present ? '✓' : '—') + '</td><td style="text-align:center">' + (e.n || '') + '</td></tr>'; }).join('');
+  $('print').innerHTML = '<img src="' + document.querySelector('#band img').src + '" alt="" style="height:44pt;float:right">'
+    + '<h1>' + h(TP('pr_title', { m })) + '</h1><p>' + h(TP('ref', { r: it.ref })) + '</p>'
+    + '<table><tr><th>' + h(TP('taker')) + '</th><td colspan="3">' + h(it.taker) + '</td></tr>'
+    + '<tr><th>' + h(TP('movement')) + '</th><td>' + h(it.movement === 'pickup' ? TP('pickup', { t: it.taker }) : TP('return')) + '</td><th>' + h(TP('order')) + '</th><td>' + h(it.order_no || '—') + '</td></tr>'
+    + '<tr><th>' + h(TP('reg')) + '</th><td>' + h(it.reg) + '</td><th>' + h(TP('msn')) + '</th><td>' + h(it.msn) + '</td></tr>'
+    + '<tr><th>' + h(TP('type')) + '</th><td>' + h(it.aircraft_type) + '</td><th>' + h(TP('date')) + '</th><td>' + d + '/' + mo + '/' + y + ' · ' + h(it.event_time) + '</td></tr></table>'
+    + '<table><tr><th>' + h(TP('equipment')) + '</th><th style="width:60pt;text-align:center">' + h(TP('present')) + '</th><th style="width:60pt;text-align:center">' + h(TP('qty')) + '</th></tr>' + rows + '</table>'
+    + '<table><tr><th>' + h(TP('obs')) + '</th></tr><tr><td style="white-space:pre-wrap">' + h(it.observations || TP('none')) + '</td></tr></table>'
+    + '<div class="sigs"><div>' + h(TP('sig_taker', { t: it.taker })) + '<br>' + h(it.taker_signer) + '<img src="' + it.taker_signature_png + '" alt=""></div>'
+    + '<div>SAF Hélicoptères<br>' + h(it.saf_signer) + '<img src="' + it.saf_signature_png + '" alt=""></div></div>';
+}
+
+/* file d'attente hors ligne */
+let pvSyncing = false;
+async function syncPv(){
+  if(pvSyncing) return; pvSyncing = true;
+  for(const it of LS.get(K_PV.queue, [])){
+    if(it.err && !it.force) continue;
+    try{ await smsRpc('fleet_handover_submit', { p: it.p }); LS.set(K_PV.queue, LS.get(K_PV.queue, []).filter(x => x.p.ref !== it.p.ref)); }
+    catch(e){ if(!e.server) break; const q = LS.get(K_PV.queue, []), x = q.find(y => y.p.ref === it.p.ref); if(x){ x.err = e.message; x.force = false; x.tries++; LS.set(K_PV.queue, q); } }
+  }
+  pvSyncing = false; pvRenderQueue(); renderBadges();
+}
+window.addEventListener('online', syncPv);
+setInterval(() => { if(navigator.onLine && LS.get(K_PV.queue, []).some(x => !x.err)) syncPv(); }, 60000);
+$('p-sync').onclick = async () => { const q = LS.get(K_PV.queue, []); q.forEach(x => { x.force = true; }); LS.set(K_PV.queue, q); await syncPv(); };
+function pvRenderQueue(){
+  const q = LS.get(K_PV.queue, []);
+  $('p-queue-wrap').classList.toggle('hide', !q.length);
+  $('p-queue').innerHTML = q.map(x => '<div class="qrow"><span>' + h(x.p.reg) + ' <em>· ' + h(x.p.taker) + '</em>' + (x.err ? '<br><span class="e">' + h(pvErr(x.err)) + '</span>' : '') + '</span><em>' + h(x.p.event_date.split('-').reverse().join('/')) + '</em></div>').join('');
+}
+function pvBadge(){ const n = LS.get(K_PV.queue, []).length; $('pv-badge').innerHTML = n ? '<span class="badge q">' + h(TP('queue_badge', { n })) + '</span>' : ''; }
+pvDrawItems(); pvNow(); $('p-signer2').value = LS.get(K_PV.signer, '') || '';
 
 /* ── Démarrage ── */
 (function init(){
